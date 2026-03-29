@@ -13,6 +13,8 @@ final class AdminApiController
 {
     private const ALLOWED_PRODUCT_GROUPS = ['PRINCIPAL', 'SMART', 'ENFANT', 'LUXE', 'MIXTE', 'AUTRE'];
     private const ALLOWED_PRODUCT_SEGMENTS = ['HOMME', 'FEMME', 'UNISEX', 'ENFANT', 'MIXTE', 'AUTRE'];
+    private const FACE_MATRIX_LENGTH = 1024;
+    private const FACE_PROFILE_LABEL_MAX_LENGTH = 120;
 
     public function __construct(
         private readonly AppContext $app,
@@ -70,6 +72,194 @@ final class AdminApiController
     private function validateAllowedValue(string $value, array $allowed, string $message): ?string
     {
         return $this->validator->allowedValue($value, $allowed, $message);
+    }
+
+    private function normalizeFaceMatrix(mixed $value): array
+    {
+        if (!is_array($value) || count($value) !== self::FACE_MATRIX_LENGTH) {
+            throw new \RuntimeException('Matrice de visage invalide.');
+        }
+
+        $matrix = [];
+        foreach ($value as $item) {
+            if (!is_numeric($item)) {
+                throw new \RuntimeException('Matrice de visage invalide.');
+            }
+
+            $number = (float) $item;
+            if ($number < 0 || $number > 1) {
+                throw new \RuntimeException('Matrice de visage hors limites.');
+            }
+
+            $matrix[] = round($number, 6);
+        }
+
+        return $matrix;
+    }
+
+    private function ensureFaceAuthProfilesTable(): void
+    {
+        $db = $this->app->db();
+        $db->exec(
+            'CREATE TABLE IF NOT EXISTS face_auth_profiles (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                user_id BIGINT UNSIGNED NOT NULL,
+                profile_label VARCHAR(' . self::FACE_PROFILE_LABEL_MAX_LENGTH . ') NULL,
+                face_matrix_json LONGTEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_face_auth_profiles_user_id (user_id),
+                CONSTRAINT fk_face_auth_profiles_user
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+
+        $schema = (string) $db->query('SELECT DATABASE()')->fetchColumn();
+        if ($schema === '') {
+            return;
+        }
+
+        $columnCheck = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "face_auth_profiles"
+               AND COLUMN_NAME = "profile_label"'
+        );
+        $columnCheck->execute(['schema' => $schema]);
+        if ((int) $columnCheck->fetchColumn() === 0) {
+            $db->exec(
+                'ALTER TABLE face_auth_profiles
+                 ADD COLUMN profile_label VARCHAR(' . self::FACE_PROFILE_LABEL_MAX_LENGTH . ') NULL AFTER user_id'
+            );
+        }
+
+        $legacyUniqueCheck = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "face_auth_profiles"
+               AND INDEX_NAME = "uniq_face_auth_user_id"'
+        );
+        $legacyUniqueCheck->execute(['schema' => $schema]);
+        if ((int) $legacyUniqueCheck->fetchColumn() > 0) {
+            $db->exec('ALTER TABLE face_auth_profiles DROP INDEX uniq_face_auth_user_id');
+        }
+
+        $indexCheck = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "face_auth_profiles"
+               AND INDEX_NAME = "idx_face_auth_profiles_user_id"'
+        );
+        $indexCheck->execute(['schema' => $schema]);
+        if ((int) $indexCheck->fetchColumn() === 0) {
+            $db->exec('ALTER TABLE face_auth_profiles ADD INDEX idx_face_auth_profiles_user_id (user_id)');
+        }
+    }
+
+    private function migrateLegacyMatrixToFaceProfiles(int $userId): void
+    {
+        $this->ensureFaceAuthProfilesTable();
+
+        $db = $this->app->db();
+        $countStmt = $db->prepare(
+            'SELECT COUNT(*)
+             FROM face_auth_profiles
+             WHERE user_id = :user_id'
+        );
+        $countStmt->execute(['user_id' => $userId]);
+        if ((int) $countStmt->fetchColumn() > 0) {
+            return;
+        }
+
+        $legacyStmt = $db->prepare(
+            'SELECT matrice
+             FROM users
+             WHERE id = :user_id
+               AND matrice IS NOT NULL
+               AND matrice <> ""
+             LIMIT 1'
+        );
+        $legacyStmt->execute(['user_id' => $userId]);
+        $legacyMatrix = $legacyStmt->fetchColumn();
+        if ($legacyMatrix === false || $legacyMatrix === null || $legacyMatrix === '') {
+            return;
+        }
+
+        $insert = $db->prepare(
+            'INSERT INTO face_auth_profiles (user_id, profile_label, face_matrix_json)
+             VALUES (:user_id, :profile_label, :face_matrix_json)'
+        );
+        $insert->execute([
+            'user_id' => $userId,
+            'profile_label' => 'Profil principal',
+            'face_matrix_json' => (string) $legacyMatrix,
+        ]);
+    }
+
+    private function syncLegacyMatrixFromFaceProfiles(int $userId): void
+    {
+        $this->ensureFaceAuthProfilesTable();
+
+        $db = $this->app->db();
+        $stmt = $db->prepare(
+            'SELECT face_matrix_json
+             FROM face_auth_profiles
+             WHERE user_id = :user_id
+             ORDER BY id ASC
+             LIMIT 1'
+        );
+        $stmt->execute(['user_id' => $userId]);
+        $matrixJson = $stmt->fetchColumn();
+
+        $update = $db->prepare(
+            'UPDATE users
+             SET matrice = :matrice
+             WHERE id = :user_id'
+        );
+        $update->execute([
+            'matrice' => $matrixJson !== false ? (string) $matrixJson : null,
+            'user_id' => $userId,
+        ]);
+    }
+
+    private function fetchAccountFaceProfiles(int $userId): array
+    {
+        $this->migrateLegacyMatrixToFaceProfiles($userId);
+
+        $stmt = $this->app->db()->prepare(
+            'SELECT id, profile_label, created_at, updated_at
+             FROM face_auth_profiles
+             WHERE user_id = :user_id
+             ORDER BY id DESC'
+        );
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll();
+    }
+
+    private function faceProfilesResponse(int $userId): array
+    {
+        $user = $this->app->fetchUserWithRoleById($userId);
+
+        return [
+            'ok' => true,
+            'user' => $user ? [
+                'id' => (int) $user['id'],
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'perfume_shop_name' => $user['perfume_shop_name'],
+                'phone' => $user['phone'],
+                'location' => $user['location'],
+                'email' => $user['email'],
+                'role_name' => $user['role_name'],
+            ] : null,
+            'face_profiles' => $this->fetchAccountFaceProfiles($userId),
+        ];
     }
 
     private function reserveStock(\PDO $db, array $items, int $orderId): ?array
@@ -1609,5 +1799,96 @@ final class AdminApiController
         $this->app->db()->prepare('DELETE FROM business_expenses WHERE id = :id')->execute(['id' => $id]);
 
         return new JsonResponse(['ok' => true]);
+    }
+
+    #[Route('/api/admin/account', name: 'api_admin_account', methods: ['GET'])]
+    public function account(): JsonResponse
+    {
+        if ($deny = $this->denyUnlessAdmin()) {
+            return $deny;
+        }
+
+        return new JsonResponse($this->faceProfilesResponse((int) $this->app->currentUserId()));
+    }
+
+    #[Route('/api/admin/account/faces', name: 'api_admin_account_face_create', methods: ['POST'])]
+    public function createAccountFace(Request $request): JsonResponse
+    {
+        if ($deny = $this->denyUnlessAdmin()) {
+            return $deny;
+        }
+
+        $userId = (int) $this->app->currentUserId();
+        $payload = json_decode((string) $request->getContent(), true) ?: [];
+        $label = trim((string) ($payload['label'] ?? ''));
+
+        if ($label === '') {
+            $label = 'Acces visage ' . date('d/m/Y H:i');
+        }
+
+        if (mb_strlen($label) > self::FACE_PROFILE_LABEL_MAX_LENGTH) {
+            return new JsonResponse(['error' => 'Le nom du visage est trop long.'], 422);
+        }
+
+        try {
+            $matrix = $this->normalizeFaceMatrix($payload['matrix'] ?? null);
+        } catch (\RuntimeException $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 422);
+        }
+
+        try {
+            $this->ensureFaceAuthProfilesTable();
+
+            $stmt = $this->app->db()->prepare(
+                'INSERT INTO face_auth_profiles (user_id, profile_label, face_matrix_json)
+                 VALUES (:user_id, :profile_label, :face_matrix_json)'
+            );
+            $stmt->execute([
+                'user_id' => $userId,
+                'profile_label' => $label,
+                'face_matrix_json' => json_encode($matrix, JSON_THROW_ON_ERROR),
+            ]);
+
+            $this->syncLegacyMatrixFromFaceProfiles($userId);
+        } catch (\PDOException $e) {
+            $message = str_contains(mb_strtolower($e->getMessage()), 'duplicate entry')
+                ? 'La base bloque encore plusieurs visages pour ce compte. La contrainte a ete detectee.'
+                : 'Impossible d enregistrer ce visage pour le moment.';
+
+            return new JsonResponse(['error' => $message], 409);
+        } catch (\Throwable) {
+            return new JsonResponse(['error' => 'Impossible d enregistrer ce visage pour le moment.'], 500);
+        }
+
+        return new JsonResponse($this->faceProfilesResponse($userId), 201);
+    }
+
+    #[Route('/api/admin/account/faces/{profileId}', name: 'api_admin_account_face_delete', methods: ['DELETE'])]
+    public function deleteAccountFace(int $profileId): JsonResponse
+    {
+        if ($deny = $this->denyUnlessAdmin()) {
+            return $deny;
+        }
+
+        $userId = (int) $this->app->currentUserId();
+        $this->ensureFaceAuthProfilesTable();
+
+        $delete = $this->app->db()->prepare(
+            'DELETE FROM face_auth_profiles
+             WHERE id = :id
+               AND user_id = :user_id'
+        );
+        $delete->execute([
+            'id' => $profileId,
+            'user_id' => $userId,
+        ]);
+
+        if ($delete->rowCount() === 0) {
+            return new JsonResponse(['error' => 'Visage introuvable.'], 404);
+        }
+
+        $this->syncLegacyMatrixFromFaceProfiles($userId);
+
+        return new JsonResponse($this->faceProfilesResponse($userId));
     }
 }
