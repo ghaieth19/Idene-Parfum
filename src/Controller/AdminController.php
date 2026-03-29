@@ -81,6 +81,7 @@ final class AdminController
 
             <nav class="admin-nav">
                 <button class="admin-link active" data-admin-view="overview">Vue generale</button>
+                <button class="admin-link" data-admin-view="account">Mon compte</button>
                 <button class="admin-link" data-admin-view="products">Produits</button>
                 <button class="admin-link" data-admin-view="raw-materials">Stock matieres</button>
                 <button class="admin-link" data-admin-view="orders">Commandes</button>
@@ -250,6 +251,73 @@ final class AdminController
                             <button id="productResetBtn" class="soft-btn" type="button">Nouveau</button>
                         </div>
                     </form>
+                </section>
+            </section>
+
+            <section id="admin-view-account" class="admin-view">
+                <section class="admin-card admin-account-hero">
+                    <div>
+                        <p class="section-kicker">Acces biometrique admin</p>
+                        <h3>Controlez les visages autorises avec une presentation plus professionnelle</h3>
+                        <p class="section-copy">Enregistrez proprement chaque collaborateur autorise sur le compte admin, gardez une vue claire des acces actifs et ouvrez la camera dans une fenetre plus elegante.</p>
+                    </div>
+                    <div class="admin-account-hero-badge">
+                        <span class="hero-badge">Securite partagee</span>
+                        <strong>Equipe admin</strong>
+                        <p class="muted">Un meme compte peut etre utilise par plusieurs personnes autorisees, chacune avec son visage enregistre.</p>
+                    </div>
+                </section>
+
+                <section class="admin-grid two">
+                    <article class="admin-card">
+                        <div class="section-head">
+                            <div>
+                                <p class="section-kicker">Compte admin</p>
+                                <h3>Informations du compte</h3>
+                                <p class="section-copy">Retrouvez les informations du compte administrateur actuellement connecte.</p>
+                            </div>
+                        </div>
+                        <div id="adminAccountSummary" class="inline-stats"></div>
+                    </article>
+
+                    <article class="admin-card">
+                        <div class="section-head">
+                            <div>
+                                <p class="section-kicker">Acces partages</p>
+                                <h3>Visages autorises</h3>
+                                <p class="section-copy">Ajoutez plusieurs visages pour que plusieurs personnes de la societe puissent acceder au meme compte admin.</p>
+                            </div>
+                        </div>
+                        <div class="admin-face-composer">
+                            <label class="admin-face-label">
+                                <span>Nom de la personne ou du poste</span>
+                                <input id="adminFaceLabel" class="search-input" type="text" maxlength="120" placeholder="Ex: Directeur, Responsable boutique, Comptable">
+                            </label>
+                            <div class="admin-face-composer-actions">
+                                <button id="adminFaceOpenBtn" class="primary-btn" type="button">Ajouter un visage</button>
+                            </div>
+                        </div>
+                        <div id="adminInlineFaceCapture" class="admin-inline-face-capture admin-hidden">
+                            <div class="admin-inline-face-head">
+                                <div>
+                                    <p class="employee-label">Camera integree</p>
+                                    <h4>Cadrez le visage puis capturez</h4>
+                                </div>
+                                <span class="face-profile-chip">Ajout en cours</span>
+                            </div>
+                            <div class="camera-shell admin-inline-camera-shell">
+                                <video id="adminFaceVideo" class="face-video" autoplay playsinline muted></video>
+                                <div class="camera-frame"></div>
+                            </div>
+                            <canvas id="adminFaceCanvas" class="face-canvas" width="320" height="240"></canvas>
+                            <div class="face-modal-actions admin-inline-face-actions">
+                                <button id="adminCaptureFaceBtn" type="button" class="primary-btn">Capturer ce visage</button>
+                                <button id="adminCloseFaceModalBtn" type="button" class="soft-btn">Annuler</button>
+                            </div>
+                        </div>
+                        <p id="adminFaceMessage" class="form-note"></p>
+                        <div id="adminFaceProfilesList" class="face-profile-list"></div>
+                    </article>
                 </section>
             </section>
 
@@ -660,7 +728,7 @@ final class AdminController
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/admin-app.js"></script>
+    <script src="/assets/js/admin-app.js?v=2"></script>
 </body>
 </html>
 HTML

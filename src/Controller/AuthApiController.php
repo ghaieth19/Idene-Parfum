@@ -15,7 +15,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AuthApiController
 {
     private const FACE_MATRIX_LENGTH = 1024;
-    private const FACE_MATCH_THRESHOLD = 5.5;
+    private const FACE_MATCH_THRESHOLD = 7.5;
+    private const FACE_MATCH_MIN_COSINE = 0.84;
+    private const FACE_PROFILE_LABEL_MAX_LENGTH = 120;
     private const SESSION_PENDING_FACE_MATRIX = 'face_auth.pending.matrix';
     private const PASSWORD_RESET_TTL_SECONDS = 3600;
 
@@ -85,6 +87,180 @@ final class AuthApiController
             'user_id' => $userId,
             'matrice' => json_encode($matrix, JSON_THROW_ON_ERROR),
         ]);
+    }
+
+    private function ensureFaceAuthProfilesTable(): void
+    {
+        $db = $this->app->db();
+        $db->exec(
+            'CREATE TABLE IF NOT EXISTS face_auth_profiles (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                user_id BIGINT UNSIGNED NOT NULL,
+                profile_label VARCHAR(' . self::FACE_PROFILE_LABEL_MAX_LENGTH . ') NULL,
+                face_matrix_json LONGTEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_face_auth_profiles_user_id (user_id),
+                CONSTRAINT fk_face_auth_profiles_user
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+
+        $schema = (string) $db->query('SELECT DATABASE()')->fetchColumn();
+        if ($schema === '') {
+            return;
+        }
+
+        $columnCheck = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "face_auth_profiles"
+               AND COLUMN_NAME = "profile_label"'
+        );
+        $columnCheck->execute(['schema' => $schema]);
+        if ((int) $columnCheck->fetchColumn() === 0) {
+            $db->exec(
+                'ALTER TABLE face_auth_profiles
+                 ADD COLUMN profile_label VARCHAR(' . self::FACE_PROFILE_LABEL_MAX_LENGTH . ') NULL AFTER user_id'
+            );
+        }
+
+        $legacyUniqueCheck = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "face_auth_profiles"
+               AND INDEX_NAME = "uniq_face_auth_user_id"'
+        );
+        $legacyUniqueCheck->execute(['schema' => $schema]);
+        if ((int) $legacyUniqueCheck->fetchColumn() > 0) {
+            $db->exec('ALTER TABLE face_auth_profiles DROP INDEX uniq_face_auth_user_id');
+        }
+
+        $indexCheck = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "face_auth_profiles"
+               AND INDEX_NAME = "idx_face_auth_profiles_user_id"'
+        );
+        $indexCheck->execute(['schema' => $schema]);
+        if ((int) $indexCheck->fetchColumn() === 0) {
+            $db->exec('ALTER TABLE face_auth_profiles ADD INDEX idx_face_auth_profiles_user_id (user_id)');
+        }
+    }
+
+    private function syncLegacyMatrixFromFaceProfiles(int $userId): void
+    {
+        $this->ensureFaceAuthProfilesTable();
+
+        $db = $this->app->db();
+        $stmt = $db->prepare(
+            'SELECT face_matrix_json
+             FROM face_auth_profiles
+             WHERE user_id = :user_id
+             ORDER BY id ASC
+             LIMIT 1'
+        );
+        $stmt->execute(['user_id' => $userId]);
+        $matrixJson = $stmt->fetchColumn();
+
+        $update = $db->prepare(
+            'UPDATE users
+             SET matrice = :matrice
+             WHERE id = :user_id'
+        );
+        $update->execute([
+            'matrice' => $matrixJson !== false ? (string) $matrixJson : null,
+            'user_id' => $userId,
+        ]);
+    }
+
+    private function migrateLegacyMatrixToFaceProfiles(int $userId): void
+    {
+        $this->ensureFaceAuthProfilesTable();
+
+        $db = $this->app->db();
+        $countStmt = $db->prepare(
+            'SELECT COUNT(*)
+             FROM face_auth_profiles
+             WHERE user_id = :user_id'
+        );
+        $countStmt->execute(['user_id' => $userId]);
+        if ((int) $countStmt->fetchColumn() > 0) {
+            return;
+        }
+
+        $legacyStmt = $db->prepare(
+            'SELECT matrice
+             FROM users
+             WHERE id = :user_id
+               AND matrice IS NOT NULL
+               AND matrice <> ""
+             LIMIT 1'
+        );
+        $legacyStmt->execute(['user_id' => $userId]);
+        $legacyMatrix = $legacyStmt->fetchColumn();
+        if ($legacyMatrix === false || $legacyMatrix === null || $legacyMatrix === '') {
+            return;
+        }
+
+        $insert = $db->prepare(
+            'INSERT INTO face_auth_profiles (user_id, profile_label, face_matrix_json)
+             VALUES (:user_id, :profile_label, :face_matrix_json)'
+        );
+        $insert->execute([
+            'user_id' => $userId,
+            'profile_label' => 'Profil principal',
+            'face_matrix_json' => (string) $legacyMatrix,
+        ]);
+    }
+
+    private function normalizeFaceVectorForComparison(array $matrix): array
+    {
+        $count = count($matrix);
+        if ($count === 0) {
+            return [];
+        }
+
+        $mean = array_sum($matrix) / $count;
+        $centered = [];
+        $sumSquares = 0.0;
+
+        foreach ($matrix as $value) {
+            $normalized = ((float) $value) - $mean;
+            $centered[] = $normalized;
+            $sumSquares += $normalized * $normalized;
+        }
+
+        $norm = sqrt($sumSquares);
+        if ($norm < 0.000001) {
+            return $centered;
+        }
+
+        foreach ($centered as $index => $value) {
+            $centered[$index] = $value / $norm;
+        }
+
+        return $centered;
+    }
+
+    private function cosineSimilarity(array $left, array $right): float
+    {
+        $limit = min(count($left), count($right));
+        if ($limit === 0) {
+            return 0.0;
+        }
+
+        $dot = 0.0;
+        for ($index = 0; $index < $limit; $index += 1) {
+            $dot += ((float) $left[$index]) * ((float) $right[$index]);
+        }
+
+        return $dot;
     }
 
     private function buildPublicUrl(Request $request, string $path, array $query = []): string
@@ -241,33 +417,71 @@ final class AuthApiController
 
     private function findUserByFaceMatrix(array $probeMatrix): ?array
     {
+        $this->ensureFaceAuthProfilesTable();
+        $normalizedProbeMatrix = $this->normalizeFaceVectorForComparison($probeMatrix);
         $stmt = $this->app->db()->query(
-            'SELECT
-                u.id,
-                u.matrice,
-                u.first_name,
-                u.last_name,
-                u.perfume_shop_name,
-                u.phone,
-                u.location,
-                u.email,
-                u.password_hash,
-                u.is_active,
-                COALESCE((
-                    SELECT r2.role_name
-                    FROM user_roles ur2
-                    INNER JOIN roles r2 ON r2.id = ur2.role_id
-                    WHERE ur2.user_id = u.id
-                    ORDER BY FIELD(r2.role_name, "ADMIN", "DIRECTEUR", "MANAGER", "EMPLOYE", "CLIENT")
-                    LIMIT 1
-                ), "CLIENT") AS role_name
-             FROM users u
-             WHERE u.is_active = 1
-               AND u.matrice IS NOT NULL'
+            'SELECT *
+             FROM (
+                SELECT
+                    u.id,
+                    f.face_matrix_json AS matrice,
+                    u.first_name,
+                    u.last_name,
+                    u.perfume_shop_name,
+                    u.phone,
+                    u.location,
+                    u.email,
+                    u.password_hash,
+                    u.is_active,
+                    COALESCE((
+                        SELECT r2.role_name
+                        FROM user_roles ur2
+                        INNER JOIN roles r2 ON r2.id = ur2.role_id
+                        WHERE ur2.user_id = u.id
+                        ORDER BY FIELD(r2.role_name, "ADMIN", "DIRECTEUR", "MANAGER", "EMPLOYE", "CLIENT")
+                        LIMIT 1
+                    ), "CLIENT") AS role_name
+                 FROM face_auth_profiles f
+                 INNER JOIN users u ON u.id = f.user_id
+                 WHERE u.is_active = 1
+
+                 UNION ALL
+
+                 SELECT
+                    u.id,
+                    u.matrice,
+                    u.first_name,
+                    u.last_name,
+                    u.perfume_shop_name,
+                    u.phone,
+                    u.location,
+                    u.email,
+                    u.password_hash,
+                    u.is_active,
+                    COALESCE((
+                        SELECT r2.role_name
+                        FROM user_roles ur2
+                        INNER JOIN roles r2 ON r2.id = ur2.role_id
+                        WHERE ur2.user_id = u.id
+                        ORDER BY FIELD(r2.role_name, "ADMIN", "DIRECTEUR", "MANAGER", "EMPLOYE", "CLIENT")
+                        LIMIT 1
+                    ), "CLIENT") AS role_name
+                 FROM users u
+                 WHERE u.is_active = 1
+                   AND u.matrice IS NOT NULL
+                   AND NOT EXISTS (
+                       SELECT 1
+                       FROM face_auth_profiles f2
+                       WHERE f2.user_id = u.id
+                   )
+             ) face_candidates
+             WHERE matrice IS NOT NULL
+               AND matrice <> ""'
         );
 
         $bestUser = null;
         $bestDistance = null;
+        $bestCosine = null;
 
         foreach ($stmt->fetchAll() as $row) {
             $stored = json_decode((string) $row['matrice'], true);
@@ -286,8 +500,19 @@ final class AuthApiController
                 continue;
             }
 
-            if ($bestDistance === null || $distance < $bestDistance) {
+            $normalizedStoredMatrix = $this->normalizeFaceVectorForComparison($stored);
+            $cosineSimilarity = $this->cosineSimilarity($normalizedStoredMatrix, $normalizedProbeMatrix);
+            if ($cosineSimilarity < self::FACE_MATCH_MIN_COSINE) {
+                continue;
+            }
+
+            if (
+                $bestDistance === null
+                || $distance < $bestDistance
+                || ($distance === $bestDistance && ($bestCosine === null || $cosineSimilarity > $bestCosine))
+            ) {
                 $bestDistance = $distance;
+                $bestCosine = $cosineSimilarity;
                 $bestUser = $row;
             }
         }
@@ -395,6 +620,8 @@ final class AuthApiController
         $pendingMatrix = $this->popPendingFaceMatrix();
         if ($pendingMatrix !== null) {
             $this->saveFaceProfile($userId, $pendingMatrix);
+            $this->migrateLegacyMatrixToFaceProfiles($userId);
+            $this->syncLegacyMatrixFromFaceProfiles($userId);
         }
 
         $this->app->loginUser([

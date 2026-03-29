@@ -120,6 +120,16 @@ const userEditPhone = document.getElementById("userEditPhone");
 const userEditLocation = document.getElementById("userEditLocation");
 const userEditEmail = document.getElementById("userEditEmail");
 const userEditActive = document.getElementById("userEditActive");
+const adminAccountSummary = document.getElementById("adminAccountSummary");
+const adminFaceLabel = document.getElementById("adminFaceLabel");
+const adminFaceOpenBtn = document.getElementById("adminFaceOpenBtn");
+const adminFaceMessage = document.getElementById("adminFaceMessage");
+const adminFaceProfilesList = document.getElementById("adminFaceProfilesList");
+const adminInlineFaceCapture = document.getElementById("adminInlineFaceCapture");
+const adminFaceVideo = document.getElementById("adminFaceVideo");
+const adminFaceCanvas = document.getElementById("adminFaceCanvas");
+const adminCaptureFaceBtn = document.getElementById("adminCaptureFaceBtn");
+const adminCloseFaceModalBtn = document.getElementById("adminCloseFaceModalBtn");
 
 const expenseForm = document.getElementById("expenseForm");
 const expenseFormPanel = document.getElementById("expenseFormPanel");
@@ -139,6 +149,8 @@ const expensesPagination = document.getElementById("expensesPagination");
 
 const API = {
     summary: "/api/admin/summary",
+    account: "/api/admin/account",
+    accountFaces: "/api/admin/account/faces",
     products: "/api/admin/products",
     rawMaterials: "/api/admin/raw-materials",
     orders: "/api/admin/orders",
@@ -152,6 +164,8 @@ const ADMIN_ORDERS_API = "/api/admin/orders";
 
 let state = {
     summary: null,
+    adminAccount: null,
+    adminFaceProfiles: [],
     products: [],
     rawMaterials: [],
     orders: [],
@@ -167,6 +181,8 @@ let state = {
     users: [],
     expenses: [],
 };
+
+let adminFaceStream = null;
 
 const rawMaterialDraft = {
     material_category: "BASE",
@@ -211,11 +227,154 @@ const setNote = (el, text, type = "") => {
 
 const fetchJson = async (url, options = {}) => {
     const response = await fetch(url, options);
-    const data = await response.json();
+    const raw = await response.text();
+    let data = {};
+
+    try {
+        data = raw ? JSON.parse(raw) : {};
+    } catch {
+        data = {};
+    }
+
     if (!response.ok) {
-        throw new Error(data.error || "Erreur serveur");
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        throw new Error("Erreur serveur");
     }
     return data;
+};
+
+const explainCameraError = (error) => {
+    const raw = typeof error?.message === "string" ? error.message : "";
+    const name = typeof error?.name === "string" ? error.name : "";
+
+    if (!window.isSecureContext) {
+        return "La camera exige un contexte securise. Utilisez http://localhost ou https.";
+    }
+
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        return "L acces a la camera a ete refuse.";
+    }
+
+    if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        return "Aucune camera disponible sur cet appareil.";
+    }
+
+    return raw || "Impossible d ouvrir la camera.";
+};
+
+const stopStream = (stream) => {
+    if (!stream) return;
+    stream.getTracks().forEach((track) => track.stop());
+};
+
+const closeAdminFaceModal = () => {
+    stopStream(adminFaceStream);
+    adminFaceStream = null;
+    if (adminFaceVideo) {
+        adminFaceVideo.srcObject = null;
+    }
+    if (adminInlineFaceCapture) {
+        adminInlineFaceCapture.classList.add("admin-hidden");
+    }
+};
+
+const openAdminFaceModal = async () => {
+    closeAdminFaceModal();
+    adminFaceStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+        },
+        audio: false,
+    });
+
+    if (adminFaceVideo) {
+        adminFaceVideo.srcObject = adminFaceStream;
+        await adminFaceVideo.play();
+    }
+
+    if (adminInlineFaceCapture) {
+        adminInlineFaceCapture.classList.remove("admin-hidden");
+        adminInlineFaceCapture.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+};
+
+const buildFaceMatrixFromElements = async (videoEl, canvasEl) => {
+    if (!(videoEl instanceof HTMLVideoElement) || !(canvasEl instanceof HTMLCanvasElement)) {
+        throw new Error("Camera indisponible.");
+    }
+
+    const context = canvasEl.getContext("2d", { willReadFrequently: true });
+    if (!context) {
+        throw new Error("Canvas indisponible.");
+    }
+
+    const width = videoEl.videoWidth || 640;
+    const height = videoEl.videoHeight || 480;
+    canvasEl.width = width;
+    canvasEl.height = height;
+    context.drawImage(videoEl, 0, 0, width, height);
+
+    let crop = {
+        x: width * 0.25,
+        y: height * 0.15,
+        width: width * 0.5,
+        height: height * 0.7,
+    };
+
+    if ("FaceDetector" in window) {
+        try {
+            const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+            const faces = await detector.detect(canvasEl);
+            if (faces.length > 0) {
+                const box = faces[0].boundingBox;
+                const size = Math.max(box.width, box.height) * 1.3;
+                crop = {
+                    x: Math.max(0, box.x + (box.width - size) / 2),
+                    y: Math.max(0, box.y + (box.height - size) / 2),
+                    width: Math.min(size, width),
+                    height: Math.min(size, height),
+                };
+            }
+        } catch {
+            // fallback
+        }
+    }
+
+    const matrixCanvas = document.createElement("canvas");
+    matrixCanvas.width = 32;
+    matrixCanvas.height = 32;
+    const matrixContext = matrixCanvas.getContext("2d", { willReadFrequently: true });
+    if (!matrixContext) {
+        throw new Error("Canvas de matrice indisponible.");
+    }
+
+    matrixContext.drawImage(
+        canvasEl,
+        crop.x,
+        crop.y,
+        crop.width,
+        crop.height,
+        0,
+        0,
+        32,
+        32
+    );
+
+    const { data } = matrixContext.getImageData(0, 0, 32, 32);
+    const matrix = [];
+    for (let index = 0; index < data.length; index += 4) {
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        const grayscale = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+        matrix.push(Number(grayscale.toFixed(6)));
+    }
+
+    return matrix;
 };
 
 const activateAdminView = (viewName) => {
@@ -1010,6 +1169,76 @@ const fillUserForm = (row) => {
     userDetailPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
+const renderAdminAccount = () => {
+    const user = state.adminAccount;
+
+    if (adminAccountSummary) {
+        if (!user) {
+            adminAccountSummary.innerHTML = "";
+        } else {
+            adminAccountSummary.innerHTML = `
+                <article class="inline-stat">
+                    <span>Compte</span>
+                    <strong>${user.first_name || ""} ${user.last_name || ""}</strong>
+                </article>
+                <article class="inline-stat">
+                    <span>Role</span>
+                    <strong>${user.role_name || "ADMIN"}</strong>
+                </article>
+                <article class="inline-stat">
+                    <span>Email</span>
+                    <strong>${user.email || "-"}</strong>
+                </article>
+                <article class="inline-stat">
+                    <span>Telephone</span>
+                    <strong>${user.phone || "-"}</strong>
+                </article>
+                <article class="inline-stat">
+                    <span>Societe / parfumerie</span>
+                    <strong>${user.perfume_shop_name || "-"}</strong>
+                </article>
+                <article class="inline-stat">
+                    <span>Localisation</span>
+                    <strong>${user.location || "-"}</strong>
+                </article>
+                <article class="inline-stat">
+                    <span>Visages autorises</span>
+                    <strong>${state.adminFaceProfiles.length}</strong>
+                </article>
+            `;
+        }
+    }
+
+    if (adminFaceProfilesList) {
+        if (!state.adminFaceProfiles.length) {
+            adminFaceProfilesList.innerHTML = `
+                <article class="face-profile-card empty">
+                    <div class="face-profile-card-copy">
+                        <p class="employee-label">Aucun acces partage</p>
+                        <strong>Aucun visage enregistre</strong>
+                        <p class="muted">Ajoutez un premier visage pour autoriser un ou plusieurs collaborateurs a se connecter au compte admin.</p>
+                    </div>
+                </article>
+            `;
+            return;
+        }
+
+        adminFaceProfilesList.innerHTML = state.adminFaceProfiles.map((profile) => `
+            <article class="face-profile-card">
+                <div class="face-profile-card-copy">
+                    <span class="face-profile-chip">Visage autorise</span>
+                    <h4>${profile.profile_label || "Acces sans nom"}</h4>
+                    <p class="muted">Ajoute le ${String(profile.created_at || "").replace(" ", " a ")}</p>
+                </div>
+                <div class="face-profile-card-actions">
+                    <span class="face-profile-id">ID ${profile.id}</span>
+                    <button class="mini-btn bad" type="button" data-face-profile-delete="${profile.id}">Supprimer</button>
+                </div>
+            </article>
+        `).join("");
+    }
+};
+
 const showEmployeeForm = () => {
     employeeFormPanel?.classList.remove("admin-hidden");
     employeeForm?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1148,6 +1377,13 @@ const loadUsers = async () => {
     state.users = data.items || [];
     renderOrderCreateUserOptions();
     renderUsers();
+};
+
+const loadAdminAccount = async () => {
+    const data = await fetchJson(API.account);
+    state.adminAccount = data.user || null;
+    state.adminFaceProfiles = data.face_profiles || [];
+    renderAdminAccount();
 };
 
 const loadExpenses = async () => {
@@ -1621,6 +1857,65 @@ hideUserDetailBtn?.addEventListener("click", () => {
     userDetailPanel?.classList.add("admin-hidden");
 });
 
+adminFaceOpenBtn?.addEventListener("click", async () => {
+    try {
+        await openAdminFaceModal();
+        setNote(adminFaceMessage, "Camera ouverte. Capturez le visage a autoriser.", "success");
+    } catch (error) {
+        setNote(adminFaceMessage, explainCameraError(error), "error");
+    }
+});
+
+adminCloseFaceModalBtn?.addEventListener("click", closeAdminFaceModal);
+
+adminCaptureFaceBtn?.addEventListener("click", async () => {
+    if (!adminCaptureFaceBtn) return;
+    adminCaptureFaceBtn.disabled = true;
+
+    try {
+        const matrix = await buildFaceMatrixFromElements(adminFaceVideo, adminFaceCanvas);
+        const payload = {
+            label: adminFaceLabel?.value.trim() || "",
+            matrix,
+        };
+        const data = await fetchJson(API.accountFaces, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        state.adminAccount = data.user || state.adminAccount;
+        state.adminFaceProfiles = data.face_profiles || [];
+        renderAdminAccount();
+        closeAdminFaceModal();
+        if (adminFaceLabel) {
+            adminFaceLabel.value = "";
+        }
+        setNote(adminFaceMessage, "Nouveau visage admin enregistre.", "success");
+    } catch (error) {
+        setNote(adminFaceMessage, error.message || "Enregistrement du visage impossible.", "error");
+    } finally {
+        adminCaptureFaceBtn.disabled = false;
+    }
+});
+
+adminFaceProfilesList?.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const profileId = target.dataset.faceProfileDelete;
+    if (!profileId) return;
+
+    try {
+        const data = await fetchJson(`${API.accountFaces}/${profileId}`, { method: "DELETE" });
+        state.adminAccount = data.user || state.adminAccount;
+        state.adminFaceProfiles = data.face_profiles || [];
+        renderAdminAccount();
+        setNote(adminFaceMessage, "Visage supprime.", "success");
+    } catch (error) {
+        setNote(adminFaceMessage, error.message || "Suppression impossible.", "error");
+    }
+});
+
 userEditForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
@@ -1704,7 +1999,7 @@ adminExpensesBody?.addEventListener("click", async (event) => {
 });
 
 const init = async () => {
-    await Promise.all([loadSummary(), loadProducts(), loadRawMaterials(), loadOrders(), loadUsers(), loadEmployees(), loadExpenses()]);
+    await Promise.all([loadSummary(), loadAdminAccount(), loadProducts(), loadRawMaterials(), loadOrders(), loadUsers(), loadEmployees(), loadExpenses()]);
 };
 
 init();
