@@ -702,78 +702,87 @@ body[data-theme="dark"]::before {
 
 .metric-tile {
     position: relative;
-    padding: 20px;
-    background: var(--bg-card);
+    padding: 24px;
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--surface-glass) 100%);
     border: 1px solid var(--line);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
     backdrop-filter: var(--card-backdrop);
-    transition: all var(--transition);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-/* Light: subtle left bar. Dark: top gradient bar on hover */
-.metric-tile::before {
+/* Accent lines or borders for different states */
+.metric-tile::after {
     content: "";
     position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
     background: var(--primary);
-    border-radius: 0 2px 2px 0;
-    opacity: var(--metric-bar-opacity);
-    transition: opacity var(--transition);
+    transition: width 0.4s ease-out;
 }
 
-[data-theme="dark"] .metric-tile::before {
-    width: 100%; height: 3px;
-    border-radius: 0;
-    opacity: 0;
-    background: linear-gradient(135deg, #34D399, #06B6D4);
+.metric-tile:hover::after {
+    width: 100%;
 }
 
 .metric-tile:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--line-strong);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-dim);
+    transform: translateY(-4px) scale(1.01);
 }
 
-[data-theme="dark"] .metric-tile:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.3); }
-[data-theme="dark"] .metric-tile:hover::before { opacity: 1; }
+[data-theme="dark"] .metric-tile {
+    background: linear-gradient(145deg, rgba(30, 36, 58, 0.6) 0%, rgba(22, 27, 45, 0.5) 100%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+}
 
-[data-theme="dark"] .metric-tile:nth-child(2)::before { background: linear-gradient(135deg, #34D399, #06B6D4); }
-[data-theme="dark"] .metric-tile:nth-child(3)::before { background: linear-gradient(135deg, #F59E0B, #EF4444); }
-[data-theme="dark"] .metric-tile:nth-child(4)::before { background: linear-gradient(135deg, #A78BFA, #EC4899); }
-[data-theme="dark"] .metric-tile:nth-child(5)::before { background: linear-gradient(135deg, #60A5FA, #34D399); }
-[data-theme="dark"] .metric-tile:nth-child(6)::before { background: linear-gradient(135deg, #34D399, #06B6D4); }
-[data-theme="dark"] .metric-tile:nth-child(7)::before { background: linear-gradient(135deg, #F59E0B, #EF4444); }
-[data-theme="dark"] .metric-tile:nth-child(8)::before { background: linear-gradient(135deg, #A78BFA, #EC4899); }
+[data-theme="dark"] .metric-tile:hover {
+    box-shadow: 0 15px 30px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.15);
+}
+
+[data-theme="dark"] .metric-tile:nth-child(2n)::after { background: linear-gradient(90deg, #34D399, #06B6D4); }
+[data-theme="dark"] .metric-tile:nth-child(2n+1)::after { background: linear-gradient(90deg, #F59E0B, #EF4444); }
+[data-theme="dark"] .metric-tile:nth-child(3n)::after { background: linear-gradient(90deg, #A78BFA, #EC4899); }
 
 .metric-tile span {
-    color: var(--muted);
-    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
 }
 
 .metric-tile strong {
     display: block;
-    margin-top: 8px;
-    font-size: 1.6rem;
+    margin-top: 4px;
+    font-size: 1.8rem;
     font-weight: 800;
     letter-spacing: -0.02em;
-    color: var(--metric-text);
+    color: var(--text);
+    position: relative;
+    z-index: 1;
+    line-height: 1.1;
 }
 
-.metric-tile.profit-positive strong { color: var(--profit-positive); }
+.metric-tile.profit-positive strong { color: var(--success); }
 
 [data-theme="dark"] .metric-tile.profit-positive strong {
-    background: linear-gradient(135deg, #34D399, #06B6D4);
+    background: linear-gradient(135deg, #34D399, #10B981);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-.metric-tile.profit-negative strong { color: var(--profit-negative); }
+.metric-tile.profit-negative strong { color: var(--danger); }
 
 /* ──────────────── GRID ──────────────── */
 
@@ -951,23 +960,55 @@ body[data-theme="dark"]::before {
 #adminAccountSummary .inline-stat strong { font-size: 1rem; line-height: 1.35; }
 
 .inline-stat {
-    border-radius: var(--radius-md);
-    padding: 16px;
+    border-radius: var(--radius-lg);
+    padding: 20px;
     min-width: 0;
     overflow: hidden;
-    background: var(--surface-glass);
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--surface-glass) 100%);
     border: 1px solid var(--line);
-    transition: all var(--transition);
-    box-shadow: none;
-    backdrop-filter: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: var(--card-backdrop);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.inline-stat:hover { border-color: var(--line-strong); transform: translateY(-2px); }
-.inline-stat span { color: var(--muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+[data-theme="dark"] .inline-stat {
+    background: linear-gradient(145deg, rgba(30, 36, 58, 0.6) 0%, rgba(22, 27, 45, 0.5) 100%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+}
+
+.inline-stat:hover { 
+    border-color: var(--primary-dim); 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: var(--shadow-md); 
+}
+
+[data-theme="dark"] .inline-stat:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.15);
+}
+
+.inline-stat span { 
+    color: var(--text-secondary); 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+    margin-bottom: 4px;
+}
 
 .inline-stat strong {
-    display: block; margin-top: 6px; font-size: 1.25rem; font-weight: 800; line-height: 1.2;
-    overflow-wrap: anywhere; word-break: break-word; hyphens: auto; color: var(--text);
+    display: block; 
+    margin-top: 6px; 
+    font-size: 1.4rem; 
+    font-weight: 800; 
+    line-height: 1.15;
+    overflow-wrap: anywhere; 
+    word-break: break-word; 
+    hyphens: auto; 
+    color: var(--text);
 }
 
 /* ──────────────── EMPLOYEES ──────────────── */

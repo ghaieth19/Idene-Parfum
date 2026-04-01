@@ -50,9 +50,9 @@ final class UserInterfaceController
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/assets/css/idene-design-system.css">
-    <link rel="stylesheet" href="/assets/css/user-app.css">
-    <link rel="stylesheet" href="/assets/css/client-ecommerce.css?v=4">
+    <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=600">
+    <link rel="stylesheet" href="/assets/css/user-app.css?v=600">
+    <link rel="stylesheet" href="/assets/css/client-ecommerce.css?v=600">
 </head>
 <body class="ecommerce-layout">
 
@@ -183,9 +183,11 @@ final class UserInterfaceController
             </div>
             
             <div id="stepBrowse" class="wf-step active">
-                <div class="eco-shop-header">
-                    <h1 class="page-title">CATALOGUE PARFUMS</h1>
-                    <p class="text-muted" id="shopResultsCount"></p>
+                <div class="eco-shop-hero">
+                    <div class="eco-shop-header">
+                        <h1 class="page-title">CATALOGUE PARFUMS</h1>
+                    </div>
+                    <p class="text-muted" id="shopResultsCount" style="margin-top: 16px; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.05em; text-transform: uppercase; background: rgba(var(--primary-rgb), 0.1); padding: 4px 12px; border-radius: var(--radius-full);"></p>
                 </div>
                 
                 <div class="eco-shop-grid">
@@ -284,6 +286,8 @@ final class UserInterfaceController
                 <div id="ordersPanel"><p class="muted">Chargement de l'historique...</p></div>
             </div>
         </div>
+
+        <button id="themeToggleBtn" class="floating-theme-btn" title="Activer/Désactiver le mode sombre">🌙</button>
 
         <!-- ═══ INVOICES VIEW ═══ -->
         <div id="viewInvoices" class="view">
@@ -468,7 +472,17 @@ final class UserInterfaceController
 
     </div><!-- /ob-modal -->
 
-    <script src="/assets/js/user-app.js?v=7"></script>
+    <script src="/assets/js/user-app.js?v=600"></script>
+    <script>
+        // Init Dark Mode User
+        const initUserTheme = () => {
+            const saved = localStorage.getItem("idene-user-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+            const btn = document.getElementById("themeToggleBtn");
+            if(btn) btn.innerHTML = saved === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '🌙';
+        };
+        initUserTheme();
+    </script>
 </body>
 </html>
 HTML);

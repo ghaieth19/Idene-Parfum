@@ -5,6 +5,25 @@
 (function () {
   'use strict';
 
+  /* ── Theme toggle ── */
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const applyTheme = (theme) => {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("idene-user-theme", theme);
+      if(themeToggleBtn) {
+          themeToggleBtn.innerHTML = theme === "dark" 
+              ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' 
+              : '🌙';
+      }
+  };
+  const savedTheme = localStorage.getItem("idene-user-theme") || "light";
+  applyTheme(savedTheme);
+
+  themeToggleBtn?.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      applyTheme(current === "dark" ? "light" : "dark");
+  });
+
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
   const on = (el, ev, fn) => el?.addEventListener(ev, fn);
@@ -255,11 +274,11 @@
       return;
     }
 
-    $('#shopProductGrid').innerHTML = filtered.map(p => {
+    $('#shopProductGrid').innerHTML = filtered.map((p, index) => {
       const isOut = p.stock_status === 'out_of_stock';
-      return `<div class="pcard ${isOut ? 'is-out' : ''}" data-id="${p.id}">
+      return `<div class="pcard ${isOut ? 'is-out' : ''}" data-id="${p.id}" style="animation-delay: ${index * 0.05}s">
         <div class="pcard-visual">
-          <span class="emoji">${segEmoji[p.segment] || '💧'}</span>
+          <img src="/assets/images/perfume-bottle.png" alt="Parfum" class="perfume-image">
           <span class="seg-tag">${segBadge(p.segment)}</span>
           <span class="stk-tag">${stockBadge(p.stock_status)}</span>
         </div>

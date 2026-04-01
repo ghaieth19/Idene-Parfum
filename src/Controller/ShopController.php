@@ -36,10 +36,11 @@ final class ShopController
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/assets/css/idene-design-system.css">
-    <link rel="stylesheet" href="/assets/css/client-ecommerce.css">
+    <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=600">
+    <link rel="stylesheet" href="/assets/css/user-app.css?v=600">
+    <link rel="stylesheet" href="/assets/css/client-ecommerce.css?v=600">
 </head>
-<body>
+<body class="ecommerce-layout">
     <div class="ecommerce-layout">
         <!-- Sidebar -->
         <aside class="shop-sidebar">
@@ -200,7 +201,27 @@ final class ShopController
         <i class="bi bi-list"></i>
     </button>
 
+    <button id="themeToggleBtn" class="floating-theme-btn" title="Activer/Désactiver le mode sombre">🌙</button>
+
+    <!-- Scripts -->
     <script>
+        // Init Dark Mode
+        const initTheme = () => {
+            const saved = localStorage.getItem("idene-user-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+            const btn = document.getElementById("themeToggleBtn");
+            if(btn) btn.innerHTML = saved === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '🌙';
+        };
+        initTheme();
+
+        document.getElementById('themeToggleBtn')?.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute("data-theme") || "light";
+            const newTheme = current === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("idene-user-theme", newTheme);
+            document.getElementById("themeToggleBtn").innerHTML = newTheme === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '🌙';
+        });
+
         // Logout functionality
         document.getElementById('logoutBtn')?.addEventListener('click', async () => {
             const response = await fetch('/api/auth/logout', { method: 'POST' });
@@ -209,7 +230,8 @@ final class ShopController
             }
         });
     </script>
-    <script src="/assets/js/client-ecommerce.js"></script>
+    <script src="/assets/js/client-ecommerce.js?v=600"></script>
+    <script src="/assets/js/user-app.js?v=600"></script>
 </body>
 </html>
 HTML);

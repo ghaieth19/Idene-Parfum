@@ -2,6 +2,41 @@
    IDENE PARFUM — E-Commerce B2B Client UI
    ═══════════════════════════════════════════════════════════════ */
 
+/* ── Theme Toggle ───────────────────────────────────────── */
+.floating-theme-btn {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 30px !important;
+  width: 55px !important;
+  height: 55px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+  z-index: 2147483647 !important; /* Max z-index to guarantee visibility */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  backdrop-filter: blur(8px) !important;
+  color: #111827 !important;
+}
+[data-theme="dark"] .floating-theme-btn {
+  background: #1e243a !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  color: #ffffff !important;
+}
+.floating-theme-btn:hover {
+  transform: translateY(-4px) scale(1.05) !important;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2) !important;
+}
+[data-theme="dark"] .floating-theme-btn:hover {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
 /* ── Base Layout ────────────────────────────────────────── */
 body.ecommerce-layout {
   background-color: var(--bg);
@@ -11,6 +46,34 @@ body.ecommerce-layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Identique à l'admin pour le dark mode */
+html[data-theme="dark"] body.ecommerce-layout {
+  background-color: #0F1117 !important;
+  background-image: radial-gradient(ellipse at 15% 5%, rgba(52,211,153,0.06) 0%, transparent 50%),
+                    radial-gradient(ellipse at 85% 15%, rgba(96,165,250,0.04) 0%, transparent 40%) !important;
+  background-attachment: fixed;
+  color: #F1F3F8 !important;
+}
+
+html[data-theme="dark"] body.ecommerce-layout::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(600px circle at 20% 30%, rgba(52,211,153,0.04), transparent),
+                    radial-gradient(500px circle at 80% 60%, rgba(96,165,250,0.03), transparent);
+  animation: meshFloat 20s ease-in-out infinite;
+  display: block;
+}
+
+@keyframes meshFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 15px) scale(0.97); }
 }
 
 .eco-main {
@@ -23,12 +86,13 @@ body.ecommerce-layout {
 
 /* ── Top Navbar ───────────────────────────────────────── */
 .eco-nav {
-  background: #fff;
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: var(--shadow-sm);
+  transition: background-color 0.3s, border-color 0.3s;
 }
 .eco-nav-container {
   display: flex;
@@ -121,7 +185,7 @@ body.ecommerce-layout {
   outline: none;
 }
 .eco-search-wrap input:focus {
-  background: #fff;
+  background: var(--bg-elevated);
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(13,107,99,.1);
 }
@@ -163,7 +227,7 @@ body.ecommerce-layout {
   position: absolute;
   top: calc(100% + 15px);
   right: -10px;
-  background: #fff;
+  background: var(--bg-elevated);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -232,7 +296,7 @@ body.ecommerce-layout {
 }
 
 .panel {
-  background: #fff;
+  background: var(--bg-elevated);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 30px;
@@ -344,7 +408,7 @@ td {
   right: -420px;
   width: 400px;
   height: 100vh;
-  background: #fff;
+  background: var(--bg-elevated);
   z-index: 1001;
   box-shadow: -5px 0 25px rgba(0,0,0,.1);
   display: flex;
@@ -468,7 +532,7 @@ body.cart-open .eco-cart-sidebar {
     width: 28px;
     height: 28px;
     border: 1px solid var(--border);
-    background: #fff;
+    background: var(--bg-elevated);
     border-radius: 4px;
     cursor: pointer;
 }
@@ -510,7 +574,7 @@ body.cart-open .eco-cart-sidebar {
     top: 80px;
     left: 0;
     right: 0;
-    background: #fff;
+    background: var(--bg-elevated);
     border-bottom: 1px solid var(--border);
     padding: 20px;
     box-shadow: var(--shadow-sm);
@@ -537,7 +601,7 @@ body.cart-open .eco-cart-sidebar {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fff;
+    background: var(--bg-elevated);
     border-top: 1px solid var(--border-light);
     z-index: 100;
     padding-bottom: env(safe-area-inset-bottom);
@@ -569,3 +633,4 @@ body.cart-open .eco-cart-sidebar {
       gap: 0;
   }
 }
+html[data-theme=" dark\] .floating-theme-btn { background: rgba(22, 27, 45, 0.72) !important; border-color: rgba(255,255,255,0.1) !important; color: #fff !important; }
