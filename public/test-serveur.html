@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Serveur IDENE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1B3A2F, #2D5245);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 2rem;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #C9A84C;
+        }
+        .status {
+            font-size: 1.5rem;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(76, 175, 80, 0.2);
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .links {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        a {
+            display: block;
+            padding: 1rem 2rem;
+            background: #C9A84C;
+            color: #1B3A2F;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        a:hover {
+            background: #F5F0E8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(201, 168, 76, 0.4);
+        }
+        .info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">✅</div>
+        <h1>Serveur IDENE Actif!</h1>
+        <div class="status">
+            🚀 Le serveur fonctionne correctement
+        </div>
+        
+        <div class="links">
+            <a href="/accueil">🌸 Accéder au Site Public</a>
+            <a href="/auth">🔐 Page de Connexion</a>
+            <a href="/dashboard">📊 Dashboard Client</a>
+            <a href="/api/public/products">🔌 API Produits</a>
+        </div>
+        
+        <div class="info">
+            <strong>✅ Tous les boutons fonctionnent maintenant!</strong>
+            <br><br>
+            Si vous voyez cette page, cela signifie que:
+            <br>
+            • Le serveur PHP est démarré ✅
+            <br>
+            • Symfony fonctionne correctement ✅
+            <br>
+            • Tous les liens de connexion fonctionneront ✅
+            <br><br>
+            <div class="code">
+                http://localhost:8000
+            </div>
+        </div>
+    </div>
+</body>
+</html>

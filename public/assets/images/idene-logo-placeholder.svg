@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Idene Parfum Logo Placeholder">
+  <defs>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0d98f"/>
+      <stop offset="100%" stop-color="#b88a23"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="32" fill="#0f1727"/>
+  <circle cx="100" cy="100" r="76" fill="#0b111d" stroke="url(#ring)" stroke-width="8"/>
+  <circle cx="100" cy="100" r="46" fill="#f3f4f6" opacity="0.96"/>
+  <path d="M100 62 L82 142 H118 Z" fill="#e6b94d" stroke="#b4871d" stroke-width="2"/>
+  <rect x="92" y="83" width="16" height="8" fill="#d53737"/>
+  <rect x="90" y="99" width="20" height="8" fill="#d53737"/>
+  <rect x="88" y="115" width="24" height="8" fill="#d53737"/>
+  <text x="100" y="32" font-family="Georgia, serif" font-size="16" text-anchor="middle" fill="#e8d39a">IDENE</text>
+  <text x="100" y="182" font-family="Georgia, serif" font-size="16" text-anchor="middle" fill="#e8d39a">PARFUM</text>
+</svg>
