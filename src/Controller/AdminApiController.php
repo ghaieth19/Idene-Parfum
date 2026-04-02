@@ -563,7 +563,54 @@ final class AdminApiController
                 pc.segment,
                 pc.code,
                 pc.name,
-                pc.price_dzd,
+                COALESCE(
+                    (
+                        SELECT pp_detail.price_dzd
+                        FROM product_prices pp_detail
+                        WHERE pp_detail.product_id = p.id
+                          AND pp_detail.sale_type = 'DETAIL'
+                          AND pp_detail.ends_at IS NULL
+                        ORDER BY pp_detail.id DESC
+                        LIMIT 1
+                    ),
+                    pc.price_dzd,
+                    0
+                ) AS price_dzd,
+                COALESCE(
+                    (
+                        SELECT pp_detail.price_dzd
+                        FROM product_prices pp_detail
+                        WHERE pp_detail.product_id = p.id
+                          AND pp_detail.sale_type = 'DETAIL'
+                          AND pp_detail.ends_at IS NULL
+                        ORDER BY pp_detail.id DESC
+                        LIMIT 1
+                    ),
+                    pc.price_dzd,
+                    0
+                ) AS detail_price_dzd,
+                COALESCE(
+                    (
+                        SELECT pp_gros.price_dzd
+                        FROM product_prices pp_gros
+                        WHERE pp_gros.product_id = p.id
+                          AND pp_gros.sale_type = 'GROS'
+                          AND pp_gros.ends_at IS NULL
+                        ORDER BY pp_gros.id DESC
+                        LIMIT 1
+                    ),
+                    (
+                        SELECT pp_detail.price_dzd
+                        FROM product_prices pp_detail
+                        WHERE pp_detail.product_id = p.id
+                          AND pp_detail.sale_type = 'DETAIL'
+                          AND pp_detail.ends_at IS NULL
+                        ORDER BY pp_detail.id DESC
+                        LIMIT 1
+                    ),
+                    pc.price_dzd,
+                    0
+                ) AS gros_price_dzd,
                 p.sku,
                 p.barcode,
                 p.is_active,
@@ -819,6 +866,7 @@ final class AdminApiController
             "SELECT
                 o.id,
                 o.order_number,
+                o.sale_type,
                 o.status AS order_status,
                 o.total_dzd,
                 o.created_at,
@@ -834,7 +882,7 @@ final class AdminApiController
              INNER JOIN users u ON u.id = o.customer_user_id
              LEFT JOIN invoices i ON i.order_id = o.id
              LEFT JOIN payments p ON p.invoice_id = i.id
-             GROUP BY o.id, o.order_number, o.status, o.total_dzd, o.created_at,
+             GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.created_at,
                       u.first_name, u.last_name, u.perfume_shop_name,
                       i.id, i.invoice_number, i.status, i.total_dzd
              ORDER BY o.id DESC"
@@ -887,7 +935,12 @@ final class AdminApiController
         $payload = json_decode((string) $request->getContent(), true) ?: [];
         $userId = (int) ($payload['user_id'] ?? 0);
         $client = $payload['client'] ?? [];
+        $metadata = is_array($payload['metadata'] ?? null) ? $payload['metadata'] : [];
         $items = $payload['items'] ?? [];
+        $saleType = strtoupper(trim((string) ($payload['sale_type'] ?? 'DETAIL')));
+        if (!in_array($saleType, ['DETAIL', 'GROS'], true)) {
+            $saleType = 'DETAIL';
+        }
 
         if ($userId <= 0) {
             return new JsonResponse(['error' => 'Parfumerie invalide.'], 422);
@@ -907,9 +960,23 @@ final class AdminApiController
             return new JsonResponse(['error' => array_values($clientErrors)[0]], 422);
         }
 
-        $resolvedItems = $this->orderPricing->resolveAdminItems($items);
+        $resolvedItems = $this->orderPricing->resolveAdminItems($items, $saleType);
         if (isset($resolvedItems['error'])) {
             return new JsonResponse(['error' => $resolvedItems['error']], $resolvedItems['status']);
+        }
+
+        $lineDisplay = [];
+        foreach ($items as $index => $item) {
+            $resolvedLine = $resolvedItems['items'][$index] ?? null;
+            if (!$resolvedLine) {
+                continue;
+            }
+
+            $lineDisplay[] = [
+                'product_id' => (int) ($resolvedLine['product_id'] ?? 0),
+                'display_name' => trim((string) ($item['display_name'] ?? '')),
+                'display_code' => trim((string) ($item['display_code'] ?? '')),
+            ];
         }
 
         $db = $this->app->db();
@@ -932,15 +999,38 @@ final class AdminApiController
                 'phone' => (string) ($client['phone'] ?? ''),
                 'shop' => (string) ($client['shop'] ?? ''),
                 'created_by_admin' => true,
+                'document_label' => $saleType === 'GROS' ? 'Facture stock parfumerie' : 'Bon de commande site',
+                'document_meta' => [
+                    'document_number' => trim((string) ($metadata['document_number'] ?? '')),
+                    'document_date' => trim((string) ($metadata['document_date'] ?? '')),
+                    'depot' => trim((string) ($metadata['depot'] ?? '')),
+                    'order_code' => trim((string) ($metadata['order_code'] ?? '')),
+                    'client_code' => trim((string) ($metadata['client_code'] ?? '')),
+                    'contact_name' => trim((string) ($metadata['contact_name'] ?? '')),
+                    'address' => trim((string) ($metadata['address'] ?? '')),
+                    'city' => trim((string) ($metadata['city'] ?? '')),
+                    'postal_code' => trim((string) ($metadata['postal_code'] ?? '')),
+                    'fiscal_code' => trim((string) ($metadata['fiscal_code'] ?? '')),
+                    'representative' => trim((string) ($metadata['representative'] ?? '')),
+                    'observation' => trim((string) ($metadata['observation'] ?? '')),
+                    'payment_mode' => trim((string) ($metadata['payment_mode'] ?? '')),
+                    'amount_paid' => (float) ($metadata['amount_paid'] ?? 0),
+                    'piece_ref' => trim((string) ($metadata['piece_ref'] ?? '')),
+                    'bank' => trim((string) ($metadata['bank'] ?? '')),
+                    'due_date' => trim((string) ($metadata['due_date'] ?? '')),
+                    'totals' => is_array($metadata['totals'] ?? null) ? $metadata['totals'] : [],
+                    'line_items' => $lineDisplay,
+                ],
             ], JSON_UNESCAPED_UNICODE);
 
             $stmtOrder = $db->prepare(
                 "INSERT INTO orders (order_number, customer_user_id, sale_type, status, notes, subtotal_dzd, total_dzd, created_by)
-                 VALUES (:n, :uid, 'DETAIL', 'CONFIRMEE', :notes, :sub, :total, :created_by)"
+                 VALUES (:n, :uid, :sale_type, 'CONFIRMEE', :notes, :sub, :total, :created_by)"
             );
             $stmtOrder->execute([
                 'n' => $orderNumber,
                 'uid' => $userId,
+                'sale_type' => $saleType,
                 'notes' => $notes,
                 'sub' => $total,
                 'total' => $total,
@@ -961,13 +1051,6 @@ final class AdminApiController
                     'price' => $line['unit_price'],
                     'line' => $line['line_total'],
                 ]);
-            }
-
-            $stockError = $this->reserveStock($db, $resolvedItems['items'], $orderId);
-            if ($stockError !== null) {
-                $db->rollBack();
-
-                return new JsonResponse($stockError, 422);
             }
 
             $stmtInvoice = $db->prepare(
@@ -1007,6 +1090,7 @@ final class AdminApiController
             "SELECT
                 o.id,
                 o.order_number,
+                o.sale_type,
                 o.status AS order_status,
                 o.total_dzd,
                 o.subtotal_dzd,
@@ -1027,7 +1111,7 @@ final class AdminApiController
              LEFT JOIN invoices i ON i.order_id = o.id
              LEFT JOIN payments p ON p.invoice_id = i.id
              WHERE o.id = :id
-             GROUP BY o.id, o.order_number, o.status, o.total_dzd, o.subtotal_dzd, o.notes, o.created_at,
+             GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.subtotal_dzd, o.notes, o.created_at,
                       u.first_name, u.last_name, u.phone, u.perfume_shop_name,
                       i.id, i.invoice_number, i.status, i.total_dzd, i.issued_at
              LIMIT 1"
@@ -1042,6 +1126,8 @@ final class AdminApiController
         $itemsStmt = $db->prepare(
             "SELECT
                 oi.id,
+                oi.product_id,
+                pc.code,
                 pc.name,
                 pc.catalog_group,
                 pc.segment,
@@ -1085,21 +1171,130 @@ final class AdminApiController
             return new JsonResponse(['error' => array_values($errors)[0]], 422);
         }
 
+        $db = $this->app->db();
+        $existingStmt = $db->prepare('SELECT sale_type, notes FROM orders WHERE id = :id LIMIT 1');
+        $existingStmt->execute(['id' => $id]);
+        $existingOrder = $existingStmt->fetch();
+        if (!$existingOrder) {
+            return new JsonResponse(['error' => 'Commande introuvable.'], 404);
+        }
+
+        $existingNotes = $existingOrder['notes'] ?? '';
+        $existingPayload = json_decode((string) $existingNotes, true);
+        if (!is_array($existingPayload)) {
+            $existingPayload = [];
+        }
+
+        $saleType = strtoupper(trim((string) ($existingOrder['sale_type'] ?? 'DETAIL')));
+        $itemsPayload = is_array($payload['items'] ?? null) ? array_values($payload['items']) : [];
+        $documentMeta = is_array($existingPayload['document_meta'] ?? null) ? $existingPayload['document_meta'] : [];
+        $lineItemsMeta = is_array($documentMeta['line_items'] ?? null) ? array_values($documentMeta['line_items']) : [];
+
+        $total = null;
+        $updatedLineDisplay = $lineItemsMeta;
+
+        if ($itemsPayload !== []) {
+            $itemsStmt = $db->prepare(
+                'SELECT id, product_id, unit_price_dzd FROM order_items WHERE order_id = :order_id ORDER BY id ASC'
+            );
+            $itemsStmt->execute(['order_id' => $id]);
+            $existingItems = $itemsStmt->fetchAll();
+            $itemsById = [];
+            foreach ($existingItems as $itemRow) {
+                $itemsById[(int) $itemRow['id']] = $itemRow;
+            }
+
+            $db->beginTransaction();
+            try {
+                $updateItemStmt = $db->prepare(
+                    'UPDATE order_items
+                        SET quantity_ml = :qty,
+                            unit_price_dzd = :price,
+                            line_total_dzd = :line_total
+                      WHERE id = :id AND order_id = :order_id'
+                );
+
+                $total = 0.0;
+                $updatedLineDisplay = [];
+                foreach ($itemsPayload as $index => $itemPayload) {
+                    $itemId = (int) ($itemPayload['id'] ?? 0);
+                    if (!isset($itemsById[$itemId])) {
+                        throw new \RuntimeException('Ligne facture introuvable.');
+                    }
+
+                    $existingItem = $itemsById[$itemId];
+                    $qty = max(1, (float) ($itemPayload['quantity_bottles'] ?? 0));
+                    $price = $saleType === 'GROS'
+                        ? max(0.001, (float) ($itemPayload['unit_price_dzd'] ?? 0))
+                        : (float) ($existingItem['unit_price_dzd'] ?? 0);
+                    $lineTotal = $qty * $price;
+                    $total += $lineTotal;
+
+                    $updateItemStmt->execute([
+                        'qty' => $qty,
+                        'price' => $price,
+                        'line_total' => $lineTotal,
+                        'id' => $itemId,
+                        'order_id' => $id,
+                    ]);
+
+                    $previousLineMeta = is_array($lineItemsMeta[$index] ?? null) ? $lineItemsMeta[$index] : [];
+                    $updatedLineDisplay[] = [
+                        'product_id' => (int) ($existingItem['product_id'] ?? 0),
+                        'display_name' => trim((string) ($itemPayload['display_name'] ?? $previousLineMeta['display_name'] ?? '')),
+                        'display_code' => trim((string) ($itemPayload['display_code'] ?? $previousLineMeta['display_code'] ?? '')),
+                    ];
+                }
+
+                $db->prepare(
+                    'UPDATE orders SET notes = :notes, subtotal_dzd = :sub, total_dzd = :total WHERE id = :id'
+                );
+            } catch (\Throwable $e) {
+                $db->rollBack();
+
+                return new JsonResponse(['error' => $e instanceof \RuntimeException ? $e->getMessage() : 'Modification document impossible.'], 422);
+            }
+        }
+
         $notes = json_encode([
             'last_name' => $lastName,
             'first_name' => $firstName,
             'phone' => $phone,
             'shop' => $shop,
+            'created_by_admin' => (bool) ($existingPayload['created_by_admin'] ?? false),
+            'document_label' => (string) ($existingPayload['document_label'] ?? ''),
+            'document_meta' => array_merge($documentMeta, [
+                'line_items' => $updatedLineDisplay,
+            ]),
         ], JSON_UNESCAPED_UNICODE);
 
-        $stmt = $this->app->db()->prepare('UPDATE orders SET notes = :notes WHERE id = :id');
-        $stmt->execute([
-            'notes' => $notes,
-            'id' => $id,
-        ]);
+        if ($itemsPayload !== []) {
+            try {
+                $db->prepare(
+                    'UPDATE orders SET notes = :notes, subtotal_dzd = :sub, total_dzd = :total WHERE id = :id'
+                )->execute([
+                    'notes' => $notes,
+                    'sub' => (float) $total,
+                    'total' => (float) $total,
+                    'id' => $id,
+                ]);
+                $db->prepare('UPDATE invoices SET total_dzd = :total WHERE order_id = :order_id')->execute([
+                    'total' => (float) $total,
+                    'order_id' => $id,
+                ]);
+                $db->commit();
+            } catch (\Throwable $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
 
-        if ($stmt->rowCount() === 0) {
-            return new JsonResponse(['error' => 'Commande introuvable.'], 404);
+                return new JsonResponse(['error' => 'Modification document impossible.'], 500);
+            }
+        } else {
+            $db->prepare('UPDATE orders SET notes = :notes WHERE id = :id')->execute([
+                'notes' => $notes,
+                'id' => $id,
+            ]);
         }
 
         return new JsonResponse(['ok' => true]);
@@ -1115,8 +1310,6 @@ final class AdminApiController
         $db = $this->app->db();
         $db->beginTransaction();
         try {
-            $this->restoreOrderStock($db, $id);
-
             $stmtInv = $db->prepare("SELECT id FROM invoices WHERE order_id = :oid");
             $stmtInv->execute(['oid' => $id]);
             $invoiceIds = array_map(static fn(array $r) => (int) $r['id'], $stmtInv->fetchAll());

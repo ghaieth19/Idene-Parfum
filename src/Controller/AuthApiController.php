@@ -19,6 +19,7 @@ final class AuthApiController
     private const FACE_MATCH_MIN_COSINE = 0.72;
     private const FACE_PROFILE_LABEL_MAX_LENGTH = 120;
     private const SESSION_PENDING_FACE_MATRIX = 'face_auth.pending.matrix';
+    private const SESSION_FIRST_LOGIN_GUIDE = 'auth.first_login_guide';
     private const PASSWORD_RESET_TTL_SECONDS = 3600;
 
     public function __construct(
@@ -74,6 +75,20 @@ final class AuthApiController
         $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
 
         return is_array($decoded) ? $decoded : null;
+    }
+
+    private function markFirstClientLoginGuide(): void
+    {
+        $this->app->session()->set(self::SESSION_FIRST_LOGIN_GUIDE, true);
+    }
+
+    private function consumeFirstClientLoginGuide(): bool
+    {
+        $session = $this->app->session();
+        $shouldShow = (bool) $session->get(self::SESSION_FIRST_LOGIN_GUIDE, false);
+        $session->remove(self::SESSION_FIRST_LOGIN_GUIDE);
+
+        return $shouldShow;
     }
 
     private function saveFaceProfile(int $userId, array $matrix): void
@@ -624,6 +639,8 @@ final class AuthApiController
             $this->syncLegacyMatrixFromFaceProfiles($userId);
         }
 
+        $this->markFirstClientLoginGuide();
+
         return ApiResponse::ok([
             'ok' => true,
             'user_id' => $userId,
@@ -648,16 +665,26 @@ final class AuthApiController
             return ApiResponse::validation($errors);
         }
 
-        $user = $this->app->fetchUserWithRoleByEmail($email);
+        try {
+            $user = $this->app->fetchUserWithRoleByEmail($email);
+        } catch (\Throwable $exception) {
+            return ApiResponse::error(
+                'La base de donnees ne repond pas. Verifiez que MySQL est demarre et accessible sur 127.0.0.1:3306.',
+                503
+            );
+        }
 
         if (!$user || !password_verify($password, (string) $user['password_hash'])) {
             return ApiResponse::error('Identifiants invalides.', 401);
         }
 
         $this->app->loginUser($user);
-        $redirect = in_array((string) $user['role_name'], ['ADMIN', 'DIRECTEUR', 'MANAGER'], true)
-            ? '/admin'
-            : '/dashboard';
+        $isAdmin = in_array((string) $user['role_name'], ['ADMIN', 'DIRECTEUR', 'MANAGER'], true);
+        $redirect = $isAdmin ? '/admin' : '/dashboard';
+
+        if (!$isAdmin && $this->consumeFirstClientLoginGuide()) {
+            $redirect = '/dashboard?onboarding=welcome&lang=ar';
+        }
 
         return ApiResponse::ok([
             'ok' => true,
@@ -703,9 +730,12 @@ final class AuthApiController
         }
 
         $this->app->loginUser($user);
-        $redirect = in_array((string) $user['role_name'], ['ADMIN', 'DIRECTEUR', 'MANAGER'], true)
-            ? '/admin'
-            : '/dashboard';
+        $isAdmin = in_array((string) $user['role_name'], ['ADMIN', 'DIRECTEUR', 'MANAGER'], true);
+        $redirect = $isAdmin ? '/admin' : '/dashboard';
+
+        if (!$isAdmin && $this->consumeFirstClientLoginGuide()) {
+            $redirect = '/dashboard?onboarding=welcome&lang=ar';
+        }
 
         return ApiResponse::ok([
             'ok' => true,

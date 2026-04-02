@@ -6,13 +6,14 @@ use App\Support\AppContext;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class AdminOrderPdfController
 {
     private const TVA_RATE = 0.19;
-    private const CICT_RATE = 0.008;
+    private const CICT_RATE = 0.01;
     private const TIMBRE = 1.000;
 
     public function __construct(private readonly AppContext $app)
@@ -20,7 +21,7 @@ final class AdminOrderPdfController
     }
 
     #[Route('/admin/orders/{id}/pdf', name: 'app_admin_order_pdf', methods: ['GET'])]
-    public function __invoke(int $id): Response
+    public function __invoke(int $id, Request $request): Response
     {
         $userId = $this->app->currentUserId();
         if (!$userId) {
@@ -31,11 +32,15 @@ final class AdminOrderPdfController
             return new Response('Acces admin requis', 403);
         }
 
+        $variant = strtoupper(trim((string) $request->query->get('variant', '')));
+        $exportSiteOrder = $variant === 'DETAIL_SITE';
+
         $db = $this->app->db();
         $stmt = $db->prepare(
             "SELECT
                 o.id,
                 o.order_number,
+                o.sale_type,
                 o.created_at,
                 o.notes,
                 i.invoice_number
@@ -53,14 +58,20 @@ final class AdminOrderPdfController
 
         $itemsStmt = $db->prepare(
             "SELECT
+                p.id AS product_id,
                 pc.code,
                 pc.name,
                 oi.quantity_ml,
                 oi.unit_price_dzd,
-                oi.line_total_dzd
+                oi.line_total_dzd,
+                pp_detail.price_dzd AS detail_unit_price_dzd
              FROM order_items oi
              INNER JOIN products p ON p.id = oi.product_id
              INNER JOIN perfume_catalog pc ON pc.id = p.perfume_catalog_id
+             LEFT JOIN product_prices pp_detail
+                    ON pp_detail.product_id = p.id
+                   AND pp_detail.sale_type = 'DETAIL'
+                   AND pp_detail.ends_at IS NULL
              WHERE oi.order_id = :order_id
              ORDER BY oi.id ASC"
         );
@@ -69,15 +80,31 @@ final class AdminOrderPdfController
 
         $client = json_decode((string) ($order['notes'] ?? '{}'), true) ?: [];
         $shipping = is_array($client['shipping_address'] ?? null) ? $client['shipping_address'] : [];
+        $documentMeta = is_array($client['document_meta'] ?? null) ? $client['document_meta'] : [];
+        $saleType = strtoupper((string) ($order['sale_type'] ?? 'DETAIL'));
+        $isWholesale = $saleType === 'GROS';
+        $renderWholesaleDocument = $isWholesale && !$exportSiteOrder;
 
         $htBrut = 0.0;
         $rowsHtml = '';
-        foreach ($items as $item) {
-            $lineTotal = (float) $item['line_total_dzd'];
-            $quantity = (string) ($item['quantity_ml'] ?? '0');
+        $lineItemsMeta = is_array($documentMeta['line_items'] ?? null) ? array_values($documentMeta['line_items']) : [];
+        foreach ($items as $index => $item) {
+            $lineMeta = is_array($lineItemsMeta[$index] ?? null) ? $lineItemsMeta[$index] : [];
+            $quantityValue = (float) ($item['quantity_ml'] ?? 0);
+            $unitPrice = $exportSiteOrder
+                ? (float) ($item['detail_unit_price_dzd'] ?? 0)
+                : (float) ($item['unit_price_dzd'] ?? 0);
+            if ($unitPrice <= 0) {
+                $unitPrice = (float) ($item['unit_price_dzd'] ?? 0);
+            }
+            $lineTotal = $exportSiteOrder
+                ? $quantityValue * $unitPrice
+                : (float) $item['line_total_dzd'];
+            $quantity = $this->quantity($quantityValue);
             $htBrut += $lineTotal;
 
-            $designation = strtoupper(trim((string) ($item['name'] ?? 'Produit')));
+            $designation = strtoupper(trim((string) ($lineMeta['display_name'] ?? $item['name'] ?? 'Produit')));
+            $referenceCode = (string) ($lineMeta['display_code'] ?? $item['code'] ?? '-');
             $rowsHtml .= sprintf(
                 '<tr class="item-row">
                     <td class="center">%s</td>
@@ -89,33 +116,45 @@ final class AdminOrderPdfController
                     <td class="right">19.00</td>
                     <td class="right">%s</td>
                 </tr>',
-                htmlspecialchars((string) ($item['code'] ?? '-'), ENT_QUOTES),
+                htmlspecialchars($referenceCode, ENT_QUOTES),
                 htmlspecialchars($designation, ENT_QUOTES),
                 htmlspecialchars($quantity, ENT_QUOTES),
-                $this->money((float) $item['unit_price_dzd']),
+                $this->money($unitPrice),
                 $this->money($lineTotal)
             );
         }
 
-        $summary = $this->buildSummary($htBrut);
+        $summary = $this->buildSummary($htBrut, $documentMeta, $renderWholesaleDocument);
         $createdAt = (string) ($order['created_at'] ?? '');
-        $clientName = trim((string) (($client['first_name'] ?? '') . ' ' . ($client['last_name'] ?? '')));
+        $clientName = trim((string) ($documentMeta['contact_name'] ?? ''));
+        if ($clientName === '') {
+            $clientName = trim((string) (($client['first_name'] ?? '') . ' ' . ($client['last_name'] ?? '')));
+        }
         $phone = trim((string) ($shipping['phone'] ?? ($client['phone'] ?? '')));
-        $line1 = trim((string) ($shipping['line1'] ?? ''));
-        $city = trim((string) ($shipping['city'] ?? ''));
-        $region = trim((string) ($shipping['region'] ?? ''));
+        $line1 = trim((string) ($documentMeta['address'] ?? ($shipping['line1'] ?? '')));
+        $city = trim((string) ($documentMeta['city'] ?? ($shipping['city'] ?? '')));
+        $region = trim((string) ($documentMeta['postal_code'] ?? ($shipping['region'] ?? '')));
         $clientAddress = trim($phone . '  ' . $line1);
         $clientCity = trim($city . '  ' . $region);
+        $documentTitle = $renderWholesaleDocument ? 'FACTURE' : 'BON DE COMMANDE';
+        $documentNumber = $renderWholesaleDocument
+            ? (string) ($order['invoice_number'] ?? $order['order_number'])
+            : (string) $order['order_number'];
+        $amountLabel = $renderWholesaleDocument
+            ? 'Arretee la Presente Facture a la somme de :'
+            : 'Arrete le present bon de commande a la somme de :';
 
         $html = $this->renderInvoiceHtml([
-            'invoice_number' => (string) ($order['invoice_number'] ?? $order['order_number']),
-            'invoice_date' => $this->formatDate($createdAt),
-            'delivery_date' => $this->formatDate($createdAt),
+            'document_title' => $documentTitle,
+            'amount_label' => $amountLabel,
+            'invoice_number' => $documentNumber,
+            'invoice_date' => $this->formatDate((string) ($documentMeta['document_date'] ?? $createdAt)),
+            'delivery_date' => $this->formatDate((string) ($documentMeta['document_date'] ?? $createdAt)),
             'client_code' => $this->clientCode($client, (int) $order['id']),
             'client_name' => $clientName !== '' ? $clientName : 'CLIENT',
             'client_address' => $clientAddress !== '' ? $clientAddress : 'TUNISIE',
             'client_city' => $clientCity !== '' ? $clientCity : 'TUNISIE',
-            'mf' => (string) ($client['mf'] ?? '959529F/A/M/000'),
+            'mf' => (string) ($documentMeta['fiscal_code'] ?? $client['mf'] ?? '959529F/A/M/000'),
             'rows_html' => $rowsHtml,
             'summary' => $summary,
         ]);
@@ -128,7 +167,7 @@ final class AdminOrderPdfController
         $dompdf->render();
 
         $response = new Response($dompdf->output());
-        $filename = 'commande-' . $order['order_number'] . '.pdf';
+        $filename = ($renderWholesaleDocument ? 'facture-stock-' : 'bon-commande-') . $order['order_number'] . '.pdf';
         $response->headers->set('Content-Type', 'application/pdf');
         $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
 
@@ -211,7 +250,7 @@ final class AdminOrderPdfController
             <td>
                 <table class="box invoice-box">
                     <tr>
-                        <th class="title-cell">FACTURE</th>
+                        <th class="title-cell">{{document_title}}</th>
                         <th class="number-cell">{{invoice_number}}</th>
                     </tr>
                     <tr class="date-row">
@@ -302,7 +341,7 @@ final class AdminOrderPdfController
 
     <table class="amount-table">
         <tr>
-            <td>Arretee la Presente Facture a la somme de : <strong>{{amount_words}}</strong></td>
+            <td>{{amount_label}} <strong>{{amount_words}}</strong></td>
         </tr>
     </table>
 
@@ -316,6 +355,8 @@ final class AdminOrderPdfController
 HTML;
 
         return strtr($template, [
+            '{{document_title}}' => htmlspecialchars((string) ($data['document_title'] ?? 'FACTURE'), ENT_QUOTES),
+            '{{amount_label}}' => htmlspecialchars((string) ($data['amount_label'] ?? 'Arretee la Presente Facture a la somme de :'), ENT_QUOTES),
             '{{invoice_number}}' => htmlspecialchars((string) $data['invoice_number'], ENT_QUOTES),
             '{{invoice_date}}' => htmlspecialchars((string) $data['invoice_date'], ENT_QUOTES),
             '{{delivery_date}}' => htmlspecialchars((string) $data['delivery_date'], ENT_QUOTES),
@@ -337,16 +378,30 @@ HTML;
         ]);
     }
 
-    private function buildSummary(float $htBrut): array
+    private function buildSummary(float $htBrut, array $documentMeta = [], bool $isWholesale = false): array
     {
-        $htNet = $htBrut;
-        $cict = $htNet * self::CICT_RATE;
+        $totalsMeta = is_array($documentMeta['totals'] ?? null) ? $documentMeta['totals'] : [];
+
+        if ($totalsMeta !== []) {
+            return [
+                'ht_brut' => (float) ($totalsMeta['subtotal'] ?? $htBrut),
+                'ht_net' => (float) ($totalsMeta['htNet'] ?? $htBrut),
+                'cict' => (float) ($totalsMeta['cict'] ?? 0),
+                'base_tva' => (float) ($totalsMeta['baseTva'] ?? 0),
+                'mt_tva' => (float) ($totalsMeta['tva'] ?? 0),
+                'timbre' => (float) ($totalsMeta['timbre'] ?? self::TIMBRE),
+                'total_to_pay' => (float) ($totalsMeta['totalToPay'] ?? $htBrut),
+            ];
+        }
+
+        $totalToPay = $htBrut;
+        $mtTva = $totalToPay * self::TVA_RATE;
+        $htNet = max(0.0, $totalToPay - $mtTva);
+        $cict = $totalToPay * self::CICT_RATE;
         $baseTva = $htNet + $cict;
-        $mtTva = $baseTva * self::TVA_RATE;
-        $totalToPay = $htNet + $cict + $mtTva + self::TIMBRE;
 
         return [
-            'ht_brut' => $htBrut,
+            'ht_brut' => $totalToPay,
             'ht_net' => $htNet,
             'cict' => $cict,
             'base_tva' => $baseTva,
@@ -358,7 +413,12 @@ HTML;
 
     private function clientCode(array $client, int $fallback): string
     {
-        $code = $client['client_code'] ?? $client['code_client'] ?? $client['customer_code'] ?? $fallback;
+        $documentMeta = is_array($client['document_meta'] ?? null) ? $client['document_meta'] : [];
+        $code = $documentMeta['client_code']
+            ?? $client['client_code']
+            ?? $client['code_client']
+            ?? $client['customer_code']
+            ?? $fallback;
 
         return str_pad((string) $code, 3, '0', STR_PAD_LEFT);
     }
@@ -369,7 +429,23 @@ HTML;
             return substr($value, 8, 2) . '/' . substr($value, 5, 2) . '/' . substr($value, 0, 4);
         }
 
+        if ($value !== '') {
+            $timestamp = strtotime($value);
+            if ($timestamp !== false) {
+                return date('d/m/Y', $timestamp);
+            }
+        }
+
         return $value !== '' ? $value : date('d/m/Y');
+    }
+
+    private function quantity(float $value): string
+    {
+        if (abs($value - round($value)) < 0.0001) {
+            return (string) (int) round($value);
+        }
+
+        return $this->money($value);
     }
 
     private function spellAmountFr(float $amount): string

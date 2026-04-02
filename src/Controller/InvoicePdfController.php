@@ -27,6 +27,8 @@ final class InvoicePdfController
             return new RedirectResponse('/auth');
         }
 
+        return new Response('Consultation PDF indisponible depuis l espace client.', 403);
+
         $db = $this->app->db();
 
         $stmt = $db->prepare(

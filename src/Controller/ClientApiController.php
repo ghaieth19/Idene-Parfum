@@ -138,6 +138,80 @@ final class ClientApiController
         return (time() - $createdAt) <= 86400;
     }
 
+    private function reserveClientStock(\PDO $db, array $items, int $orderId): ?array
+    {
+        $selectStock = $db->prepare(
+            'SELECT quantity_ml FROM stock WHERE product_id = :product_id LIMIT 1 FOR UPDATE'
+        );
+        $updateStock = $db->prepare(
+            'UPDATE stock SET quantity_ml = quantity_ml - :qty WHERE product_id = :product_id'
+        );
+        $insertMovement = $db->prepare(
+            "INSERT INTO stock_movements (product_id, movement_type, quantity_ml, reason, reference_type, reference_id, created_by)
+             VALUES (:product_id, 'OUT', :qty, :reason, 'ORDER', :reference_id, :created_by)"
+        );
+
+        foreach ($items as $index => $item) {
+            $selectStock->execute([
+                'product_id' => $item['product_id'],
+            ]);
+            $stockQty = $selectStock->fetchColumn();
+            if ($stockQty === false) {
+                return ['error' => 'Stock introuvable a la ligne ' . ($index + 1) . '.', 'status' => 422];
+            }
+
+            if ((float) $stockQty < (float) $item['qty']) {
+                return ['error' => 'Stock insuffisant a la ligne ' . ($index + 1) . '.', 'status' => 422];
+            }
+
+            $updateStock->execute([
+                'product_id' => $item['product_id'],
+                'qty' => $item['qty'],
+            ]);
+            $insertMovement->execute([
+                'product_id' => $item['product_id'],
+                'qty' => $item['qty'],
+                'reason' => 'Sortie commande client',
+                'reference_id' => $orderId,
+                'created_by' => $this->userId(),
+            ]);
+        }
+
+        return null;
+    }
+
+    private function restoreClientOrderStock(\PDO $db, int $orderId): void
+    {
+        $itemsStmt = $db->prepare(
+            'SELECT product_id, quantity_ml FROM order_items WHERE order_id = :order_id ORDER BY id ASC'
+        );
+        $itemsStmt->execute([
+            'order_id' => $orderId,
+        ]);
+
+        $updateStock = $db->prepare(
+            'UPDATE stock SET quantity_ml = quantity_ml + :qty WHERE product_id = :product_id'
+        );
+        $insertMovement = $db->prepare(
+            "INSERT INTO stock_movements (product_id, movement_type, quantity_ml, reason, reference_type, reference_id, created_by)
+             VALUES (:product_id, 'RETURN', :qty, :reason, 'ORDER', :reference_id, :created_by)"
+        );
+
+        foreach ($itemsStmt->fetchAll() as $item) {
+            $updateStock->execute([
+                'product_id' => (int) $item['product_id'],
+                'qty' => (float) $item['quantity_ml'],
+            ]);
+            $insertMovement->execute([
+                'product_id' => (int) $item['product_id'],
+                'qty' => (float) $item['quantity_ml'],
+                'reason' => 'Restauration stock commande client',
+                'reference_id' => $orderId,
+                'created_by' => $this->userId(),
+            ]);
+        }
+    }
+
     #[Route('/api/client/dashboard', name: 'api_client_dashboard', methods: ['GET'])]
     public function dashboard(): JsonResponse
     {
@@ -305,6 +379,7 @@ final class ClientApiController
         $shipRegion = trim((string) ($shipping['region'] ?? ''));
         $shipCountry = trim((string) ($shipping['country'] ?? ''));
         $shipPhone = trim((string) ($shipping['phone'] ?? $shipping['line2'] ?? ''));
+        $shipDeliveryAddress = trim((string) ($shipping['delivery_address'] ?? ''));
 
         $shipErrors = array_values(array_filter([
             $this->validator->required($shipLine1, 'Adresse', 180),
@@ -373,6 +448,7 @@ final class ClientApiController
                     'city' => $shipCity,
                     'region' => $shipRegion,
                     'country' => $shipCountry,
+                    'delivery_address' => $shipDeliveryAddress,
                 ],
             ], JSON_UNESCAPED_UNICODE);
 
@@ -402,6 +478,13 @@ final class ClientApiController
                     'price' => $line['unit_price'],
                     'line' => $line['line_total'],
                 ]);
+            }
+
+            $stockError = $this->reserveClientStock($db, $resolvedItems['items'], $orderId);
+            if ($stockError !== null) {
+                $db->rollBack();
+
+                return ApiResponse::error($stockError['error'], $stockError['status']);
             }
 
             $stmtInvoice = $db->prepare(
@@ -489,6 +572,7 @@ final class ClientApiController
         $shipRegion = trim((string) ($shipping['region'] ?? ''));
         $shipCountry = trim((string) ($shipping['country'] ?? ''));
         $shipPhone = trim((string) ($shipping['phone'] ?? $shipping['line2'] ?? ''));
+        $shipDeliveryAddress = trim((string) ($shipping['delivery_address'] ?? ''));
 
         $shipErrors = array_values(array_filter([
             $this->validator->required($shipLine1, 'Adresse', 180),
@@ -548,10 +632,12 @@ final class ClientApiController
             'city' => $shipCity,
             'region' => $shipRegion,
             'country' => $shipCountry,
+            'delivery_address' => $shipDeliveryAddress,
         ];
 
         $db->beginTransaction();
         try {
+            $this->restoreClientOrderStock($db, $id);
             $db->prepare("DELETE FROM order_items WHERE order_id = :oid")->execute(['oid' => $id]);
 
             $stmtItem = $db->prepare(
@@ -566,6 +652,13 @@ final class ClientApiController
                     'price' => $line['unit_price'],
                     'line' => $line['line_total'],
                 ]);
+            }
+
+            $stockError = $this->reserveClientStock($db, $resolvedItems['items'], $id);
+            if ($stockError !== null) {
+                $db->rollBack();
+
+                return ApiResponse::error($stockError['error'], $stockError['status']);
             }
 
             $db->prepare(
@@ -614,6 +707,7 @@ final class ClientApiController
 
         $db->beginTransaction();
         try {
+            $this->restoreClientOrderStock($db, $id);
             $invoiceIdsStmt = $db->prepare("SELECT id FROM invoices WHERE order_id = :oid");
             $invoiceIdsStmt->execute(['oid' => $id]);
             $invoiceIds = array_map(static fn(array $row): int => (int) $row['id'], $invoiceIdsStmt->fetchAll());
@@ -643,13 +737,16 @@ final class ClientApiController
 
         $stmt = $db->prepare("SELECT i.id, i.invoice_number, i.status, i.subtotal_dzd, i.tax_dzd, i.total_dzd,
             i.due_date, i.issued_at, o.order_number,
+            TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) AS customer_name,
+            COALESCE(NULLIF(u.perfume_shop_name, ''), TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')))) AS customer_display_name,
             COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
             FROM invoices i
             INNER JOIN orders o ON o.id = i.order_id
+            INNER JOIN users u ON u.id = o.customer_user_id
             LEFT JOIN payments p ON p.invoice_id = i.id
             WHERE o.customer_user_id = :uid
             GROUP BY i.id, i.invoice_number, i.status, i.subtotal_dzd, i.tax_dzd, i.total_dzd,
-                     i.due_date, i.issued_at, o.order_number
+                     i.due_date, i.issued_at, o.order_number, u.first_name, u.last_name, u.perfume_shop_name
             ORDER BY i.id DESC");
         $stmt->execute(['uid' => $uid]);
 

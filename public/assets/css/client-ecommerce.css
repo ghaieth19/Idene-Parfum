@@ -1147,6 +1147,49 @@
   padding: 9px 22px;
 }
 
+.arabic-guide-btn {
+  width: auto;
+  padding: 0 14px;
+  gap: 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1B4D3E 0%, #2D7A5E 100%);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(27, 77, 62, 0.22);
+}
+
+.arabic-guide-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arabic-guide-btn__text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.arabic-guide-btn.is-highlighted {
+  animation: arabicGuidePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes arabicGuidePulse {
+  0%, 100% { transform: translateY(0); box-shadow: 0 12px 26px rgba(27, 77, 62, 0.22); }
+  50% { transform: translateY(-2px); box-shadow: 0 18px 34px rgba(27, 77, 62, 0.35); }
+}
+
+.ob-arabic-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(27, 77, 62, 0.08);
+  border: 1px solid rgba(27, 77, 62, 0.14);
+  color: #1f2937;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  text-align: right;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .ob-modal { width: 97vw; border-radius: 18px; }
@@ -1160,4 +1203,7 @@
   .ob-desc  { font-size: .85rem; }
   .ob-footer { padding: 12px 16px 16px; }
   .ob-btn-next, .ob-btn-prev { padding: 8px 14px; font-size: .82rem; }
+  .arabic-guide-btn { padding: 0 12px; }
+  .arabic-guide-btn__text { display: none; }
+  .ob-arabic-note { font-size: 0.86rem; }
 }

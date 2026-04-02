@@ -68,6 +68,7 @@ const formatBottleCount = (value) => `${Number(value || 0).toFixed(2)} bouteille
 const orderSearch = document.getElementById("orderSearch");
 const ordersAllBtn = document.getElementById("ordersAllBtn");
 const ordersPartialBtn = document.getElementById("ordersPartialBtn");
+const orderTypeFilter = document.getElementById("orderTypeFilter");
 const orderShopFilter = document.getElementById("orderShopFilter");
 const orderStatusFilter = document.getElementById("orderStatusFilter");
 const orderInvoiceFilter = document.getElementById("orderInvoiceFilter");
@@ -77,24 +78,86 @@ const orderFiltersResetBtn = document.getElementById("orderFiltersResetBtn");
 const showOrderCreateBtn = document.getElementById("showOrderCreateBtn");
 const orderCreatePanel = document.getElementById("orderCreatePanel");
 const hideOrderCreateBtn = document.getElementById("hideOrderCreateBtn");
+const orderCreatePanelTitle = document.getElementById("orderCreatePanelTitle");
+const orderCreatePanelCopy = document.getElementById("orderCreatePanelCopy");
 const orderCreateMessage = document.getElementById("orderCreateMessage");
 const orderCreateForm = document.getElementById("orderCreateForm");
+const orderCreateWorkspace = document.getElementById("orderCreateWorkspace");
+const orderCreateSaleType = document.getElementById("orderCreateSaleType");
+const orderCreateDocumentLabel = document.getElementById("orderCreateDocumentLabel");
+const orderCreateDocumentNumber = document.getElementById("orderCreateDocumentNumber");
+const orderCreateDocumentDate = document.getElementById("orderCreateDocumentDate");
+const orderCreateDepot = document.getElementById("orderCreateDepot");
+const orderCreateOrderCode = document.getElementById("orderCreateOrderCode");
+const orderCreateGlobalDiscount = document.getElementById("orderCreateGlobalDiscount");
+const orderCreateExceptionalTax = document.getElementById("orderCreateExceptionalTax");
 const orderCreateShop = document.getElementById("orderCreateShop");
 const orderCreateShopList = document.getElementById("orderCreateShopList");
 const orderCreateProductSearch = document.getElementById("orderCreateProductSearch");
 const orderCreateProduct = document.getElementById("orderCreateProduct");
+const orderCreateClientCode = document.getElementById("orderCreateClientCode");
+const orderCreateContactName = document.getElementById("orderCreateContactName");
+const orderCreatePhone = document.getElementById("orderCreatePhone");
+const orderCreateAddress = document.getElementById("orderCreateAddress");
+const orderCreateCity = document.getElementById("orderCreateCity");
+const orderCreatePostalCode = document.getElementById("orderCreatePostalCode");
+const orderCreateFiscalCode = document.getElementById("orderCreateFiscalCode");
+const orderCreateRepresentative = document.getElementById("orderCreateRepresentative");
+const orderCreateObservation = document.getElementById("orderCreateObservation");
+const orderCreateQuickGroup = document.getElementById("orderCreateQuickGroup");
+const orderCreateQuickSegment = document.getElementById("orderCreateQuickSegment");
+const orderCreatePackageCount = document.getElementById("orderCreatePackageCount");
+const orderCreateUnitPrice = document.getElementById("orderCreateUnitPrice");
 const orderCreateQty = document.getElementById("orderCreateQty");
+const orderCreateStockPreview = document.getElementById("orderCreateStockPreview");
+const orderCreateItemDiscount = document.getElementById("orderCreateItemDiscount");
+const orderCreateItemFodec = document.getElementById("orderCreateItemFodec");
+const orderCreateItemConsumption = document.getElementById("orderCreateItemConsumption");
+const orderCreateItemTva = document.getElementById("orderCreateItemTva");
 const orderAddItemBtn = document.getElementById("orderAddItemBtn");
 const orderCreateItemsBody = document.getElementById("orderCreateItemsBody");
 const orderCreateTotal = document.getElementById("orderCreateTotal");
+const orderCreatePaymentMode = document.getElementById("orderCreatePaymentMode");
+const orderCreatePaidAmount = document.getElementById("orderCreatePaidAmount");
+const orderCreatePieceRef = document.getElementById("orderCreatePieceRef");
+const orderCreateBank = document.getElementById("orderCreateBank");
+const orderCreateDueDate = document.getElementById("orderCreateDueDate");
+const orderCreateNewBalance = document.getElementById("orderCreateNewBalance");
+const orderCreateSidebarBalance = document.getElementById("orderCreateSidebarBalance");
+const orderCreateSidebarPending = document.getElementById("orderCreateSidebarPending");
+const orderCreateSidebarDue = document.getElementById("orderCreateSidebarDue");
+const orderCreateSidebarCommitment = document.getElementById("orderCreateSidebarCommitment");
+const orderCreateTotalFodec = document.getElementById("orderCreateTotalFodec");
+const orderCreateTotalHt = document.getElementById("orderCreateTotalHt");
+const orderCreateTotalConsumption = document.getElementById("orderCreateTotalConsumption");
+const orderCreateTotalDiscount = document.getElementById("orderCreateTotalDiscount");
+const orderCreateWithholdingBase = document.getElementById("orderCreateWithholdingBase");
+const orderCreateWithholdingAmount = document.getElementById("orderCreateWithholdingAmount");
+const orderCreateTotalTva = document.getElementById("orderCreateTotalTva");
+const orderCreateTotalTtc = document.getElementById("orderCreateTotalTtc");
+const orderCreateSubmitTopBtn = document.getElementById("orderCreateSubmitTopBtn");
+const orderCreateSubmitBtn = document.getElementById("orderCreateSubmitBtn");
 const adminOrdersBody = document.getElementById("adminOrdersBody");
 const orderSectionStats = document.getElementById("orderSectionStats");
 const ordersPagination = document.getElementById("ordersPagination");
+const documentSearch = document.getElementById("documentSearch");
+const documentTypeFilter = document.getElementById("documentTypeFilter");
+const documentShopSearch = document.getElementById("documentShopSearch");
+const documentPhoneSearch = document.getElementById("documentPhoneSearch");
+const documentFirstNameSearch = document.getElementById("documentFirstNameSearch");
+const documentLastNameSearch = document.getElementById("documentLastNameSearch");
+const documentDateFrom = document.getElementById("documentDateFrom");
+const documentDateTo = document.getElementById("documentDateTo");
+const documentFiltersResetBtn = document.getElementById("documentFiltersResetBtn");
+const adminDocumentsBody = document.getElementById("adminDocumentsBody");
+const documentSectionStats = document.getElementById("documentSectionStats");
+const documentsPagination = document.getElementById("documentsPagination");
 const orderDetailPanel = document.getElementById("orderDetailPanel");
 const orderDetailTitle = document.getElementById("orderDetailTitle");
 const orderDetailSummary = document.getElementById("orderDetailSummary");
 const orderDetailItemsBody = document.getElementById("orderDetailItemsBody");
 const orderDetailMessage = document.getElementById("orderDetailMessage");
+const generateInvoiceFromOrderBtn = document.getElementById("generateInvoiceFromOrderBtn");
 const hideOrderDetailBtn = document.getElementById("hideOrderDetailBtn");
 const exportOrderPdfBtn = document.getElementById("exportOrderPdfBtn");
 const orderEditForm = document.getElementById("orderEditForm");
@@ -112,6 +175,13 @@ const paymentAlreadyPaid = document.getElementById("paymentAlreadyPaid");
 const paymentRemaining = document.getElementById("paymentRemaining");
 const paymentAmountInput = document.getElementById("paymentAmountInput");
 const paymentModalMessage = document.getElementById("paymentModalMessage");
+const overviewAccessModal = document.getElementById("overviewAccessModal");
+const overviewAccessModalBackdrop = document.getElementById("overviewAccessModalBackdrop");
+const overviewAccessCloseBtn = document.getElementById("overviewAccessCloseBtn");
+const overviewAccessCancelBtn = document.getElementById("overviewAccessCancelBtn");
+const overviewAccessConfirmBtn = document.getElementById("overviewAccessConfirmBtn");
+const overviewAccessInput = document.getElementById("overviewAccessInput");
+const overviewAccessMessage = document.getElementById("overviewAccessMessage");
 
 const employeeForm = document.getElementById("employeeForm");
 const employeeFormPanel = document.getElementById("employeeFormPanel");
@@ -202,6 +272,7 @@ let state = {
         perfumeStock: { page: 1, perPage: 10 },
         rawMaterials: { page: 1, perPage: 8 },
         orders: { page: 1, perPage: 8 },
+        orderDocuments: { page: 1, perPage: 8 },
         users: { page: 1, perPage: 8 },
         expenses: { page: 1, perPage: 8 },
     },
@@ -240,13 +311,260 @@ const resetRawMaterialDraft = () => {
 };
 
 const adminOrderCart = new Map();
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const formatFixed3 = (value) => Number(value || 0).toFixed(3);
+const ORDER_TVA_RATE = 0.19;
+const ORDER_CICT_RATE = 0.01;
+const ORDER_TIMBRE = 1.0;
+const ADMIN_OVERVIEW_ACCESS_CODE = "2026";
+let adminOverviewUnlocked = false;
 
-const openOrderPdf = (orderId) => {
+const getOrderDocumentLabel = (saleType) => {
+    const normalized = String(saleType || "").trim().toUpperCase();
+    return normalized === "GROS" ? "Facture stock" : "Bon de commande";
+};
+
+const getOrderDisplayAmount = (row) => {
+    const normalized = String(row?.sale_type || "").trim().toUpperCase();
+    return normalized === "GROS"
+        ? Number(row?.invoice_total || row?.total_dzd || 0)
+        : Number(row?.total_dzd || 0);
+};
+
+const getOrderCreateSaleType = () => {
+    const normalized = String(orderCreateSaleType?.value || "DETAIL").trim().toUpperCase();
+    return normalized === "GROS" ? "GROS" : "DETAIL";
+};
+
+const isWholesaleOrderCreate = () => getOrderCreateSaleType() === "GROS";
+
+const getAdminProductUnitPrice = (product, saleType = getOrderCreateSaleType()) => {
+    const normalized = String(saleType || "").trim().toUpperCase();
+    if (normalized === "GROS") {
+        return Number(product?.gros_price_dzd ?? product?.detail_price_dzd ?? product?.price_dzd ?? 0);
+    }
+
+    return Number(product?.detail_price_dzd ?? product?.price_dzd ?? 0);
+};
+
+const calculateAdminOrderLine = (item) => {
+    const qty = Number(item?.qty || 0);
+    const unitPrice = Number(item?.price || 0);
+    const discountRate = Number(item?.discount_rate || 0);
+
+    const baseAmount = unitPrice * qty;
+    const discountAmount = baseAmount * (discountRate / 100);
+    const netAmount = baseAmount - discountAmount;
+    const totalHt = netAmount;
+    const totalTtc = totalHt;
+
+    return {
+        baseAmount,
+        discountAmount,
+        netAmount,
+        totalHt,
+        totalTtc,
+    };
+};
+
+const calculateAdminOrderTotals = () => {
+    const totals = {
+        subtotal: 0,
+        discount: 0,
+        htNet: 0,
+        cict: 0,
+        consumption: 0,
+        baseTva: 0,
+        tva: 0,
+        timbre: 0,
+        totalToPay: 0,
+    };
+
+    adminOrderCart.forEach((item) => {
+        const line = calculateAdminOrderLine(item);
+        totals.subtotal += line.baseAmount;
+        totals.discount += line.discountAmount;
+    });
+
+    totals.totalToPay = Math.max(0, totals.subtotal - totals.discount);
+    totals.tva = totals.totalToPay * ORDER_TVA_RATE;
+    totals.htNet = Math.max(0, totals.totalToPay - totals.tva);
+    totals.cict = totals.totalToPay * ORDER_CICT_RATE;
+    totals.consumption = totals.totalToPay * 0.25;
+    totals.baseTva = totals.htNet + totals.cict;
+    totals.timbre = adminOrderCart.size > 0 ? ORDER_TIMBRE : 0;
+
+    return totals;
+};
+
+const setOrderCreateWorkspaceMode = (saleType) => {
+    const normalized = String(saleType || "").trim().toUpperCase();
+    orderCreateWorkspace?.classList.toggle("is-wholesale", normalized === "GROS");
+    orderCreateWorkspace?.classList.toggle("is-detail", normalized !== "GROS");
+    if (orderCreateDocumentLabel) {
+        orderCreateDocumentLabel.value = normalized === "GROS"
+            ? "Facture stock parfumerie"
+            : "Bon de commande site";
+    }
+};
+
+const updateOrderCreatePaymentSummary = () => {
+    const totals = calculateAdminOrderTotals();
+    const paidAmount = Number(orderCreatePaidAmount?.value || 0);
+    const remainingAmount = Math.max(0, totals.totalToPay - paidAmount);
+
+    if (orderCreateSidebarBalance) orderCreateSidebarBalance.textContent = formatFixed3(totals.totalToPay);
+    if (orderCreateSidebarPending) orderCreateSidebarPending.textContent = formatFixed3(paidAmount);
+    if (orderCreateSidebarDue) orderCreateSidebarDue.textContent = formatFixed3(remainingAmount);
+    if (orderCreateSidebarCommitment) orderCreateSidebarCommitment.textContent = formatFixed3(totals.htNet);
+    if (orderCreateNewBalance) orderCreateNewBalance.value = formatFixed3(remainingAmount);
+    if (orderCreateTotalFodec) orderCreateTotalFodec.textContent = formatFixed3(totals.cict);
+    if (orderCreateTotalHt) orderCreateTotalHt.textContent = formatFixed3(totals.htNet);
+    if (orderCreateTotalConsumption) orderCreateTotalConsumption.textContent = formatFixed3(totals.consumption);
+    if (orderCreateTotalDiscount) orderCreateTotalDiscount.textContent = formatFixed3(totals.discount);
+    if (orderCreateWithholdingBase) orderCreateWithholdingBase.textContent = formatFixed3(totals.baseTva);
+    if (orderCreateWithholdingAmount) orderCreateWithholdingAmount.textContent = formatFixed3(0);
+    if (orderCreateTotalTva) orderCreateTotalTva.textContent = formatFixed3(totals.tva);
+    if (orderCreateTotalTtc) orderCreateTotalTtc.textContent = formatFixed3(totals.totalToPay);
+    if (orderCreateTotal) orderCreateTotal.textContent = formatDT(totals.totalToPay);
+};
+
+const autofillOrderCreateClientFields = () => {
+    const user = getSelectedAdminUser();
+    if (!user) return;
+
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+    if (orderCreateClientCode) orderCreateClientCode.value = String(user.id || "");
+    if (orderCreateContactName) orderCreateContactName.value = fullName;
+    if (orderCreatePhone) orderCreatePhone.value = user.phone || "";
+    if (orderCreateAddress) orderCreateAddress.value = user.location || "";
+    if (orderCreateCity) orderCreateCity.value = user.location || "Tunis";
+    if (orderCreatePostalCode) orderCreatePostalCode.value = "1000";
+};
+
+const getQuickInvoiceSelection = () => ({
+    group: String(orderCreateQuickGroup?.value || "").trim().toUpperCase(),
+    segment: String(orderCreateQuickSegment?.value || "").trim().toUpperCase(),
+});
+
+const getQuickInvoiceLabel = () => {
+    const { group, segment } = getQuickInvoiceSelection();
+    return [group, segment].filter(Boolean).join(" ");
+};
+
+const getQuickInvoiceMatchingProducts = () => {
+    const { group, segment } = getQuickInvoiceSelection();
+    if (!group) return [];
+
+    return state.products.filter((row) => {
+        const sameGroup = String(row.catalog_group || "").trim().toUpperCase() === group;
+        if (!sameGroup) return false;
+        if (!segment) return true;
+
+        return String(row.segment || "").trim().toUpperCase() === segment;
+    });
+};
+
+const findQuickInvoiceFallbackProduct = () => {
+    return getQuickInvoiceMatchingProducts()[0] || null;
+};
+
+const getQuickInvoiceAggregateStock = () => {
+    return getQuickInvoiceMatchingProducts()
+        .reduce((sum, row) => sum + Number(row.stock_bottles || 0), 0);
+};
+
+const syncOrderCreatePanelContent = () => {
+    const saleType = getOrderCreateSaleType();
+    const isWholesale = saleType === "GROS";
+    setOrderCreateWorkspaceMode(saleType);
+
+    if (orderCreatePanelTitle) {
+        orderCreatePanelTitle.textContent = isWholesale
+            ? "Gerer facture stock parfumerie"
+            : "Gerer bon de commande site";
+    }
+    if (orderCreatePanelCopy) {
+        orderCreatePanelCopy.textContent = isWholesale
+            ? "Selectionnez une parfumerie, choisissez le parfum, saisissez la quantite bouteilles et fixez librement le prix de la facture."
+            : "Selectionnez une parfumerie, ajoutez les produits et le bon de commande prendra automatiquement le prix reel du site.";
+    }
+    if (orderCreateSubmitBtn) {
+        orderCreateSubmitBtn.textContent = isWholesale
+            ? "Enregistrer la facture"
+            : "Enregistrer le bon de commande";
+    }
+    if (orderCreateSubmitTopBtn) {
+        orderCreateSubmitTopBtn.textContent = isWholesale
+            ? "Valider facture"
+            : "Valider bon";
+    }
+    if (orderAddItemBtn) {
+        orderAddItemBtn.textContent = isWholesale
+            ? "Ajouter a la facture"
+            : "Ajouter au bon";
+    }
+    if (orderCreateUnitPrice) orderCreateUnitPrice.readOnly = !isWholesale;
+    if (orderCreateItemDiscount) orderCreateItemDiscount.readOnly = !isWholesale;
+    if (orderCreateItemFodec) orderCreateItemFodec.readOnly = true;
+    if (orderCreateItemConsumption) orderCreateItemConsumption.readOnly = true;
+    if (orderCreateItemTva) orderCreateItemTva.readOnly = true;
+    if (orderCreatePackageCount) orderCreatePackageCount.readOnly = !isWholesale;
+    if (orderCreateQuickGroup) orderCreateQuickGroup.disabled = !isWholesale;
+    if (orderCreateQuickSegment) orderCreateQuickSegment.disabled = !isWholesale;
+    if (isWholesale) {
+        if (orderCreateItemFodec) orderCreateItemFodec.value = "1.000";
+        if (orderCreateItemConsumption) orderCreateItemConsumption.value = "25.000";
+        if (orderCreateItemTva) orderCreateItemTva.value = "19.000";
+    }
+};
+
+const syncOrderCreateUnitPrice = () => {
+    if (!orderCreateUnitPrice) return;
+    const productId = Number(orderCreateProduct?.value || 0);
+    const selectedProduct = state.products.find((row) => Number(row.id) === productId) || null;
+    const product = selectedProduct || (isWholesaleOrderCreate() ? findQuickInvoiceFallbackProduct() : null);
+    const nextPrice = product ? getAdminProductUnitPrice(product) : 0;
+    orderCreateUnitPrice.value = nextPrice > 0 ? nextPrice.toFixed(3) : "0.000";
+    orderCreateUnitPrice.readOnly = !isWholesaleOrderCreate();
+    if (orderCreateStockPreview) {
+        const previewStock = selectedProduct
+            ? Number(selectedProduct.stock_bottles || 0)
+            : (isWholesaleOrderCreate() ? getQuickInvoiceAggregateStock() : Number(product?.stock_bottles || 0));
+        orderCreateStockPreview.value = formatFixed3(previewStock);
+    }
+};
+
+const openOrderPdf = (orderId, variant = "") => {
     if (!orderId) return;
-    window.open(`/admin/orders/${orderId}/pdf`, "_blank");
+    const params = new URLSearchParams();
+    if (variant) {
+        params.set("variant", variant);
+    }
+    const query = params.toString();
+    window.open(`/admin/orders/${orderId}/pdf${query ? `?${query}` : ""}`, "_blank");
 };
 
 const formatDT = (value) => `${Number(value || 0).toFixed(2)} DT`;
+const formatAdminDateTime = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value || "").slice(0, 16).replace("T", " ");
+    }
+
+    return date.toLocaleString("fr-FR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    }).replace(",", "");
+};
+const escapeHtmlAttr = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
 const setNote = (el, text, type = "") => {
     if (!el) return;
@@ -434,6 +752,12 @@ const handleAdminLinkNavigation = (link, event) => {
     if (!viewName) return;
     event?.preventDefault();
     event?.stopPropagation();
+
+    if (viewName === "overview" && !adminOverviewUnlocked) {
+        openOverviewAccessModal();
+        return;
+    }
+
     activateAdminView(viewName);
     if (window.innerWidth <= 940) {
         window.setTimeout(() => closeAdminMobileSidebar(), 30);
@@ -471,6 +795,7 @@ window.addEventListener("resize", () => {
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeAdminMobileSidebar();
     if (event.key === "Escape") closePaymentModal();
+    if (event.key === "Escape") closeOverviewAccessModal();
 });
 
 if (adminLogoutBtn) {
@@ -840,7 +1165,21 @@ const formatShopUserLabel = (row) => {
     return person ? `${shop} - ${person}` : shop;
 };
 
-const showOrderCreatePanel = () => {
+const showOrderCreatePanel = (saleType = "DETAIL") => {
+    if (orderCreateSaleType) {
+        orderCreateSaleType.value = String(saleType || "DETAIL").toUpperCase() === "GROS" ? "GROS" : "DETAIL";
+    }
+    if (orderCreateDocumentDate && !orderCreateDocumentDate.value) {
+        orderCreateDocumentDate.value = todayIso();
+    }
+    if (orderCreateDueDate && !orderCreateDueDate.value) {
+        orderCreateDueDate.value = todayIso();
+    }
+    syncOrderCreatePanelContent();
+    renderOrderCreateProductOptions();
+    syncOrderCreateUnitPrice();
+    autofillOrderCreateClientFields();
+    updateOrderCreatePaymentSummary();
     orderCreatePanel?.classList.remove("admin-hidden");
     orderCreatePanel?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
@@ -851,11 +1190,43 @@ const hideOrderCreatePanel = () => {
 
 const resetAdminOrderBuilder = () => {
     adminOrderCart.clear();
+    if (orderCreateDocumentNumber) orderCreateDocumentNumber.value = "Auto";
+    if (orderCreateDocumentDate) orderCreateDocumentDate.value = todayIso();
+    if (orderCreateDepot) orderCreateDepot.value = "PRINCIPAL";
+    if (orderCreateOrderCode) orderCreateOrderCode.value = "";
+    if (orderCreateGlobalDiscount) orderCreateGlobalDiscount.value = "0.000";
+    if (orderCreateExceptionalTax) orderCreateExceptionalTax.value = "0.000";
     if (orderCreateQty) orderCreateQty.value = "1";
+    if (orderCreatePackageCount) orderCreatePackageCount.value = "0";
+    if (orderCreateSaleType) orderCreateSaleType.value = "DETAIL";
+    if (orderCreateUnitPrice) orderCreateUnitPrice.value = "0.000";
+    if (orderCreateStockPreview) orderCreateStockPreview.value = "0.000";
+    if (orderCreateItemDiscount) orderCreateItemDiscount.value = "0.000";
+    if (orderCreateItemFodec) orderCreateItemFodec.value = "0.000";
+    if (orderCreateItemConsumption) orderCreateItemConsumption.value = "0.000";
+    if (orderCreateItemTva) orderCreateItemTva.value = "19.000";
+    if (orderCreateClientCode) orderCreateClientCode.value = "";
+    if (orderCreateContactName) orderCreateContactName.value = "";
+    if (orderCreatePhone) orderCreatePhone.value = "";
+    if (orderCreateAddress) orderCreateAddress.value = "";
+    if (orderCreateCity) orderCreateCity.value = "";
+    if (orderCreatePostalCode) orderCreatePostalCode.value = "";
+    if (orderCreateFiscalCode) orderCreateFiscalCode.value = "";
+    if (orderCreateRepresentative) orderCreateRepresentative.value = "";
+    if (orderCreateObservation) orderCreateObservation.value = "";
+    if (orderCreateQuickGroup) orderCreateQuickGroup.value = "";
+    if (orderCreateQuickSegment) orderCreateQuickSegment.value = "";
+    if (orderCreatePaymentMode) orderCreatePaymentMode.value = "Espece";
+    if (orderCreatePaidAmount) orderCreatePaidAmount.value = "0.000";
+    if (orderCreatePieceRef) orderCreatePieceRef.value = "";
+    if (orderCreateBank) orderCreateBank.value = "";
+    if (orderCreateDueDate) orderCreateDueDate.value = todayIso();
     if (orderCreateProductSearch) orderCreateProductSearch.value = "";
     if (orderCreateShop) orderCreateShop.value = "";
     setNote(orderCreateMessage, "");
+    syncOrderCreatePanelContent();
     renderOrderCreateProductOptions();
+    syncOrderCreateUnitPrice();
     renderAdminOrderCart();
 };
 
@@ -874,44 +1245,55 @@ const renderOrderCreateUserOptions = () => {
 const renderOrderCreateProductOptions = () => {
     if (!orderCreateProduct) return;
     const q = (orderCreateProductSearch?.value || "").trim().toLowerCase();
+    const saleType = getOrderCreateSaleType();
+    const { group, segment } = getQuickInvoiceSelection();
     const products = state.products.filter((row) => {
         const haystack = `${row.name} ${row.catalog_group} ${row.segment}`.toLowerCase();
-        return q === "" || haystack.includes(q);
+        const matchesText = q === "" || haystack.includes(q);
+        const matchesGroup = !group || String(row.catalog_group || "").trim().toUpperCase() === group;
+        const matchesSegment = !segment || String(row.segment || "").trim().toUpperCase() === segment;
+        return matchesText && matchesGroup && matchesSegment;
     });
 
     orderCreateProduct.innerHTML = [
-        '<option value="">Choisir un produit</option>',
-        ...products.map((row) => `<option value="${row.id}">${row.name} - ${row.catalog_group}/${row.segment} - ${formatDT(row.price_dzd)}</option>`),
+        `<option value="">${saleType === "GROS" ? "Choix facultatif" : "Choisir un produit"}</option>`,
+        ...products.map((row) => `<option value="${row.id}">${row.name} - ${row.catalog_group}/${row.segment} - ${formatDT(getAdminProductUnitPrice(row, saleType))}</option>`),
     ].join("");
+
+    syncOrderCreateUnitPrice();
 };
 
 const getAdminOrderTotal = () => {
-    let total = 0;
-    adminOrderCart.forEach((item) => {
-        total += Number(item.price || 0) * Number(item.qty || 0);
-    });
-    return total;
+    return calculateAdminOrderTotals().totalToPay;
 };
 
 const renderAdminOrderCart = () => {
     if (!orderCreateItemsBody || !orderCreateTotal) return;
 
     if (adminOrderCart.size === 0) {
-        orderCreateItemsBody.innerHTML = '<tr><td colspan="6">Aucun produit ajoute pour le moment.</td></tr>';
+        orderCreateItemsBody.innerHTML = '<tr><td colspan="13">Aucun produit ajoute pour le moment.</td></tr>';
     } else {
+        const isWholesale = isWholesaleOrderCreate();
         orderCreateItemsBody.innerHTML = Array.from(adminOrderCart.values()).map((item) => `
             <tr>
+                <td>${item.code || item.id}</td>
                 <td>${item.name}</td>
-                <td>${item.catalog_group} / ${item.segment}</td>
-                <td>${formatDT(item.price)}</td>
-                <td>${item.qty}</td>
-                <td>${formatDT(item.price * item.qty)}</td>
+                <td><input class="table-inline-input" type="number" min="0" step="1" value="${Number(item.package_count || 0)}" data-order-create-package="${item.id}" ${isWholesale ? "" : "readonly"}></td>
+                <td><input class="table-inline-input" type="number" min="1" step="1" value="${item.qty}" data-order-create-qty="${item.id}"></td>
+                <td>${formatFixed3(item.stock || 0)}</td>
+                <td><input class="table-inline-input" type="number" min="0.001" step="0.001" value="${formatFixed3(item.price || 0)}" data-order-create-price="${item.id}" ${isWholesale ? "" : "readonly"}></td>
+                <td><input class="table-inline-input" type="number" min="0" step="0.001" value="${formatFixed3(item.discount_rate || 0)}" data-order-create-discount="${item.id}" ${isWholesale ? "" : "readonly"}></td>
+                <td><input class="table-inline-input" type="number" min="0" step="0.001" value="${formatFixed3(item.fodec_rate || 0)}" data-order-create-fodec="${item.id}" ${isWholesale ? "" : "readonly"}></td>
+                <td><input class="table-inline-input" type="number" min="0" step="0.001" value="${formatFixed3(item.consumption_rate || 0)}" data-order-create-consumption="${item.id}" ${isWholesale ? "" : "readonly"}></td>
+                <td><input class="table-inline-input" type="number" min="0" step="0.001" value="${formatFixed3(item.tva_rate || 0)}" data-order-create-tva="${item.id}" ${isWholesale ? "" : "readonly"}></td>
+                <td>${formatFixed3(calculateAdminOrderLine(item).totalHt)}</td>
+                <td>${formatFixed3(calculateAdminOrderLine(item).totalTtc)}</td>
                 <td><button class="mini-btn bad" type="button" data-order-create-remove="${item.id}">Retirer</button></td>
             </tr>
         `).join("");
     }
 
-    orderCreateTotal.textContent = formatDT(getAdminOrderTotal());
+    updateOrderCreatePaymentSummary();
 };
 
 const getSelectedAdminUser = () => {
@@ -923,34 +1305,75 @@ const getSelectedAdminUser = () => {
 const addAdminOrderItem = () => {
     const productId = Number(orderCreateProduct?.value || 0);
     const qty = Number(orderCreateQty?.value || 0);
-    const product = state.products.find((row) => Number(row.id) === productId);
+    const unitPrice = Number(orderCreateUnitPrice?.value || 0);
+    const packageCount = Number(orderCreatePackageCount?.value || 0);
+    const discountRate = Number(orderCreateItemDiscount?.value || 0);
+    const fodecRate = Number(orderCreateItemFodec?.value || 0);
+    const consumptionRate = Number(orderCreateItemConsumption?.value || 0);
+    const tvaRate = Number(orderCreateItemTva?.value || 0);
+    const saleType = getOrderCreateSaleType();
+    const isWholesale = saleType === "GROS";
+    const selectedProduct = state.products.find((row) => Number(row.id) === productId) || null;
+    const fallbackProduct = isWholesale && !selectedProduct ? findQuickInvoiceFallbackProduct() : null;
+    const product = selectedProduct || fallbackProduct;
+    const quickLabel = getQuickInvoiceLabel();
+    const displayName = selectedProduct ? selectedProduct.name : (quickLabel || fallbackProduct?.name || "");
+    const displayCode = selectedProduct ? (selectedProduct.code || selectedProduct.id) : (quickLabel || fallbackProduct?.code || fallbackProduct?.id || "");
+    const displayStock = selectedProduct
+        ? Number(selectedProduct.stock_bottles || 0)
+        : (isWholesale ? getQuickInvoiceAggregateStock() : Number(product?.stock_bottles || 0));
 
     if (!product) {
-        setNote(orderCreateMessage, "Choisissez un produit.", "error");
+        setNote(orderCreateMessage, isWholesale ? "Choisissez un parfum ou au moins un type rapide." : "Choisissez un produit.", "error");
         return;
     }
     if (qty <= 0) {
         setNote(orderCreateMessage, "Quantite invalide.", "error");
         return;
     }
+    if (unitPrice <= 0) {
+        setNote(orderCreateMessage, "Prix unitaire invalide.", "error");
+        return;
+    }
 
     const existing = adminOrderCart.get(String(product.id));
     if (existing) {
         existing.qty += qty;
+        existing.name = displayName || existing.name;
+        existing.code = displayCode || existing.code;
+        existing.price = isWholesale ? unitPrice : getAdminProductUnitPrice(product, saleType);
+        existing.package_count = isWholesale ? packageCount : 0;
+        existing.discount_rate = isWholesale ? discountRate : 0;
+        existing.fodec_rate = isWholesale ? 1 : 0;
+        existing.consumption_rate = isWholesale ? 25 : 0;
+        existing.tva_rate = isWholesale ? 19 : 19;
+        existing.display_name = displayName || existing.display_name || existing.name;
+        existing.display_code = displayCode || existing.display_code || existing.code;
     } else {
         adminOrderCart.set(String(product.id), {
             id: product.id,
             product_id: product.id,
-            name: product.name,
+            code: displayCode,
+            name: displayName,
             catalog_group: product.catalog_group,
             segment: product.segment,
-            price: Number(product.price_dzd || 0),
+            stock: displayStock,
+            price: isWholesale ? (unitPrice || getAdminProductUnitPrice(product, saleType)) : getAdminProductUnitPrice(product, saleType),
+            package_count: isWholesale ? packageCount : 0,
+            discount_rate: isWholesale ? discountRate : 0,
+            fodec_rate: isWholesale ? 1 : 0,
+            consumption_rate: isWholesale ? 25 : 0,
+            tva_rate: 19,
+            display_name: displayName,
+            display_code: displayCode,
             qty,
         });
     }
 
     setNote(orderCreateMessage, "Produit ajoute au panier admin.", "success");
     if (orderCreateQty) orderCreateQty.value = "1";
+    if (orderCreatePackageCount) orderCreatePackageCount.value = "0";
+    syncOrderCreateUnitPrice();
     renderAdminOrderCart();
 };
 
@@ -975,6 +1398,44 @@ const closePaymentModal = () => {
         paymentAmountInput.value = "";
     }
     setPaymentModalMessage("");
+};
+
+const setOverviewAccessMessage = (message = "", type = "") => {
+    if (!overviewAccessMessage) return;
+    overviewAccessMessage.textContent = message;
+    overviewAccessMessage.classList.remove("error", "success");
+    if (type) overviewAccessMessage.classList.add(type);
+};
+
+const closeOverviewAccessModal = () => {
+    overviewAccessModal?.classList.add("admin-hidden");
+    overviewAccessModal?.setAttribute("aria-hidden", "true");
+    if (overviewAccessInput) {
+        overviewAccessInput.value = "";
+    }
+    setOverviewAccessMessage("");
+};
+
+const openOverviewAccessModal = () => {
+    overviewAccessModal?.classList.remove("admin-hidden");
+    overviewAccessModal?.setAttribute("aria-hidden", "false");
+    setOverviewAccessMessage("");
+    window.setTimeout(() => overviewAccessInput?.focus(), 40);
+};
+
+const submitOverviewAccess = () => {
+    const code = String(overviewAccessInput?.value || "").trim();
+    if (code !== ADMIN_OVERVIEW_ACCESS_CODE) {
+        setOverviewAccessMessage("Code incorrect.", "error");
+        return;
+    }
+
+    adminOverviewUnlocked = true;
+    closeOverviewAccessModal();
+    activateAdminView("overview");
+    if (window.innerWidth <= 940) {
+        window.setTimeout(() => closeAdminMobileSidebar(), 30);
+    }
 };
 
 const openPaymentModal = (row) => {
@@ -1004,6 +1465,7 @@ const openPaymentModal = (row) => {
 
 const getFilteredOrders = () => {
     const q = (orderSearch?.value || "").trim().toLowerCase();
+    const type = orderTypeFilter?.value || "ALL";
     const shop = orderShopFilter?.value || "ALL";
     const deliveryStatus = orderStatusFilter?.value || "ALL";
     const invoiceStatus = orderInvoiceFilter?.value || "ALL";
@@ -1016,6 +1478,9 @@ const getFilteredOrders = () => {
         const searchBlob = [
             row.order_number,
             row.perfume_shop_name,
+            row.phone,
+            row.sale_type,
+            getOrderDocumentLabel(row.sale_type),
             row.invoice_number,
             row.first_name,
             row.last_name,
@@ -1025,6 +1490,7 @@ const getFilteredOrders = () => {
         ].join(" ").toLowerCase();
 
         const matchSearch = q === "" || searchBlob.includes(q);
+        const matchType = type === "ALL" || String(row.sale_type || "DETAIL").toUpperCase() === type;
         const matchShop = shop === "ALL" || (row.perfume_shop_name || "") === shop;
         const matchDelivery = deliveryStatus === "ALL" || row.order_status === deliveryStatus;
         const matchInvoice = invoiceStatus === "ALL" || rowInvoiceStatus === invoiceStatus;
@@ -1032,7 +1498,7 @@ const getFilteredOrders = () => {
         const matchDateFrom = dateFrom === "" || rowDate >= dateFrom;
         const matchDateTo = dateTo === "" || rowDate <= dateTo;
 
-        return matchSearch && matchShop && matchDelivery && matchInvoice && matchMode && matchDateFrom && matchDateTo;
+        return matchSearch && matchType && matchShop && matchDelivery && matchInvoice && matchMode && matchDateFrom && matchDateTo;
     });
 };
 
@@ -1052,6 +1518,100 @@ const renderOrderShopFilter = () => {
     ].join("");
 
     orderShopFilter.value = shops.includes(currentValue) ? currentValue : "ALL";
+};
+
+const getFilteredOrderDocuments = () => {
+    const q = (documentSearch?.value || "").trim().toLowerCase();
+    const type = documentTypeFilter?.value || "ALL";
+    const shop = (documentShopSearch?.value || "").trim().toLowerCase();
+    const phone = (documentPhoneSearch?.value || "").trim().toLowerCase();
+    const firstName = (documentFirstNameSearch?.value || "").trim().toLowerCase();
+    const lastName = (documentLastNameSearch?.value || "").trim().toLowerCase();
+    const dateFrom = documentDateFrom?.value || "";
+    const dateTo = documentDateTo?.value || "";
+
+    return state.orders.filter((row) => {
+        const rowDate = String(row.created_at || "").slice(0, 10);
+        const fullSearch = [
+            row.order_number,
+            row.invoice_number,
+            row.perfume_shop_name,
+            row.phone,
+            row.first_name,
+            row.last_name,
+            getOrderDocumentLabel(row.sale_type),
+            row.sale_type,
+        ].join(" ").toLowerCase();
+
+        const matchSearch = q === "" || fullSearch.includes(q);
+        const matchType = type === "ALL" || String(row.sale_type || "DETAIL").toUpperCase() === type;
+        const matchShop = shop === "" || String(row.perfume_shop_name || "").toLowerCase().includes(shop);
+        const matchPhone = phone === "" || String(row.phone || "").toLowerCase().includes(phone);
+        const matchFirstName = firstName === "" || String(row.first_name || "").toLowerCase().includes(firstName);
+        const matchLastName = lastName === "" || String(row.last_name || "").toLowerCase().includes(lastName);
+        const matchDateFrom = dateFrom === "" || rowDate >= dateFrom;
+        const matchDateTo = dateTo === "" || rowDate <= dateTo;
+
+        return matchSearch && matchType && matchShop && matchPhone && matchFirstName && matchLastName && matchDateFrom && matchDateTo;
+    });
+};
+
+const renderOrderDocuments = () => {
+    if (!adminDocumentsBody) return;
+
+    const filtered = getFilteredOrderDocuments();
+    const pagination = state.pagination.orderDocuments;
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pagination.perPage));
+    if (pagination.page > totalPages) pagination.page = totalPages;
+    const start = (pagination.page - 1) * pagination.perPage;
+    const paged = filtered.slice(start, start + pagination.perPage);
+
+    if (documentSectionStats) {
+        const grossCount = filtered.filter((row) => String(row.sale_type || "").toUpperCase() === "GROS").length;
+        const detailCount = filtered.filter((row) => String(row.sale_type || "").toUpperCase() !== "GROS").length;
+        const visibleShops = new Set(filtered.map((row) => String(row.perfume_shop_name || "").trim()).filter(Boolean)).size;
+        documentSectionStats.innerHTML = `
+            <article class="inline-stat">
+                <span>Documents filtres</span>
+                <strong>${filtered.length}</strong>
+            </article>
+            <article class="inline-stat">
+                <span>Factures stock</span>
+                <strong>${grossCount}</strong>
+            </article>
+            <article class="inline-stat">
+                <span>Bons de commande</span>
+                <strong>${detailCount}</strong>
+            </article>
+            <article class="inline-stat">
+                <span>Parfumeries visibles</span>
+                <strong>${visibleShops}</strong>
+            </article>
+        `;
+    }
+
+    adminDocumentsBody.innerHTML = paged.map((row) => `
+        <tr>
+            <td>${row.order_number}<br><small>${getOrderDocumentLabel(row.sale_type)}</small><br><small>${row.invoice_number || "-"}</small></td>
+            <td>${row.perfume_shop_name || "-"}</td>
+            <td>${row.first_name || "-"} ${row.last_name || ""}</td>
+            <td>${row.phone || "-"}</td>
+            <td>${String(row.created_at || "").slice(0, 10)}</td>
+            <td><strong>${formatDT(getOrderDisplayAmount(row))}</strong></td>
+            <td>
+                <div class="table-actions">
+                    <button class="mini-btn" data-document-view="${row.id}">Consulter</button>
+                    <button class="mini-btn" data-document-edit="${row.id}">Modifier</button>
+                    <button class="mini-btn" data-document-pdf="${row.id}">${String(row.sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
+                    <button class="mini-btn bad" data-document-delete="${row.id}">Supprimer</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+
+    if (documentsPagination) {
+        documentsPagination.innerHTML = renderPaginationControls(filtered.length, pagination.page, totalPages, "orderDocuments");
+    }
 };
 
 const renderOrders = () => {
@@ -1102,10 +1662,10 @@ const renderOrders = () => {
     adminOrdersBody.innerHTML = paged
         .map((row) => `
             <tr>
-                <td>${row.order_number}<br><small>${row.created_at.slice(0, 10)}</small></td>
+                <td>${row.order_number}<br><small>${getOrderDocumentLabel(row.sale_type)}</small><br><small>${formatAdminDateTime(row.created_at)}</small></td>
                 <td>${row.perfume_shop_name || "-"}<br><small>${row.first_name} ${row.last_name}</small></td>
                 <td>
-                    <strong>${formatDT(row.invoice_total || row.total_dzd || 0)}</strong>
+                    <strong>${formatDT(getOrderDisplayAmount(row))}</strong>
                     <br><small>Paye: ${formatDT(row.paid_amount || 0)}</small>
                     <br><small>Reste: ${formatDT(row.remaining_amount || 0)}</small>
                 </td>
@@ -1123,7 +1683,11 @@ const renderOrders = () => {
                     <div class="table-actions">
                         <button class="mini-btn" data-order-view="${row.id}">Consulter</button>
                         <button class="mini-btn" data-order-edit-open="${row.id}">Modifier</button>
-                        <button class="mini-btn" data-order-pdf="${row.id}">PDF</button>
+                        ${String(row.sale_type || "").toUpperCase() === "GROS"
+                            ? `<button class="mini-btn" data-order-generate-purchase="${row.id}">Generer bon de commande</button>`
+                            : `<button class="mini-btn" data-order-generate-invoice="${row.id}">Generer facture</button>`
+                        }
+                        <button class="mini-btn" data-order-pdf="${row.id}">${String(row.sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
                         <button class="mini-btn bad" data-order-delete="${row.id}">Supprimer</button>
                         <button class="mini-btn warn" data-order-apply="${row.id}">Valider livraison</button>
                         ${row.invoice_id ? `<button class="mini-btn" data-invoice-apply="${row.invoice_id}">Valider paiement</button>` : ""}
@@ -1431,6 +1995,7 @@ const loadOrders = async () => {
     state.ordersSummary = data.summary || {};
     renderOrderShopFilter();
     renderOrders();
+    renderOrderDocuments();
 };
 
 const parseOrderNotes = (notes) => {
@@ -1441,13 +2006,48 @@ const parseOrderNotes = (notes) => {
     }
 };
 
+const updateOrderDetailRowTotal = (row) => {
+    if (!(row instanceof HTMLElement)) return;
+    const qtyInput = row.querySelector("[data-order-detail-qty]");
+    const priceInput = row.querySelector("[data-order-detail-price]");
+    const totalEl = row.querySelector("[data-order-detail-total]");
+    if (!qtyInput || !totalEl) return;
+
+    const qty = Number(qtyInput.value || 0);
+    const fallbackPrice = Number(row.dataset.unitPrice || 0);
+    const price = priceInput instanceof HTMLInputElement ? Number(priceInput.value || 0) : fallbackPrice;
+    totalEl.textContent = formatDT(qty * price);
+};
+
+const collectOrderDetailItems = () => {
+    return Array.from(orderDetailItemsBody?.querySelectorAll("[data-order-detail-row]") || []).map((row) => {
+        const qtyInput = row.querySelector("[data-order-detail-qty]");
+        const priceInput = row.querySelector("[data-order-detail-price]");
+        const nameInput = row.querySelector("[data-order-detail-name]");
+
+        return {
+            id: Number(row.dataset.itemId || 0),
+            display_code: row.dataset.itemCode || "",
+            display_name: nameInput instanceof HTMLInputElement ? nameInput.value.trim() : (row.dataset.displayName || ""),
+            quantity_bottles: Number(qtyInput instanceof HTMLInputElement ? qtyInput.value || 0 : 0),
+            unit_price_dzd: priceInput instanceof HTMLInputElement ? Number(priceInput.value || 0) : Number(row.dataset.unitPrice || 0),
+        };
+    });
+};
+
 const fillOrderDetail = (payload) => {
     const order = payload.order || {};
     const items = payload.items || [];
     const client = parseOrderNotes(order.notes);
+    const lineItemsMeta = Array.isArray(client?.document_meta?.line_items) ? client.document_meta.line_items : [];
+    const documentLabel = getOrderDocumentLabel(order.sale_type);
+    const isWholesale = String(order.sale_type || "").toUpperCase() === "GROS";
 
-    orderDetailTitle.textContent = `Commande ${order.order_number || ""}`;
+    orderDetailTitle.textContent = `${documentLabel} ${order.order_number || ""}`;
     orderEditId.value = order.id || "";
+    if (orderEditForm) {
+        orderEditForm.dataset.saleType = String(order.sale_type || "DETAIL").toUpperCase();
+    }
     orderEditLastName.value = client.last_name || order.last_name || "";
     orderEditFirstName.value = client.first_name || order.first_name || "";
     orderEditPhone.value = client.phone || order.phone || "";
@@ -1459,8 +2059,12 @@ const fillOrderDetail = (payload) => {
             <strong>${order.invoice_number || "-"}</strong>
         </article>
         <article class="inline-stat">
+            <span>Type</span>
+            <strong>${documentLabel}</strong>
+        </article>
+        <article class="inline-stat">
             <span>Montant</span>
-            <strong>${formatDT(order.invoice_total || order.total_dzd || 0)}</strong>
+            <strong>${formatDT(getOrderDisplayAmount(order))}</strong>
         </article>
         <article class="inline-stat">
             <span>Paye / Reste</span>
@@ -1472,19 +2076,199 @@ const fillOrderDetail = (payload) => {
         </article>
     `;
 
-    orderDetailItemsBody.innerHTML = items.map((item) => `
-        <tr>
-            <td>${item.name}</td>
+    orderDetailItemsBody.innerHTML = items.map((item, index) => {
+        const lineMeta = lineItemsMeta[index] || {};
+        const label = lineMeta.display_name || item.name;
+        const qty = Number(item.quantity_bottles || 0);
+        const price = Number(item.unit_price_dzd || 0);
+        return `
+        <tr data-order-detail-row="1" data-item-id="${Number(item.id || 0)}" data-item-code="${escapeHtmlAttr(lineMeta.display_code || item.code || "")}" data-display-name="${escapeHtmlAttr(label)}" data-unit-price="${price}">
+            <td>${isWholesale ? `<input class="table-inline-input" type="text" value="${escapeHtmlAttr(label)}" data-order-detail-name="${Number(item.id || 0)}">` : label}</td>
             <td>${item.catalog_group} / ${item.segment}</td>
-            <td>${Number(item.quantity_bottles || 0)} bouteille${Number(item.quantity_bottles || 0) > 1 ? "s" : ""}</td>
-            <td>${formatDT(item.unit_price_dzd || 0)}</td>
-            <td>${formatDT(item.line_total_dzd || 0)}</td>
+            <td><input class="table-inline-input" type="number" min="1" step="1" value="${qty}" data-order-detail-qty="${Number(item.id || 0)}"></td>
+            <td>${isWholesale ? `<input class="table-inline-input" type="number" min="0.001" step="0.001" value="${price.toFixed(3)}" data-order-detail-price="${Number(item.id || 0)}">` : formatDT(price)}</td>
+            <td><strong data-order-detail-total="${Number(item.id || 0)}">${formatDT(qty * price)}</strong></td>
         </tr>
-    `).join("");
+    `;
+    }).join("");
+
+    if (exportOrderPdfBtn) {
+        exportOrderPdfBtn.textContent = `Exporter ${documentLabel}`;
+    }
+    if (generateInvoiceFromOrderBtn) {
+        const canGenerateInvoice = String(order.sale_type || "").toUpperCase() !== "GROS";
+        generateInvoiceFromOrderBtn.classList.toggle("admin-hidden", !canGenerateInvoice);
+        generateInvoiceFromOrderBtn.dataset.orderId = canGenerateInvoice ? String(order.id || "") : "";
+    }
 
     setNote(orderDetailMessage, "");
     orderDetailPanel?.classList.remove("admin-hidden");
     orderDetailPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+const prefillInvoiceFromOrder = (payload) => {
+    const order = payload.order || {};
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const client = parseOrderNotes(order.notes);
+
+    activateAdminView("orders");
+    resetAdminOrderBuilder();
+    showOrderCreatePanel("GROS");
+
+    if (orderCreateShop) {
+        orderCreateShop.value = client.shop || order.perfume_shop_name || "";
+    }
+    autofillOrderCreateClientFields();
+
+    if (orderCreateDocumentDate) {
+        orderCreateDocumentDate.value = todayIso();
+    }
+    if (orderCreateContactName) {
+        orderCreateContactName.value = [client.first_name || order.first_name, client.last_name || order.last_name].filter(Boolean).join(" ").trim();
+    }
+    if (orderCreatePhone) {
+        orderCreatePhone.value = client.phone || order.phone || "";
+    }
+    if (orderCreateObservation) {
+        orderCreateObservation.value = `Facture generee depuis ${order.order_number || "bon de commande"}`;
+    }
+
+    adminOrderCart.clear();
+    items.forEach((item, index) => {
+        const productId = Number(item.product_id || 0);
+        const product = state.products.find((row) => Number(row.id) === productId) || null;
+        const lineMeta = Array.isArray(client?.document_meta?.line_items) ? client.document_meta.line_items[index] || {} : {};
+        const label = lineMeta.display_name || item.name || product?.name || "Produit";
+        const code = lineMeta.display_code || item.code || product?.code || productId;
+
+        if (!productId) return;
+
+        adminOrderCart.set(String(productId), {
+            id: productId,
+            product_id: productId,
+            code,
+            name: label,
+            display_name: label,
+            display_code: code,
+            catalog_group: product?.catalog_group || item.catalog_group || "",
+            segment: product?.segment || item.segment || "",
+            stock: Number(product?.stock_bottles || 0),
+            qty: Number(item.quantity_bottles || 0),
+            package_count: 0,
+            price: Number(item.unit_price_dzd || 0),
+            discount_rate: 0,
+            fodec_rate: 1,
+            consumption_rate: 25,
+            tva_rate: 19,
+        });
+    });
+
+    renderAdminOrderCart();
+    setNote(orderCreateMessage, "Facture pre-remplie depuis le bon de commande. Vous pouvez maintenant changer les prix.", "success");
+};
+
+const prefillPurchaseOrderFromInvoice = (payload) => {
+    const order = payload.order || {};
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const client = parseOrderNotes(order.notes);
+    const documentMeta = client?.document_meta || {};
+
+    activateAdminView("orders");
+    resetAdminOrderBuilder();
+    showOrderCreatePanel("DETAIL");
+
+    if (orderCreateShop) {
+        orderCreateShop.value = client.shop || order.perfume_shop_name || "";
+    }
+    autofillOrderCreateClientFields();
+
+    if (orderCreateDocumentDate) {
+        orderCreateDocumentDate.value = documentMeta.document_date || todayIso();
+    }
+    if (orderCreateDocumentNumber) {
+        orderCreateDocumentNumber.value = documentMeta.document_number || "Auto";
+    }
+    if (orderCreateDepot) {
+        orderCreateDepot.value = documentMeta.depot || "PRINCIPAL";
+    }
+    if (orderCreateOrderCode) {
+        orderCreateOrderCode.value = documentMeta.order_code || order.order_number || "";
+    }
+    if (orderCreateContactName) {
+        orderCreateContactName.value = documentMeta.contact_name || [client.first_name || order.first_name, client.last_name || order.last_name].filter(Boolean).join(" ").trim();
+    }
+    if (orderCreatePhone) {
+        orderCreatePhone.value = client.phone || order.phone || "";
+    }
+    if (orderCreateClientCode) {
+        orderCreateClientCode.value = documentMeta.client_code || "";
+    }
+    if (orderCreateAddress) {
+        orderCreateAddress.value = documentMeta.address || "";
+    }
+    if (orderCreateCity) {
+        orderCreateCity.value = documentMeta.city || "";
+    }
+    if (orderCreatePostalCode) {
+        orderCreatePostalCode.value = documentMeta.postal_code || "";
+    }
+    if (orderCreateFiscalCode) {
+        orderCreateFiscalCode.value = documentMeta.fiscal_code || "";
+    }
+    if (orderCreateRepresentative) {
+        orderCreateRepresentative.value = documentMeta.representative || "";
+    }
+    if (orderCreateObservation) {
+        orderCreateObservation.value = documentMeta.observation || `Bon de commande genere depuis ${order.order_number || "facture"}`;
+    }
+    if (orderCreatePaymentMode) {
+        orderCreatePaymentMode.value = documentMeta.payment_mode || "Espece";
+    }
+    if (orderCreatePaidAmount) {
+        orderCreatePaidAmount.value = formatFixed3(documentMeta.amount_paid || 0);
+    }
+    if (orderCreatePieceRef) {
+        orderCreatePieceRef.value = documentMeta.piece_ref || "";
+    }
+    if (orderCreateBank) {
+        orderCreateBank.value = documentMeta.bank || "";
+    }
+    if (orderCreateDueDate) {
+        orderCreateDueDate.value = documentMeta.due_date || todayIso();
+    }
+
+    adminOrderCart.clear();
+    items.forEach((item, index) => {
+        const productId = Number(item.product_id || 0);
+        const product = state.products.find((row) => Number(row.id) === productId) || null;
+        const lineMeta = Array.isArray(client?.document_meta?.line_items) ? client.document_meta.line_items[index] || {} : {};
+        const label = lineMeta.display_name || item.name || product?.name || "Produit";
+        const code = lineMeta.display_code || item.code || product?.code || productId;
+
+        if (!productId || !product) return;
+
+        adminOrderCart.set(String(productId), {
+            id: productId,
+            product_id: productId,
+            code,
+            name: label,
+            display_name: label,
+            display_code: code,
+            catalog_group: product.catalog_group || item.catalog_group || "",
+            segment: product.segment || item.segment || "",
+            stock: Number(product.stock_bottles || 0),
+            qty: Number(item.quantity_bottles || 0),
+            package_count: 0,
+            price: getAdminProductUnitPrice(product, "DETAIL"),
+            discount_rate: 0,
+            fodec_rate: 0,
+            consumption_rate: 0,
+            tva_rate: 19,
+        });
+    });
+
+    renderAdminOrderCart();
+    setNote(orderCreateMessage, "Bon de commande pre-rempli depuis la facture. Les memes donnees et quantites ont ete reprises, seul le prix a ete remplace par le prix du site sans remise.", "success");
 };
 
 const loadEmployees = async () => {
@@ -1497,6 +2281,7 @@ const loadUsers = async () => {
     const data = await fetchJson(API.users);
     state.users = data.items || [];
     renderOrderCreateUserOptions();
+    autofillOrderCreateClientFields();
     renderUsers();
 };
 
@@ -1537,11 +2322,27 @@ orderSearch?.addEventListener("input", () => {
     state.pagination.orders.page = 1;
     renderOrders();
 });
+documentSearch?.addEventListener("input", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
 ordersAllBtn?.addEventListener("click", () => setOrderViewMode("ALL"));
 ordersPartialBtn?.addEventListener("click", () => setOrderViewMode("PARTIAL_ONLY"));
+orderTypeFilter?.addEventListener("change", () => {
+    state.pagination.orders.page = 1;
+    renderOrders();
+});
+documentTypeFilter?.addEventListener("change", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
 orderShopFilter?.addEventListener("change", () => {
     state.pagination.orders.page = 1;
     renderOrders();
+});
+documentShopSearch?.addEventListener("input", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
 });
 orderStatusFilter?.addEventListener("change", () => {
     state.pagination.orders.page = 1;
@@ -1551,16 +2352,37 @@ orderInvoiceFilter?.addEventListener("change", () => {
     state.pagination.orders.page = 1;
     renderOrders();
 });
+documentPhoneSearch?.addEventListener("input", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
+documentFirstNameSearch?.addEventListener("input", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
+documentLastNameSearch?.addEventListener("input", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
 orderDateFrom?.addEventListener("change", () => {
     state.pagination.orders.page = 1;
     renderOrders();
+});
+documentDateFrom?.addEventListener("change", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
 });
 orderDateTo?.addEventListener("change", () => {
     state.pagination.orders.page = 1;
     renderOrders();
 });
+documentDateTo?.addEventListener("change", () => {
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
 orderFiltersResetBtn?.addEventListener("click", () => {
     if (orderSearch) orderSearch.value = "";
+    if (orderTypeFilter) orderTypeFilter.value = "ALL";
     if (orderShopFilter) orderShopFilter.value = "ALL";
     if (orderStatusFilter) orderStatusFilter.value = "ALL";
     if (orderInvoiceFilter) orderInvoiceFilter.value = "ALL";
@@ -1569,14 +2391,91 @@ orderFiltersResetBtn?.addEventListener("click", () => {
     state.pagination.orders.page = 1;
     renderOrders();
 });
+documentFiltersResetBtn?.addEventListener("click", () => {
+    if (documentSearch) documentSearch.value = "";
+    if (documentTypeFilter) documentTypeFilter.value = "ALL";
+    if (documentShopSearch) documentShopSearch.value = "";
+    if (documentPhoneSearch) documentPhoneSearch.value = "";
+    if (documentFirstNameSearch) documentFirstNameSearch.value = "";
+    if (documentLastNameSearch) documentLastNameSearch.value = "";
+    if (documentDateFrom) documentDateFrom.value = "";
+    if (documentDateTo) documentDateTo.value = "";
+    state.pagination.orderDocuments.page = 1;
+    renderOrderDocuments();
+});
 showOrderCreateBtn?.addEventListener("click", () => {
     activateAdminView("orders");
-    showOrderCreatePanel();
+    resetAdminOrderBuilder();
+    showOrderCreatePanel("DETAIL");
 });
 hideOrderCreateBtn?.addEventListener("click", () => {
     hideOrderCreatePanel();
 });
+orderCreateProduct?.addEventListener("change", syncOrderCreateUnitPrice);
+orderCreateShop?.addEventListener("input", autofillOrderCreateClientFields);
 orderCreateProductSearch?.addEventListener("input", renderOrderCreateProductOptions);
+orderCreateQuickGroup?.addEventListener("change", () => {
+    renderOrderCreateProductOptions();
+    if (!orderCreateProduct?.value && isWholesaleOrderCreate()) {
+        const fallbackProduct = findQuickInvoiceFallbackProduct();
+        if (fallbackProduct && orderCreateUnitPrice) {
+            orderCreateUnitPrice.value = formatFixed3(getAdminProductUnitPrice(fallbackProduct, "GROS"));
+        }
+    }
+});
+orderCreateQuickSegment?.addEventListener("change", () => {
+    renderOrderCreateProductOptions();
+    if (!orderCreateProduct?.value && isWholesaleOrderCreate()) {
+        const fallbackProduct = findQuickInvoiceFallbackProduct();
+        if (fallbackProduct && orderCreateUnitPrice) {
+            orderCreateUnitPrice.value = formatFixed3(getAdminProductUnitPrice(fallbackProduct, "GROS"));
+        }
+    }
+});
+orderCreateDocumentDate?.addEventListener("change", () => {
+    if (orderCreateDueDate && !orderCreateDueDate.value) {
+        orderCreateDueDate.value = orderCreateDocumentDate.value;
+    }
+});
+orderCreatePaidAmount?.addEventListener("input", updateOrderCreatePaymentSummary);
+orderCreateSaleType?.addEventListener("change", () => {
+    const saleType = getOrderCreateSaleType();
+    syncOrderCreatePanelContent();
+    adminOrderCart.forEach((item) => {
+        const product = state.products.find((row) => Number(row.id) === Number(item.product_id));
+        if (product) {
+            item.price = getAdminProductUnitPrice(product, saleType);
+            if (saleType === "GROS") {
+                item.fodec_rate = 1;
+                item.consumption_rate = 25;
+                item.tva_rate = 19;
+            } else {
+                item.package_count = 0;
+                item.discount_rate = 0;
+                item.fodec_rate = 0;
+                item.consumption_rate = 0;
+                item.tva_rate = 19;
+            }
+        }
+    });
+    if (saleType === "GROS") {
+        if (orderCreatePackageCount) orderCreatePackageCount.value = "0";
+        if (orderCreateItemDiscount) orderCreateItemDiscount.value = "0.000";
+        if (orderCreateItemFodec) orderCreateItemFodec.value = "1.000";
+        if (orderCreateItemConsumption) orderCreateItemConsumption.value = "25.000";
+        if (orderCreateItemTva) orderCreateItemTva.value = "19.000";
+    } else {
+        if (orderCreatePackageCount) orderCreatePackageCount.value = "0";
+        if (orderCreateItemDiscount) orderCreateItemDiscount.value = "0.000";
+        if (orderCreateItemFodec) orderCreateItemFodec.value = "0.000";
+        if (orderCreateItemConsumption) orderCreateItemConsumption.value = "0.000";
+        if (orderCreateItemTva) orderCreateItemTva.value = "19.000";
+    }
+    renderOrderCreateProductOptions();
+    syncOrderCreateUnitPrice();
+    renderAdminOrderCart();
+    setNote(orderCreateMessage, `Tarif ${saleType === "GROS" ? "stock parfumerie" : "site"} applique.`, "success");
+});
 orderAddItemBtn?.addEventListener("click", addAdminOrderItem);
 employeeSearch?.addEventListener("input", renderEmployees);
 userSearch?.addEventListener("input", () => {
@@ -1782,6 +2681,16 @@ adminOrdersBody?.addEventListener("click", async (event) => {
         openOrderPdf(target.dataset.orderPdf);
         return;
     }
+    if (target.dataset.orderGenerateInvoice) {
+        const detail = await fetchJson(`${API.orders}/${target.dataset.orderGenerateInvoice}`);
+        prefillInvoiceFromOrder(detail);
+        return;
+    }
+    if (target.dataset.orderGeneratePurchase) {
+        const detail = await fetchJson(`${API.orders}/${target.dataset.orderGeneratePurchase}`);
+        prefillPurchaseOrderFromInvoice(detail);
+        return;
+    }
     if (target.dataset.orderDelete) {
         await fetchJson(`${API.orders}/${target.dataset.orderDelete}`, { method: "DELETE" });
         orderDetailPanel?.classList.add("admin-hidden");
@@ -1819,6 +2728,35 @@ adminOrdersBody?.addEventListener("click", async (event) => {
     }
 });
 
+adminDocumentsBody?.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (target.dataset.documentView || target.dataset.documentEdit) {
+        const id = target.dataset.documentView || target.dataset.documentEdit;
+        activateAdminView("orders");
+        const detail = await fetchJson(`${API.orders}/${id}`);
+        fillOrderDetail(detail);
+        return;
+    }
+    if (target.dataset.documentPdf) {
+        openOrderPdf(target.dataset.documentPdf);
+        return;
+    }
+    if (target.dataset.documentDelete) {
+        await fetchJson(`${API.orders}/${target.dataset.documentDelete}`, { method: "DELETE" });
+        orderDetailPanel?.classList.add("admin-hidden");
+        await loadOrders();
+        await loadSummary();
+    }
+});
+
+orderDetailItemsBody?.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    updateOrderDetailRowTotal(target.closest("tr"));
+});
+
 orderCreateItemsBody?.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
@@ -1828,12 +2766,91 @@ orderCreateItemsBody?.addEventListener("click", (event) => {
     setNote(orderCreateMessage, "Produit retire du panier admin.", "success");
 });
 
+orderCreateItemsBody?.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    const isWholesale = isWholesaleOrderCreate();
+
+    if (target.dataset.orderCreatePackage) {
+        if (!isWholesale) return;
+        const item = adminOrderCart.get(String(target.dataset.orderCreatePackage));
+        if (!item) return;
+        item.package_count = Number(target.value || 0);
+        renderAdminOrderCart();
+        return;
+    }
+
+    if (target.dataset.orderCreatePrice) {
+        if (!isWholesale) return;
+        const item = adminOrderCart.get(String(target.dataset.orderCreatePrice));
+        if (!item) return;
+        const nextPrice = Number(target.value || 0);
+        if (nextPrice > 0) {
+            item.price = nextPrice;
+            renderAdminOrderCart();
+        }
+        return;
+    }
+
+    if (target.dataset.orderCreateDiscount) {
+        if (!isWholesale) return;
+        const item = adminOrderCart.get(String(target.dataset.orderCreateDiscount));
+        if (!item) return;
+        item.discount_rate = Math.max(0, Number(target.value || 0));
+        renderAdminOrderCart();
+        return;
+    }
+
+    if (target.dataset.orderCreateFodec) {
+        if (!isWholesale) return;
+        const item = adminOrderCart.get(String(target.dataset.orderCreateFodec));
+        if (!item) return;
+        item.fodec_rate = Math.max(0, Number(target.value || 0));
+        renderAdminOrderCart();
+        return;
+    }
+
+    if (target.dataset.orderCreateConsumption) {
+        if (!isWholesale) return;
+        const item = adminOrderCart.get(String(target.dataset.orderCreateConsumption));
+        if (!item) return;
+        item.consumption_rate = Math.max(0, Number(target.value || 0));
+        renderAdminOrderCart();
+        return;
+    }
+
+    if (target.dataset.orderCreateTva) {
+        if (!isWholesale) return;
+        const item = adminOrderCart.get(String(target.dataset.orderCreateTva));
+        if (!item) return;
+        item.tva_rate = Math.max(0, Number(target.value || 0));
+        renderAdminOrderCart();
+        return;
+    }
+
+    if (target.dataset.orderCreateQty) {
+        const item = adminOrderCart.get(String(target.dataset.orderCreateQty));
+        if (!item) return;
+        const nextQty = Number(target.value || 0);
+        if (nextQty > 0) {
+            item.qty = nextQty;
+            renderAdminOrderCart();
+        }
+    }
+});
+
 hideOrderDetailBtn?.addEventListener("click", () => {
     orderDetailPanel?.classList.add("admin-hidden");
 });
 
 exportOrderPdfBtn?.addEventListener("click", () => {
     openOrderPdf(orderEditId.value);
+});
+
+generateInvoiceFromOrderBtn?.addEventListener("click", async () => {
+    if (!generateInvoiceFromOrderBtn?.dataset.orderId) return;
+    const detail = await fetchJson(`${API.orders}/${generateInvoiceFromOrderBtn.dataset.orderId}`);
+    prefillInvoiceFromOrder(detail);
 });
 
 orderEditForm?.addEventListener("submit", async (event) => {
@@ -1847,6 +2864,7 @@ orderEditForm?.addEventListener("submit", async (event) => {
                 first_name: orderEditFirstName.value.trim(),
                 phone: orderEditPhone.value.trim(),
                 shop: orderEditShop.value.trim(),
+                items: collectOrderDetailItems(),
             }),
         });
         setNote(orderDetailMessage, "Commande modifiee.", "success");
@@ -1873,16 +2891,45 @@ orderCreateForm?.addEventListener("submit", async (event) => {
 
     const payload = {
         user_id: Number(selectedUser.id),
+        sale_type: getOrderCreateSaleType(),
         client: {
-            last_name: selectedUser.last_name || "",
-            first_name: selectedUser.first_name || "",
-            phone: selectedUser.phone || "",
-            shop: selectedUser.perfume_shop_name || "",
+            last_name: selectedUser.last_name || orderCreateContactName?.value.trim() || "",
+            first_name: selectedUser.first_name || orderCreateContactName?.value.trim() || "",
+            phone: orderCreatePhone?.value.trim() || selectedUser.phone || "",
+            shop: orderCreateShop?.value.trim() || selectedUser.perfume_shop_name || "",
+        },
+        metadata: {
+            document_label: orderCreateDocumentLabel?.value.trim() || "",
+            document_number: orderCreateDocumentNumber?.value.trim() || "",
+            document_date: orderCreateDocumentDate?.value || "",
+            depot: orderCreateDepot?.value.trim() || "",
+            order_code: orderCreateOrderCode?.value.trim() || "",
+            client_code: orderCreateClientCode?.value.trim() || "",
+            contact_name: orderCreateContactName?.value.trim() || "",
+            address: orderCreateAddress?.value.trim() || "",
+            city: orderCreateCity?.value.trim() || "",
+            postal_code: orderCreatePostalCode?.value.trim() || "",
+            fiscal_code: orderCreateFiscalCode?.value.trim() || "",
+            representative: orderCreateRepresentative?.value.trim() || "",
+            observation: orderCreateObservation?.value.trim() || "",
+            payment_mode: orderCreatePaymentMode?.value || "",
+            amount_paid: Number(orderCreatePaidAmount?.value || 0),
+            piece_ref: orderCreatePieceRef?.value.trim() || "",
+            bank: orderCreateBank?.value.trim() || "",
+            due_date: orderCreateDueDate?.value || "",
+            totals: calculateAdminOrderTotals(),
         },
         items: Array.from(adminOrderCart.values()).map((item) => ({
             product_id: item.product_id,
             qty: item.qty,
             unit_price: item.price,
+            display_name: item.display_name || item.name,
+            display_code: item.display_code || item.code,
+            package_count: item.package_count || 0,
+            discount_rate: item.discount_rate || 0,
+            fodec_rate: item.fodec_rate || 0,
+            consumption_rate: item.consumption_rate || 0,
+            tva_rate: item.tva_rate || 0,
         })),
     };
 
@@ -1892,7 +2939,7 @@ orderCreateForm?.addEventListener("submit", async (event) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-        setNote(orderCreateMessage, "Commande admin enregistree.", "success");
+        setNote(orderCreateMessage, payload.sale_type === "GROS" ? "Facture admin enregistree." : "Bon de commande enregistre.", "success");
         resetAdminOrderBuilder();
         hideOrderCreatePanel();
         await loadOrders();
@@ -2000,6 +3047,21 @@ adminFaceOpenBtn?.addEventListener("click", async () => {
 paymentModalBackdrop?.addEventListener("click", closePaymentModal);
 paymentModalCloseBtn?.addEventListener("click", closePaymentModal);
 paymentModalCancelBtn?.addEventListener("click", closePaymentModal);
+overviewAccessModalBackdrop?.addEventListener("click", closeOverviewAccessModal);
+overviewAccessCloseBtn?.addEventListener("click", closeOverviewAccessModal);
+overviewAccessCancelBtn?.addEventListener("click", closeOverviewAccessModal);
+overviewAccessConfirmBtn?.addEventListener("click", submitOverviewAccess);
+
+overviewAccessInput?.addEventListener("input", () => {
+    setOverviewAccessMessage("");
+});
+
+overviewAccessInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        submitOverviewAccess();
+    }
+});
 
 paymentAmountInput?.addEventListener("input", () => {
     setPaymentModalMessage("");

@@ -24,6 +24,10 @@
     const dt = new Date(d);
     return isNaN(dt) ? '-' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   };
+  const fmtTime = (d) => {
+    const dt = new Date(d);
+    return isNaN(dt) ? '' : dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  };
   const bottleLabel = (qty) => `${qty} bouteille${qty > 1 ? 's' : ''}`;
 
   const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -429,6 +433,12 @@
     }
   }
 
+  function refreshClientProductStocks() {
+    shopProducts = [];
+    dashLoaded = false;
+    loadShop();
+  }
+
   window.filterSegment = function (seg, btn) {
     if (btn) {
       $$('.eco-nav-links button').forEach((b) => b.classList.remove('active'));
@@ -586,7 +596,8 @@
         phone: $('#ckLine2').value,
         city: $('#ckCity').value,
         region: $('#ckRegion').value,
-        country: $('#ckCountry').value
+        country: $('#ckCountry').value,
+        delivery_address: $('#ckDeliveryAddress')?.value || ''
       }
     };
 
@@ -601,6 +612,7 @@
       cart = [];
       editingOrderId = null;
       renderCart();
+      refreshClientProductStocks();
       loadOrders();
       shopStep('confirm');
     }).catch(() => {
@@ -680,6 +692,7 @@
       $('#ckCity').value = shipping.city || '';
       $('#ckRegion').value = shipping.region || '';
       $('#ckCountry').value = shipping.country || 'Tunisie';
+      if ($('#ckDeliveryAddress')) $('#ckDeliveryAddress').value = shipping.delivery_address || '';
       renderCart();
       renderCheckoutSummary();
       switchView('shop');
@@ -694,6 +707,7 @@
         alert(d.error || 'Suppression impossible.');
         return;
       }
+      refreshClientProductStocks();
       loadOrders();
     }).catch(() => alert('Erreur reseau lors de la suppression.'));
   };
@@ -712,7 +726,14 @@
     const q = ($('#invoiceSearch')?.value || '').toLowerCase();
     const st = $('#invoiceStatusFilter')?.value || 'ALL';
     let filtered = allInvoices;
-    if (q) filtered = filtered.filter((x) => String(x.invoice_number || '').toLowerCase().includes(q) || String(x.order_number || '').toLowerCase().includes(q));
+    if (q) {
+      filtered = filtered.filter((x) => [
+        x.invoice_number,
+        x.customer_name,
+        x.customer_display_name,
+        x.order_number
+      ].some((value) => String(value || '').toLowerCase().includes(q)));
+    }
     if (st !== 'ALL') filtered = filtered.filter((x) => x.payment_status === st || x.status === st);
 
     if (!filtered.length) {
@@ -720,19 +741,18 @@
       return;
     }
     let html = `<div class="orders-table-wrap"><table class="orders-table"><thead><tr>
-      <th>Facture</th><th>Date d'emission</th><th>Commande liee</th><th>Total</th><th>Paye</th><th>Reste</th><th>Statut Paiement</th><th>PDF</th>
+      <th>Facture</th><th>Date d'emission</th><th>Nom</th><th>Statut Paiement</th>
       </tr></thead><tbody>`;
     filtered.forEach((x) => {
       const payStatus = x.payment_status || x.status;
+      const customerName = x.customer_display_name || x.customer_name || '-';
+      const issuedDate = fmtDate(x.issued_at);
+      const issuedTime = fmtTime(x.issued_at);
       html += `<tr>
         <td><strong>${esc(x.invoice_number)}</strong></td>
-        <td>${fmtDate(x.issued_at)}</td>
-        <td>${esc(x.order_number || '-')}</td>
-        <td><strong>${formatDT(x.total_dzd)}</strong></td>
-        <td>${formatDT(x.paid_amount || 0)}</td>
-        <td><strong>${formatDT(x.remaining_amount || 0)}</strong></td>
+        <td>${issuedDate}${issuedTime ? ` ${issuedTime}` : ''}</td>
+        <td>${esc(customerName)}</td>
         <td>${statusPill(payStatus)}</td>
-        <td><a class="btn btn-sm btn-ghost" href="/invoice/${x.id}/pdf" target="_blank" rel="noopener noreferrer"><i class="bi bi-download"></i></a></td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -860,6 +880,10 @@
     const btnNext = $('#obNext');
     const btnPrev = $('#obPrev');
     const btnSkip = $('#obSkip');
+    const arabicGuideBtn = $('#arabicGuideBtn');
+    const shouldForceOpen = document.body?.dataset?.forceOnboarding === '1';
+    const onboardingLang = document.body?.dataset?.onboardingLang || 'fr';
+    const arabicNote = $('#obArabicNote');
     if (!modal || !slides.length) return;
 
     slides.forEach((_, i) => {
@@ -882,18 +906,48 @@
         : '<i class="bi bi-chevron-right"></i> Suivant';
     }
     function close() {
+      modal.classList.remove('ob-enter');
+      backdrop.classList.remove('ob-enter');
       modal.style.display = 'none';
       backdrop.style.display = 'none';
       localStorage.setItem(key, '1');
+      if (shouldForceOpen) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('onboarding');
+        url.searchParams.delete('lang');
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+      }
+    }
+    function open(force = false) {
+      if (force) {
+        localStorage.removeItem(key);
+      }
+      modal.classList.remove('ob-enter');
+      backdrop.classList.remove('ob-enter');
+      modal.style.display = 'flex';
+      backdrop.style.display = 'block';
+      goTo(0);
+      requestAnimationFrame(() => {
+        modal.classList.add('ob-enter');
+        backdrop.classList.add('ob-enter');
+      });
     }
     on(btnNext, 'click', () => current < slides.length - 1 ? goTo(current + 1) : close());
     on(btnPrev, 'click', () => current > 0 && goTo(current - 1));
     on(btnSkip, 'click', close);
     on(backdrop, 'click', close);
-    if (!localStorage.getItem(key)) {
-      modal.style.display = 'flex';
-      backdrop.style.display = 'block';
-      goTo(0);
+    on(arabicGuideBtn, 'click', () => open(true));
+
+    if (arabicGuideBtn && onboardingLang === 'ar') {
+      arabicGuideBtn.classList.add('is-highlighted');
+    }
+
+    if (arabicNote) {
+      arabicNote.hidden = onboardingLang !== 'ar';
+    }
+
+    if (shouldForceOpen || !localStorage.getItem(key)) {
+      open(shouldForceOpen);
     }
   })();
 

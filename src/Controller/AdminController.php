@@ -50,7 +50,7 @@ final class AdminController
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/admin-app.css?v=19">
+    <link rel="stylesheet" href="/assets/css/admin-app.css?v=22">
 </head>
 <body data-admin-name="__ADMIN_NAME__" data-admin-role="__ADMIN_ROLE__">
     <button type="button" id="mobileAdminSidebarToggle" class="mobile-sidebar-toggle hamburger-toggle" aria-label="Ouvrir ou fermer le menu admin">
@@ -74,11 +74,12 @@ final class AdminController
             </div>
 
             <nav class="admin-nav">
-                <button type="button" class="admin-link active" data-admin-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Vue generale</button>
+                <button type="button" class="admin-link" data-admin-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Vue generale</button>
                 <button type="button" class="admin-link" data-admin-view="account"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mon compte</button>
-                <button type="button" class="admin-link" data-admin-view="products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Produits</button>
+                <button type="button" class="admin-link active" data-admin-view="products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Produits</button>
                 <button type="button" class="admin-link" data-admin-view="raw-materials"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Stock matieres</button>
                 <button type="button" class="admin-link" data-admin-view="orders"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes</button>
+                <button type="button" class="admin-link" data-admin-view="documents"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>Documents</button>
                 <button type="button" class="admin-link" data-admin-view="users"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</button>
                 <button type="button" class="admin-link" data-admin-view="employees"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Employes</button>
                 <button type="button" class="admin-link" data-admin-view="expenses"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Charges</button>
@@ -113,7 +114,7 @@ final class AdminController
                 </div>
             </section>
 
-            <section id="admin-view-overview" class="admin-view active">
+            <section id="admin-view-overview" class="admin-view">
                 <section class="admin-hero">
                     <div>
                         <p class="eyebrow">Pilotage financier et operationnel</p>
@@ -187,7 +188,7 @@ final class AdminController
                 </section>
             </section>
 
-            <section id="admin-view-products" class="admin-view">
+            <section id="admin-view-products" class="admin-view active">
                 <section class="admin-card">
                     <div class="section-head">
                         <div>
@@ -478,6 +479,11 @@ final class AdminController
                         </div>
                         <div class="section-actions orders-toolbar">
                             <input id="orderSearch" class="search-input" type="search" placeholder="Rechercher commande, client, parfumerie, facture...">
+                            <select id="orderTypeFilter" class="search-input orders-filter">
+                                <option value="ALL">Tous types</option>
+                                <option value="DETAIL">BON_COMMANDE_SITE</option>
+                                <option value="GROS">FACTURE_STOCK</option>
+                            </select>
                             <select id="orderShopFilter" class="search-input orders-filter">
                                 <option value="ALL">Toutes parfumeries</option>
                             </select>
@@ -503,7 +509,7 @@ final class AdminController
                                 <span>Au</span>
                                 <input id="orderDateTo" class="search-input orders-filter" type="date">
                             </label>
-                            <button id="showOrderCreateBtn" class="primary-btn" type="button">Ajouter une commande</button>
+                            <button id="showOrderCreateBtn" class="primary-btn" type="button">Creer une commande</button>
                             <button id="orderFiltersResetBtn" class="soft-btn" type="button">Tout afficher</button>
                         </div>
                     </div>
@@ -530,8 +536,8 @@ final class AdminController
                     <div class="section-head">
                         <div>
                             <p class="section-kicker">Creation commande admin</p>
-                            <h3>Creer une commande pour une parfumerie</h3>
-                            <p class="section-copy">Choisissez une parfumerie existante, ajoutez les parfums souhaites puis enregistrez la commande sous son compte.</p>
+                            <h3 id="orderCreatePanelTitle">Creer une commande pour une parfumerie</h3>
+                            <p id="orderCreatePanelCopy" class="section-copy">Choisissez une parfumerie existante, ajoutez les parfums souhaites puis enregistrez la commande sous son compte.</p>
                         </div>
                         <div class="section-actions">
                             <p id="orderCreateMessage" class="form-note"></p>
@@ -539,48 +545,235 @@ final class AdminController
                         </div>
                     </div>
 
-                    <form id="orderCreateForm" class="admin-form">
-                        <div class="form-grid">
-                            <label>Nom de la parfumerie
-                                <input id="orderCreateShop" type="search" list="orderCreateShopList" placeholder="Chercher une parfumerie..." required>
-                                <datalist id="orderCreateShopList"></datalist>
-                            </label>
-                            <label>Recherche parfum
-                                <input id="orderCreateProductSearch" type="search" placeholder="Chercher un parfum...">
-                            </label>
-                            <label>Produit
-                                <select id="orderCreateProduct"></select>
-                            </label>
-                            <label>Quantite
-                                <input id="orderCreateQty" type="number" min="1" step="1" value="1">
-                            </label>
-                        </div>
+                    <form id="orderCreateForm" class="admin-form invoice-workspace">
+                        <div id="orderCreateWorkspace" class="invoice-workspace-sheet">
+                            <div class="invoice-software-head">
+                                <div class="invoice-software-badge">exec</div>
+                                <div class="invoice-software-actions">
+                                    <button id="orderCreateSubmitTopBtn" class="primary-btn" type="submit">Valider document</button>
+                                </div>
+                            </div>
 
-                        <div class="form-actions">
-                            <button id="orderAddItemBtn" class="soft-btn" type="button">Ajouter au panier</button>
-                            <span id="orderCreateTotal" class="order-create-total">0.00 DT</span>
-                        </div>
+                            <div class="invoice-layout-grid">
+                                <section class="invoice-panel">
+                                    <div class="invoice-panel-grid invoice-panel-grid-left">
+                                        <label>Document
+                                            <input id="orderCreateDocumentLabel" type="text" value="Facture stock parfumerie" readonly>
+                                        </label>
+                                        <label>Numero
+                                            <input id="orderCreateDocumentNumber" type="text" value="Auto" placeholder="Auto">
+                                        </label>
+                                        <label>Date
+                                            <input id="orderCreateDocumentDate" type="date" required>
+                                        </label>
+                                        <label>Nature
+                                            <select id="orderCreateSaleType" required>
+                                                <option value="DETAIL">Bon de commande site</option>
+                                                <option value="GROS">Facture stock parfumerie</option>
+                                            </select>
+                                        </label>
+                                        <label>Depot
+                                            <input id="orderCreateDepot" type="text" value="PRINCIPAL">
+                                        </label>
+                                        <label>N Cde
+                                            <input id="orderCreateOrderCode" type="text" placeholder="Bon / code interne">
+                                        </label>
+                                        <label>Tx remise
+                                            <input id="orderCreateGlobalDiscount" type="number" min="0" step="0.001" value="0.000">
+                                        </label>
+                                        <label>Tx excepte
+                                            <input id="orderCreateExceptionalTax" type="number" min="0" step="0.001" value="0.000">
+                                        </label>
+                                    </div>
+                                </section>
 
-                        <div class="table-wrap">
-                            <table class="admin-table">
-                                <thead>
-                                    <tr>
-                                        <th>Produit</th>
-                                        <th>Categorie</th>
-                                        <th>Prix</th>
-                                        <th>Quantite</th>
-                                        <th>Total</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="orderCreateItemsBody">
-                                    <tr><td colspan="6">Aucun produit ajoute pour le moment.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                <section class="invoice-panel">
+                                    <div class="invoice-panel-grid invoice-panel-grid-right">
+                                        <label>Parfumerie
+                                            <input id="orderCreateShop" type="search" list="orderCreateShopList" placeholder="Chercher une parfumerie..." required>
+                                            <datalist id="orderCreateShopList"></datalist>
+                                        </label>
+                                        <label>Code client
+                                            <input id="orderCreateClientCode" type="text" placeholder="Code client">
+                                        </label>
+                                        <label>Nom contact
+                                            <input id="orderCreateContactName" type="text" placeholder="Nom du contact">
+                                        </label>
+                                        <label>Telephone
+                                            <input id="orderCreatePhone" type="text" placeholder="Telephone client">
+                                        </label>
+                                        <label>Adresse
+                                            <input id="orderCreateAddress" type="text" placeholder="Adresse client">
+                                        </label>
+                                        <label>Ville
+                                            <input id="orderCreateCity" type="text" placeholder="Ville">
+                                        </label>
+                                        <label>Code postal
+                                            <input id="orderCreatePostalCode" type="text" placeholder="Code postal">
+                                        </label>
+                                        <label>Mat fiscal
+                                            <input id="orderCreateFiscalCode" type="text" placeholder="Matricule fiscal">
+                                        </label>
+                                        <label>Representant
+                                            <input id="orderCreateRepresentative" type="text" placeholder="Representant">
+                                        </label>
+                                    </div>
+                                </section>
 
-                        <div class="form-actions">
-                            <button class="primary-btn" type="submit">Enregistrer la commande</button>
+                                <aside class="invoice-side-summary">
+                                    <article class="invoice-side-box">
+                                        <span>Solde</span>
+                                        <strong id="orderCreateSidebarBalance">0.000</strong>
+                                    </article>
+                                    <article class="invoice-side-box">
+                                        <span>Encours</span>
+                                        <strong id="orderCreateSidebarPending">0.000</strong>
+                                    </article>
+                                    <article class="invoice-side-box">
+                                        <span>Echeance</span>
+                                        <strong id="orderCreateSidebarDue">0.000</strong>
+                                    </article>
+                                    <article class="invoice-side-box">
+                                        <span>Engagement</span>
+                                        <strong id="orderCreateSidebarCommitment">0.000</strong>
+                                    </article>
+                                </aside>
+                            </div>
+
+                            <section class="invoice-observation-box">
+                                <label>Observations
+                                    <textarea id="orderCreateObservation" rows="2" placeholder="Observation, details livraison, note interne..."></textarea>
+                                </label>
+                            </section>
+
+                            <section class="invoice-lines-card">
+                                <div class="invoice-line-entry">
+                                    <label>Type rapide
+                                        <select id="orderCreateQuickGroup">
+                                            <option value="">Type optionnel</option>
+                                            <option value="PRINCIPAL">PRINCIPAL</option>
+                                            <option value="SMART">SMART</option>
+                                            <option value="ENFANT">ENFANT</option>
+                                        </select>
+                                    </label>
+                                    <label>Profil
+                                        <select id="orderCreateQuickSegment">
+                                            <option value="">Profil optionnel</option>
+                                            <option value="FEMME">FEMME</option>
+                                            <option value="HOMME">HOMME</option>
+                                            <option value="UNISEX">UNISEX</option>
+                                            <option value="ENFANT">ENFANT</option>
+                                        </select>
+                                    </label>
+                                    <label>Produit
+                                        <select id="orderCreateProduct">
+                                            <option value="">Choix facultatif</option>
+                                        </select>
+                                    </label>
+                                    <label>Nb col
+                                        <input id="orderCreatePackageCount" type="number" min="0" step="1" value="0">
+                                    </label>
+                                    <label>Qte
+                                        <input id="orderCreateQty" type="number" min="1" step="1" value="1">
+                                    </label>
+                                    <label>Stock
+                                        <input id="orderCreateStockPreview" type="text" value="0.00" readonly>
+                                    </label>
+                                    <label>Prix
+                                        <input id="orderCreateUnitPrice" type="number" min="0.001" step="0.001" value="0.000">
+                                    </label>
+                                    <label>Rm%
+                                        <input id="orderCreateItemDiscount" type="number" min="0" step="0.001" value="0.000">
+                                    </label>
+                                    <label>Fodec%
+                                        <input id="orderCreateItemFodec" type="number" min="0" step="0.001" value="0.000">
+                                    </label>
+                                    <label>D.C %
+                                        <input id="orderCreateItemConsumption" type="number" min="0" step="0.001" value="0.000">
+                                    </label>
+                                    <label>TVA%
+                                        <input id="orderCreateItemTva" type="number" min="0" step="0.001" value="19.000">
+                                    </label>
+                                    <button id="orderAddItemBtn" class="soft-btn invoice-add-line-btn" type="button">Ajouter</button>
+                                </div>
+
+                                <div class="table-wrap invoice-lines-table-wrap">
+                                    <table class="admin-table invoice-lines-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Article</th>
+                                                <th>Designation</th>
+                                                <th>Nb Col</th>
+                                                <th>Qte</th>
+                                                <th>Stock</th>
+                                                <th>Prix</th>
+                                                <th>Rm%</th>
+                                                <th>Fodec%</th>
+                                                <th>D.C %</th>
+                                                <th>TVA%</th>
+                                                <th>Total HT</th>
+                                                <th>Total TTC</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="orderCreateItemsBody">
+                                            <tr><td colspan="13">Aucun produit ajoute pour le moment.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <div class="invoice-bottom-grid">
+                                <section class="invoice-payment-box">
+                                    <div class="invoice-payment-tabs">
+                                        <span class="is-active">Paiement</span>
+                                        <span>Transport</span>
+                                        <span>Poids/Colis</span>
+                                    </div>
+                                    <div class="invoice-payment-grid">
+                                        <label>Mode paiement
+                                            <select id="orderCreatePaymentMode">
+                                                <option value="Espece">Espece</option>
+                                                <option value="Cheque">Cheque</option>
+                                                <option value="Virement">Virement</option>
+                                                <option value="Traite">Traite</option>
+                                            </select>
+                                        </label>
+                                        <label>Montant paye
+                                            <input id="orderCreatePaidAmount" type="number" min="0" step="0.001" value="0.000">
+                                        </label>
+                                        <label>Piece
+                                            <input id="orderCreatePieceRef" type="text" placeholder="Piece">
+                                        </label>
+                                        <label>Banque
+                                            <input id="orderCreateBank" type="text" placeholder="Banque">
+                                        </label>
+                                        <label>Echeance
+                                            <input id="orderCreateDueDate" type="date">
+                                        </label>
+                                        <label>Nouveau solde
+                                            <input id="orderCreateNewBalance" type="text" value="0.000" readonly>
+                                        </label>
+                                    </div>
+                                </section>
+
+                                <section class="invoice-total-box">
+                                    <div class="invoice-total-grid">
+                                        <div><span>Fodec/Cict</span><strong id="orderCreateTotalFodec">0.000</strong></div>
+                                        <div><span>Total H.T</span><strong id="orderCreateTotalHt">0.000</strong></div>
+                                        <div><span>Droit de consommation</span><strong id="orderCreateTotalConsumption">0.000</strong></div>
+                                        <div><span>Remise</span><strong id="orderCreateTotalDiscount">0.000</strong></div>
+                                        <div><span>Base retenue</span><strong id="orderCreateWithholdingBase">0.000</strong></div>
+                                        <div><span>Total TVA</span><strong id="orderCreateTotalTva">0.000</strong></div>
+                                        <div><span>Retenue source</span><strong id="orderCreateWithholdingAmount">0.000</strong></div>
+                                        <div><span>Total a payer</span><strong id="orderCreateTotalTtc">0.000</strong></div>
+                                    </div>
+                                    <div class="invoice-total-footer">
+                                        <span id="orderCreateTotal" class="order-create-total">0.00 DT</span>
+                                        <button id="orderCreateSubmitBtn" class="primary-btn" type="submit">Enregistrer la commande</button>
+                                    </div>
+                                </section>
+                            </div>
                         </div>
                     </form>
                 </section>
@@ -593,6 +786,7 @@ final class AdminController
                         </div>
                         <div class="section-actions">
                             <p id="orderDetailMessage" class="form-note"></p>
+                            <button id="generateInvoiceFromOrderBtn" class="soft-btn admin-hidden" type="button">Generer facture</button>
                             <button id="exportOrderPdfBtn" class="soft-btn" type="button">Exporter PDF</button>
                             <button id="hideOrderDetailBtn" class="soft-btn" type="button">Fermer</button>
                         </div>
@@ -624,6 +818,57 @@ final class AdminController
                             <tbody id="orderDetailItemsBody"></tbody>
                         </table>
                     </div>
+                </section>
+            </section>
+
+            <section id="admin-view-documents" class="admin-view">
+                <section class="admin-card">
+                    <div class="section-head">
+                        <div>
+                            <p class="section-kicker">Gestion documents</p>
+                            <h3>Factures et bandes de commande</h3>
+                            <p class="section-copy">Retrouvez tous les documents admin avec pagination, recherche rapide et actions directes par parfumerie, telephone, nom, prenom et date.</p>
+                        </div>
+                        <div class="section-actions orders-toolbar">
+                            <input id="documentSearch" class="search-input" type="search" placeholder="Recherche globale document, facture, parfumerie...">
+                            <select id="documentTypeFilter" class="search-input orders-filter">
+                                <option value="ALL">Tous types</option>
+                                <option value="DETAIL">BON_COMMANDE_SITE</option>
+                                <option value="GROS">FACTURE_STOCK</option>
+                            </select>
+                            <input id="documentShopSearch" class="search-input orders-filter" type="search" placeholder="Parfumerie">
+                            <input id="documentPhoneSearch" class="search-input orders-filter" type="search" placeholder="Telephone">
+                            <input id="documentFirstNameSearch" class="search-input orders-filter" type="search" placeholder="Prenom">
+                            <input id="documentLastNameSearch" class="search-input orders-filter" type="search" placeholder="Nom">
+                            <label class="orders-date-filter">
+                                <span>Du</span>
+                                <input id="documentDateFrom" class="search-input orders-filter" type="date">
+                            </label>
+                            <label class="orders-date-filter">
+                                <span>Au</span>
+                                <input id="documentDateTo" class="search-input orders-filter" type="date">
+                            </label>
+                            <button id="documentFiltersResetBtn" class="soft-btn" type="button">Tout afficher</button>
+                        </div>
+                    </div>
+                    <div id="documentSectionStats" class="inline-stats"></div>
+                    <div class="table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Document</th>
+                                    <th>Parfumerie</th>
+                                    <th>Contact</th>
+                                    <th>Telephone</th>
+                                    <th>Date</th>
+                                    <th>Montant</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminDocumentsBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="documentsPagination" class="table-pagination"></div>
                 </section>
             </section>
 
@@ -765,8 +1010,33 @@ final class AdminController
         </div>
     </div>
 
+    <div id="overviewAccessModal" class="overview-lock-modal admin-hidden" aria-hidden="true">
+        <div id="overviewAccessModalBackdrop" class="overview-lock-backdrop"></div>
+        <div class="overview-lock-dialog" role="dialog" aria-modal="true" aria-labelledby="overviewAccessTitle">
+            <div class="overview-lock-head">
+                <div>
+                    <p class="section-kicker">Acces securise</p>
+                    <h3 id="overviewAccessTitle">Ouvrir le tableau de bord</h3>
+                </div>
+                <button id="overviewAccessCloseBtn" class="soft-btn" type="button">Fermer</button>
+            </div>
+            <div class="overview-lock-body">
+                <p class="section-copy">Saisissez le code admin pour afficher la vue generale.</p>
+                <label class="overview-lock-field">
+                    <span>Code d'acces</span>
+                    <input id="overviewAccessInput" class="search-input overview-lock-input" type="password" inputmode="numeric" placeholder="Code">
+                </label>
+                <p id="overviewAccessMessage" class="form-note"></p>
+            </div>
+            <div class="overview-lock-actions">
+                <button id="overviewAccessCancelBtn" class="soft-btn" type="button">Annuler</button>
+                <button id="overviewAccessConfirmBtn" class="primary-btn" type="button">Ouvrir</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/admin-app.js?v=10"></script>
+    <script src="/assets/js/admin-app.js?v=28"></script>
 </body>
 </html>
 HTML

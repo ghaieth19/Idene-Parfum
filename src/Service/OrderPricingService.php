@@ -37,31 +37,40 @@ final class OrderPricingService
         return $this->resolveItems($normalized['items'], $stmt);
     }
 
-    public function resolveAdminItems(array $items): array
+    public function resolveAdminItems(array $items, string $saleType = 'DETAIL'): array
     {
         $normalized = $this->normalizeItems($items, 'product_id');
         if (isset($normalized['error'])) {
             return $normalized;
         }
 
+        $saleType = strtoupper(trim($saleType));
+        if (!in_array($saleType, ['DETAIL', 'GROS'], true)) {
+            $saleType = 'DETAIL';
+        }
+
         $stmt = $this->db()->prepare(
             "SELECT
                 p.id AS product_id,
-                COALESCE(pp.price_dzd, pc.price_dzd, 0) AS unit_price
+                COALESCE(pp_target.price_dzd, pp_detail.price_dzd, pc.price_dzd, 0) AS unit_price
              FROM products p
              INNER JOIN perfume_catalog pc ON pc.id = p.perfume_catalog_id
-             LEFT JOIN product_prices pp
-                ON pp.product_id = p.id
-               AND pp.sale_type = 'DETAIL'
-               AND pp.ends_at IS NULL
+             LEFT JOIN product_prices pp_target
+                ON pp_target.product_id = p.id
+               AND pp_target.sale_type = :sale_type
+               AND pp_target.ends_at IS NULL
+             LEFT JOIN product_prices pp_detail
+                ON pp_detail.product_id = p.id
+               AND pp_detail.sale_type = 'DETAIL'
+               AND pp_detail.ends_at IS NULL
              WHERE p.id = :id
                AND p.is_active = 1
                AND pc.is_active = 1
-             ORDER BY pp.id DESC
+             ORDER BY pp_target.id DESC, pp_detail.id DESC
              LIMIT 1"
         );
 
-        return $this->resolveItems($normalized['items'], $stmt);
+        return $this->resolveItems($normalized['items'], $stmt, ['sale_type' => $saleType], $saleType === 'GROS');
     }
 
     public function total(array $items): float
@@ -92,24 +101,30 @@ final class OrderPricingService
             $normalized[] = [
                 'lookup_id' => $itemId,
                 'qty' => $qty,
+                'unit_price_override' => isset($line['unit_price']) && (float) $line['unit_price'] > 0
+                    ? (float) $line['unit_price']
+                    : null,
             ];
         }
 
         return ['items' => $normalized];
     }
 
-    private function resolveItems(array $items, \PDOStatement $stmt): array
+    private function resolveItems(array $items, \PDOStatement $stmt, array $extraParams = [], bool $allowUnitPriceOverride = true): array
     {
         $resolved = [];
 
         foreach ($items as $index => $line) {
-            $stmt->execute(['id' => $line['lookup_id']]);
+            $stmt->execute(['id' => $line['lookup_id']] + $extraParams);
             $product = $stmt->fetch();
             if (!$product) {
                 return ['error' => 'Produit introuvable a la ligne ' . ($index + 1) . '.', 'status' => 422];
             }
 
-            $unitPrice = (float) ($product['unit_price'] ?? 0);
+            $unitPrice = $allowUnitPriceOverride ? (float) ($line['unit_price_override'] ?? 0) : 0.0;
+            if ($unitPrice <= 0) {
+                $unitPrice = (float) ($product['unit_price'] ?? 0);
+            }
             if ($unitPrice <= 0) {
                 return ['error' => 'Prix serveur invalide a la ligne ' . ($index + 1) . '.', 'status' => 422];
             }
