@@ -9,11 +9,13 @@
 :root {
   /* Brand palette */
   --primary:       #0d6b63;
+  --primary-rgb:   13,107,99;
   --primary-dark:  #084d47;
   --primary-light: #e6f3f2;
   --primary-50:    rgba(13,107,99,.06);
   --primary-100:   rgba(13,107,99,.12);
   --primary-200:   rgba(13,107,99,.20);
+  --primary-300:   #2f8b84;
 
   --accent:        #ed7d4f;
   --accent-dark:   #d5632e;
@@ -24,9 +26,11 @@
   --gold-light:    #fdf6e7;
 
   --bg:            #f6f3ed;
+  --bg-alt:        #edf0f5;
   --bg-card:       #ffffff;
   --bg-elevated:   #ffffff;
   --bg-glass:      rgba(255,255,255,.72);
+  --surface:       rgba(255,255,255,.92);
 
   --text:          #1a2332;
   --text-secondary:#5a6a7e;
@@ -89,11 +93,13 @@
 
 [data-theme="dark"] {
   --primary:       #34D399;
+  --primary-rgb:   52,211,153;
   --primary-dark:  #10B981;
   --primary-light: rgba(52,211,153,0.12);
   --primary-50:    rgba(52,211,153,.06);
   --primary-100:   rgba(52,211,153,.12);
   --primary-200:   rgba(52,211,153,.20);
+  --primary-300:   #6ee7b7;
 
   --accent:        #F59E0B;
   --accent-dark:   #D97706;
@@ -104,9 +110,11 @@
   --gold-light:    rgba(252,211,77,0.12);
 
   --bg:            #0F1117;
+  --bg-alt:        #161B2D;
   --bg-card:       rgba(22, 27, 45, 0.72);
   --bg-elevated:   #1A2033;
   --bg-glass:      rgba(15, 17, 23, 0.72);
+  --surface:       rgba(255,255,255,.04);
 
   --text:          #F1F3F8;
   --text-secondary:#9CA3B8;

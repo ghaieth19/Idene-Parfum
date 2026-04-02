@@ -1,4 +1,4 @@
-/* ── Theme toggle ── */
+/* â”€â”€ Theme toggle â”€â”€ */
 const themeToggleBtn = document.getElementById("themeToggleBtn");
 
 const applyTheme = (theme) => {
@@ -14,7 +14,7 @@ themeToggleBtn?.addEventListener("click", () => {
     applyTheme(current === "dark" ? "light" : "dark");
 });
 
-/* ── DOM refs ── */
+/* â”€â”€ DOM refs â”€â”€ */
 const adminLinks = document.querySelectorAll(".admin-link");
 const adminViews = document.querySelectorAll(".admin-view");
 const adminLogoutBtn = document.getElementById("adminLogoutBtn");
@@ -66,6 +66,8 @@ const perfumeStockPagination = document.getElementById("perfumeStockPagination")
 const formatBottleCount = (value) => `${Number(value || 0).toFixed(2)} bouteille${Number(value || 0) > 1 ? "s" : ""}`;
 
 const orderSearch = document.getElementById("orderSearch");
+const ordersAllBtn = document.getElementById("ordersAllBtn");
+const ordersPartialBtn = document.getElementById("ordersPartialBtn");
 const orderShopFilter = document.getElementById("orderShopFilter");
 const orderStatusFilter = document.getElementById("orderStatusFilter");
 const orderInvoiceFilter = document.getElementById("orderInvoiceFilter");
@@ -101,6 +103,15 @@ const orderEditLastName = document.getElementById("orderEditLastName");
 const orderEditFirstName = document.getElementById("orderEditFirstName");
 const orderEditPhone = document.getElementById("orderEditPhone");
 const orderEditShop = document.getElementById("orderEditShop");
+const paymentModal = document.getElementById("paymentModal");
+const paymentModalBackdrop = document.getElementById("paymentModalBackdrop");
+const paymentModalCloseBtn = document.getElementById("paymentModalCloseBtn");
+const paymentModalCancelBtn = document.getElementById("paymentModalCancelBtn");
+const paymentModalConfirmBtn = document.getElementById("paymentModalConfirmBtn");
+const paymentAlreadyPaid = document.getElementById("paymentAlreadyPaid");
+const paymentRemaining = document.getElementById("paymentRemaining");
+const paymentAmountInput = document.getElementById("paymentAmountInput");
+const paymentModalMessage = document.getElementById("paymentModalMessage");
 
 const employeeForm = document.getElementById("employeeForm");
 const employeeFormPanel = document.getElementById("employeeFormPanel");
@@ -197,9 +208,11 @@ let state = {
     employees: [],
     users: [],
     expenses: [],
+    orderViewMode: "ALL",
 };
 
 let adminFaceStream = null;
+let pendingPartialPayment = null;
 
 const rawMaterialDraft = {
     material_category: "BASE",
@@ -397,6 +410,8 @@ const buildFaceMatrixFromElements = async (videoEl, canvasEl) => {
 const activateAdminView = (viewName) => {
     adminViews.forEach((view) => view.classList.toggle("active", view.id === `admin-view-${viewName}`));
     adminLinks.forEach((link) => link.classList.toggle("active", link.dataset.adminView === viewName));
+    window.location.hash = `admin-${viewName}`;
+    window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 const closeAdminMobileSidebar = () => {
@@ -413,11 +428,30 @@ const openAdminMobileSidebar = () => {
     document.body.classList.add("sidebar-open");
 };
 
+const handleAdminLinkNavigation = (link, event) => {
+    if (!(link instanceof HTMLElement)) return;
+    const viewName = String(link.dataset.adminView || "").trim();
+    if (!viewName) return;
+    event?.preventDefault();
+    event?.stopPropagation();
+    activateAdminView(viewName);
+    if (window.innerWidth <= 940) {
+        window.setTimeout(() => closeAdminMobileSidebar(), 30);
+    }
+};
+
 adminLinks.forEach((link) => {
-    link.addEventListener("click", () => {
-        activateAdminView(link.dataset.adminView);
-        if (window.innerWidth <= 940) closeAdminMobileSidebar();
+    link.addEventListener("click", (event) => {
+        handleAdminLinkNavigation(link, event);
     });
+
+    link.addEventListener("pointerup", (event) => {
+        handleAdminLinkNavigation(link, event);
+    }, { passive: false });
+
+    link.addEventListener("touchend", (event) => {
+        handleAdminLinkNavigation(link, event);
+    }, { passive: false });
 });
 
 [mobileAdminSidebarToggle, mobileAdminSidebarToggleInline].forEach((button) => {
@@ -436,6 +470,7 @@ window.addEventListener("resize", () => {
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeAdminMobileSidebar();
+    if (event.key === "Escape") closePaymentModal();
 });
 
 if (adminLogoutBtn) {
@@ -924,6 +959,49 @@ const normalizeOrderInvoiceStatus = (value) => {
     return status !== "" ? status : "NON_PAYE";
 };
 
+const setPaymentModalMessage = (message = "", type = "") => {
+    if (!paymentModalMessage) return;
+    paymentModalMessage.textContent = message;
+    paymentModalMessage.classList.remove("error", "success");
+    if (type) paymentModalMessage.classList.add(type);
+};
+
+const closePaymentModal = () => {
+    pendingPartialPayment = null;
+    paymentModal?.classList.add("admin-hidden");
+    paymentModal?.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("sidebar-open");
+    if (paymentAmountInput) {
+        paymentAmountInput.value = "";
+    }
+    setPaymentModalMessage("");
+};
+
+const openPaymentModal = (row) => {
+    const total = Number(row.invoice_total || row.total_dzd || 0);
+    const paid = Number(row.paid_amount || 0);
+    const remaining = Number(row.remaining_amount ?? Math.max(0, total - paid));
+
+    pendingPartialPayment = {
+        invoiceId: row.invoice_id,
+        remaining,
+    };
+
+    if (paymentAlreadyPaid) {
+        paymentAlreadyPaid.textContent = formatDT(paid);
+    }
+    if (paymentRemaining) {
+        paymentRemaining.textContent = formatDT(remaining);
+    }
+    if (paymentAmountInput) {
+        paymentAmountInput.value = remaining > 0 ? remaining.toFixed(2) : "";
+    }
+    setPaymentModalMessage("");
+    paymentModal?.classList.remove("admin-hidden");
+    paymentModal?.setAttribute("aria-hidden", "false");
+    setTimeout(() => paymentAmountInput?.focus(), 40);
+};
+
 const getFilteredOrders = () => {
     const q = (orderSearch?.value || "").trim().toLowerCase();
     const shop = orderShopFilter?.value || "ALL";
@@ -950,10 +1028,11 @@ const getFilteredOrders = () => {
         const matchShop = shop === "ALL" || (row.perfume_shop_name || "") === shop;
         const matchDelivery = deliveryStatus === "ALL" || row.order_status === deliveryStatus;
         const matchInvoice = invoiceStatus === "ALL" || rowInvoiceStatus === invoiceStatus;
+        const matchMode = state.orderViewMode !== "PARTIAL_ONLY" || rowInvoiceStatus === "PARTIEL";
         const matchDateFrom = dateFrom === "" || rowDate >= dateFrom;
         const matchDateTo = dateTo === "" || rowDate <= dateTo;
 
-        return matchSearch && matchShop && matchDelivery && matchInvoice && matchDateFrom && matchDateTo;
+        return matchSearch && matchShop && matchDelivery && matchInvoice && matchMode && matchDateFrom && matchDateTo;
     });
 };
 
@@ -977,6 +1056,8 @@ const renderOrderShopFilter = () => {
 
 const renderOrders = () => {
     const filtered = getFilteredOrders();
+    const partialOrders = state.orders.filter((row) => normalizeOrderInvoiceStatus(row.invoice_status) === "PARTIEL");
+    const partialRemainingTotal = partialOrders.reduce((sum, row) => sum + Number(row.remaining_amount || 0), 0);
     const pagination = state.pagination.orders;
     const totalPages = Math.max(1, Math.ceil(filtered.length / pagination.perPage));
     if (pagination.page > totalPages) pagination.page = totalPages;
@@ -1000,16 +1081,20 @@ const renderOrders = () => {
                 <strong>${filtered.length} / ${summary.orders_count || 0}</strong>
             </article>
             <article class="inline-stat">
-                <span>Commandes payees</span>
-                <strong>${summary.paid_orders_count || 0}</strong>
+                <span>Commandes partielles</span>
+                <strong>${partialOrders.length}</strong>
+            </article>
+            <article class="inline-stat">
+                <span>Total reste a payer</span>
+                <strong>${formatDT(partialRemainingTotal)}</strong>
             </article>
             <article class="inline-stat">
                 <span>Parfumeries visibles</span>
                 <strong>${uniqueShops}</strong>
             </article>
             <article class="inline-stat">
-                <span>Recherche dynamique</span>
-                <strong>${(orderSearch?.value || "").trim() !== "" ? "Active" : "Tous"}</strong>
+                <span>Vue active</span>
+                <strong>${state.orderViewMode === "PARTIAL_ONLY" ? "Paiements partiels" : "Toutes les commandes"}</strong>
             </article>
         `;
     }
@@ -1019,7 +1104,11 @@ const renderOrders = () => {
             <tr>
                 <td>${row.order_number}<br><small>${row.created_at.slice(0, 10)}</small></td>
                 <td>${row.perfume_shop_name || "-"}<br><small>${row.first_name} ${row.last_name}</small></td>
-                <td>${formatDT(row.total_dzd)}</td>
+                <td>
+                    <strong>${formatDT(row.invoice_total || row.total_dzd || 0)}</strong>
+                    <br><small>Paye: ${formatDT(row.paid_amount || 0)}</small>
+                    <br><small>Reste: ${formatDT(row.remaining_amount || 0)}</small>
+                </td>
                 <td>
                     <select class="inline-select" data-order-status="${row.id}">
                         ${["CONFIRMEE","EN_PREPARATION","EXPEDIEE","LIVREE","ANNULEE"].map((status) => `<option value="${status}" ${status === row.order_status ? "selected" : ""}>${status}</option>`).join("")}
@@ -1047,6 +1136,17 @@ const renderOrders = () => {
     if (ordersPagination) {
         ordersPagination.innerHTML = renderPaginationControls(filtered.length, pagination.page, totalPages, "orders");
     }
+};
+
+const setOrderViewMode = (mode) => {
+    state.orderViewMode = mode === "PARTIAL_ONLY" ? "PARTIAL_ONLY" : "ALL";
+    ordersAllBtn?.classList.toggle("is-active", state.orderViewMode === "ALL");
+    ordersPartialBtn?.classList.toggle("is-active", state.orderViewMode === "PARTIAL_ONLY");
+    if (orderInvoiceFilter) {
+        orderInvoiceFilter.value = state.orderViewMode === "PARTIAL_ONLY" ? "PARTIEL" : "ALL";
+    }
+    state.pagination.orders.page = 1;
+    renderOrders();
 };
 
 const renderPaginationControls = (totalItems, currentPage, totalPages, key) => {
@@ -1363,6 +1463,10 @@ const fillOrderDetail = (payload) => {
             <strong>${formatDT(order.invoice_total || order.total_dzd || 0)}</strong>
         </article>
         <article class="inline-stat">
+            <span>Paye / Reste</span>
+            <strong>${formatDT(order.paid_amount || 0)} / ${formatDT(order.remaining_amount || 0)}</strong>
+        </article>
+        <article class="inline-stat">
             <span>Statuts</span>
             <strong>${order.order_status || "-"} / ${order.invoice_status || "-"}</strong>
         </article>
@@ -1433,6 +1537,8 @@ orderSearch?.addEventListener("input", () => {
     state.pagination.orders.page = 1;
     renderOrders();
 });
+ordersAllBtn?.addEventListener("click", () => setOrderViewMode("ALL"));
+ordersPartialBtn?.addEventListener("click", () => setOrderViewMode("PARTIAL_ONLY"));
 orderShopFilter?.addEventListener("change", () => {
     state.pagination.orders.page = 1;
     renderOrders();
@@ -1694,11 +1800,19 @@ adminOrdersBody?.addEventListener("click", async (event) => {
         await loadSummary();
     }
     if (target.dataset.invoiceApply) {
+        const invoiceId = target.dataset.invoiceApply;
         const select = adminOrdersBody.querySelector(`[data-invoice-status="${target.dataset.invoiceApply}"]`);
-        await fetchJson(`/api/admin/invoices/${target.dataset.invoiceApply}/status`, {
+        const row = state.orders.find((item) => String(item.invoice_id) === String(invoiceId));
+        const payload = { status: select.value };
+        if (select.value === "PARTIEL") {
+            if (!row) return;
+            openPaymentModal(row);
+            return;
+        }
+        await fetchJson(`/api/admin/invoices/${invoiceId}/status`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: select.value }),
+            body: JSON.stringify(payload),
         });
         await loadOrders();
         await loadSummary();
@@ -1880,6 +1994,53 @@ adminFaceOpenBtn?.addEventListener("click", async () => {
         setNote(adminFaceMessage, "Camera ouverte. Capturez le visage a autoriser.", "success");
     } catch (error) {
         setNote(adminFaceMessage, explainCameraError(error), "error");
+    }
+});
+
+paymentModalBackdrop?.addEventListener("click", closePaymentModal);
+paymentModalCloseBtn?.addEventListener("click", closePaymentModal);
+paymentModalCancelBtn?.addEventListener("click", closePaymentModal);
+
+paymentAmountInput?.addEventListener("input", () => {
+    setPaymentModalMessage("");
+});
+
+paymentAmountInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        paymentModalConfirmBtn?.click();
+    }
+});
+
+paymentModalConfirmBtn?.addEventListener("click", async () => {
+    if (!pendingPartialPayment || !paymentAmountInput) return;
+
+    const amount = Number(String(paymentAmountInput.value || "").replace(",", ".").trim());
+    if (!Number.isFinite(amount) || amount <= 0) {
+        setPaymentModalMessage("Saisissez un montant valide.", "error");
+        return;
+    }
+    if (amount >= Number(pendingPartialPayment.remaining || 0)) {
+        setPaymentModalMessage("Le montant partiel doit rester inferieur au reste a payer.", "error");
+        return;
+    }
+
+    paymentModalConfirmBtn.disabled = true;
+    paymentModalConfirmBtn.textContent = "Validation...";
+    try {
+        await fetchJson(`/api/admin/invoices/${pendingPartialPayment.invoiceId}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "PARTIEL", amount_paid: amount }),
+        });
+        closePaymentModal();
+        await loadOrders();
+        await loadSummary();
+    } catch (error) {
+        setPaymentModalMessage(error.message || "Validation impossible.", "error");
+    } finally {
+        paymentModalConfirmBtn.disabled = false;
+        paymentModalConfirmBtn.textContent = "Valider le paiement";
     }
 });
 

@@ -37,7 +37,7 @@ final class ShopController
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=600">
-    <link rel="stylesheet" href="/assets/css/user-app.css?v=600">
+    <link rel="stylesheet" href="/assets/css/user-app.css?v=605">
     <link rel="stylesheet" href="/assets/css/client-ecommerce.css?v=600">
 </head>
 <body class="ecommerce-layout">
@@ -78,7 +78,7 @@ final class ShopController
                 </a>
                 <button type="button" id="logoutBtn" class="shop-nav-item" style="margin-top: auto;">
                     <span class="shop-nav-icon"><i class="bi bi-box-arrow-right"></i></span>
-                    <span>Déconnexion</span>
+                    <span>DÃƒÆ’Ã‚Â©connexion</span>
                 </button>
             </nav>
         </aside>
@@ -121,15 +121,15 @@ final class ShopController
             <div class="shop-content">
                 <div class="shop-section-header">
                     <h1 class="shop-section-title">Catalogue Professionnel</h1>
-                    <p class="shop-section-subtitle">Découvrez notre sélection de parfums premium pour votre boutique</p>
+                    <p class="shop-section-subtitle">DÃƒÆ’Ã‚Â©couvrez notre sÃƒÆ’Ã‚Â©lection de parfums premium pour votre boutique</p>
                 </div>
 
                 <!-- Filters -->
                 <div class="shop-filters">
                     <div class="filter-group">
-                        <label class="filter-label">Catégorie</label>
+                        <label class="filter-label">CatÃƒÆ’Ã‚Â©gorie</label>
                         <select class="filter-select" id="categoryFilter">
-                            <option value="ALL">Toutes les catégories</option>
+                            <option value="ALL">Toutes les catÃƒÆ’Ã‚Â©gories</option>
                             <option value="PRINCIPAL">Principal</option>
                             <option value="SMART">Smart</option>
                             <option value="ENFANT">Enfant</option>
@@ -140,7 +140,7 @@ final class ShopController
                         <select class="filter-select" id="sortFilter">
                             <option value="name">Nom (A-Z)</option>
                             <option value="price-asc">Prix croissant</option>
-                            <option value="price-desc">Prix décroissant</option>
+                            <option value="price-desc">Prix dÃƒÆ’Ã‚Â©croissant</option>
                         </select>
                     </div>
                 </div>
@@ -155,7 +155,7 @@ final class ShopController
 
                 <!-- Pagination -->
                 <div class="shop-pagination">
-                    <button class="pagination-btn" disabled>Précédent</button>
+                    <button class="pagination-btn" disabled>PrÃƒÆ’Ã‚Â©cÃƒÆ’Ã‚Â©dent</button>
                     <span class="pagination-info">Page 1 / 1</span>
                     <button class="pagination-btn" disabled>Suivant</button>
                 </div>
@@ -173,7 +173,7 @@ final class ShopController
         </div>
         <div class="cart-items">
             <div class="cart-empty">
-                <div class="cart-empty-icon">🛒</div>
+                <div class="cart-empty-icon">ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ¢â‚¬â„¢</div>
                 <p>Votre panier est vide</p>
             </div>
         </div>
@@ -201,7 +201,7 @@ final class ShopController
         <i class="bi bi-list"></i>
     </button>
 
-    <button id="themeToggleBtn" class="floating-theme-btn" title="Activer/Désactiver le mode sombre">🌙</button>
+    <button id="themeToggleBtn" class="floating-theme-btn" title="Activer/DÃƒÆ’Ã‚Â©sactiver le mode sombre">ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢</button>
 
     <!-- Scripts -->
     <script>
@@ -210,7 +210,7 @@ final class ShopController
             const saved = localStorage.getItem("idene-user-theme") || "light";
             document.documentElement.setAttribute("data-theme", saved);
             const btn = document.getElementById("themeToggleBtn");
-            if(btn) btn.innerHTML = saved === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '🌙';
+            if(btn) btn.innerHTML = saved === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : 'ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢';
         };
         initTheme();
 
@@ -219,7 +219,7 @@ final class ShopController
             const newTheme = current === "dark" ? "light" : "dark";
             document.documentElement.setAttribute("data-theme", newTheme);
             localStorage.setItem("idene-user-theme", newTheme);
-            document.getElementById("themeToggleBtn").innerHTML = newTheme === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '🌙';
+            document.getElementById("themeToggleBtn").innerHTML = newTheme === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : 'ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢';
         });
 
         // Logout functionality
@@ -231,7 +231,7 @@ final class ShopController
         });
     </script>
     <script src="/assets/js/client-ecommerce.js?v=600"></script>
-    <script src="/assets/js/user-app.js?v=600"></script>
+    <script src="/assets/js/user-app.js?v=606"></script>
 </body>
 </html>
 HTML);

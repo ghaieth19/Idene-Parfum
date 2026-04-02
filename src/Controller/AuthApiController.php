@@ -15,8 +15,8 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AuthApiController
 {
     private const FACE_MATRIX_LENGTH = 1024;
-    private const FACE_MATCH_THRESHOLD = 7.5;
-    private const FACE_MATCH_MIN_COSINE = 0.84;
+    private const FACE_MATCH_THRESHOLD = 10.5;
+    private const FACE_MATCH_MIN_COSINE = 0.72;
     private const FACE_PROFILE_LABEL_MAX_LENGTH = 120;
     private const SESSION_PENDING_FACE_MATRIX = 'face_auth.pending.matrix';
     private const PASSWORD_RESET_TTL_SECONDS = 3600;

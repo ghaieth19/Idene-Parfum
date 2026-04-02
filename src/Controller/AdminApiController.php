@@ -374,6 +374,34 @@ final class AdminApiController
         return $status;
     }
 
+    private function invoicePaymentSnapshot(\PDO $db, int $invoiceId): array
+    {
+        $stmt = $db->prepare(
+            "SELECT
+                i.total_dzd,
+                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
+             FROM invoices i
+             LEFT JOIN payments p ON p.invoice_id = i.id
+             WHERE i.id = :id
+             GROUP BY i.id, i.total_dzd
+             LIMIT 1"
+        );
+        $stmt->execute(['id' => $invoiceId]);
+        $invoice = $stmt->fetch();
+        if (!$invoice) {
+            throw new \RuntimeException('Facture introuvable.');
+        }
+
+        $total = (float) $invoice['total_dzd'];
+        $paid = (float) $invoice['paid_amount'];
+
+        return [
+            'total_amount' => $total,
+            'paid_amount' => $paid,
+            'remaining_amount' => max(0, $total - $paid),
+        ];
+    }
+
     #[Route('/api/admin/summary', name: 'api_admin_summary', methods: ['GET'])]
     public function summary(): JsonResponse
     {
@@ -799,12 +827,25 @@ final class AdminApiController
                 u.perfume_shop_name,
                 i.id AS invoice_id,
                 i.invoice_number,
-                i.status AS invoice_status
+                i.status AS invoice_status,
+                COALESCE(i.total_dzd, 0) AS invoice_total,
+                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
              FROM orders o
              INNER JOIN users u ON u.id = o.customer_user_id
              LEFT JOIN invoices i ON i.order_id = o.id
+             LEFT JOIN payments p ON p.invoice_id = i.id
+             GROUP BY o.id, o.order_number, o.status, o.total_dzd, o.created_at,
+                      u.first_name, u.last_name, u.perfume_shop_name,
+                      i.id, i.invoice_number, i.status, i.total_dzd
              ORDER BY o.id DESC"
         )->fetchAll();
+
+        foreach ($rows as &$row) {
+            $invoiceTotal = (float) ($row['invoice_total'] ?? 0);
+            $paidAmount = (float) ($row['paid_amount'] ?? 0);
+            $row['remaining_amount'] = max(0, $invoiceTotal - $paidAmount);
+        }
+        unset($row);
 
         $paidOrdersTotal = (float) $db->query(
             "SELECT COALESCE(SUM(i.total_dzd), 0)
@@ -979,11 +1020,16 @@ final class AdminApiController
                 i.invoice_number,
                 i.status AS invoice_status,
                 i.total_dzd AS invoice_total,
-                i.issued_at
+                i.issued_at,
+                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
              FROM orders o
              INNER JOIN users u ON u.id = o.customer_user_id
              LEFT JOIN invoices i ON i.order_id = o.id
+             LEFT JOIN payments p ON p.invoice_id = i.id
              WHERE o.id = :id
+             GROUP BY o.id, o.order_number, o.status, o.total_dzd, o.subtotal_dzd, o.notes, o.created_at,
+                      u.first_name, u.last_name, u.phone, u.perfume_shop_name,
+                      i.id, i.invoice_number, i.status, i.total_dzd, i.issued_at
              LIMIT 1"
         );
         $stmt->execute(['id' => $id]);
@@ -991,6 +1037,7 @@ final class AdminApiController
         if (!$order) {
             return new JsonResponse(['error' => 'Commande introuvable.'], 404);
         }
+        $order['remaining_amount'] = max(0, (float) ($order['invoice_total'] ?? 0) - (float) ($order['paid_amount'] ?? 0));
 
         $itemsStmt = $db->prepare(
             "SELECT
@@ -1153,37 +1200,28 @@ final class AdminApiController
 
         $payload = json_decode((string) $request->getContent(), true) ?: [];
         $status = strtoupper(trim((string) ($payload['status'] ?? '')));
+        $amountPaid = isset($payload['amount_paid']) ? (float) $payload['amount_paid'] : 0.0;
         $allowed = ['NON_PAYE', 'PARTIEL', 'PAYE'];
         if (!in_array($status, $allowed, true)) {
             return new JsonResponse(['error' => 'Statut paiement invalide.'], 422);
         }
 
         $db = $this->app->db();
-        $stmt = $db->prepare(
-            "SELECT
-                i.total_dzd,
-                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
-             FROM invoices i
-             LEFT JOIN payments p ON p.invoice_id = i.id
-             WHERE i.id = :id
-             GROUP BY i.id, i.total_dzd
-             LIMIT 1"
-        );
-        $stmt->execute(['id' => $id]);
-        $invoice = $stmt->fetch();
-        if (!$invoice) {
+        try {
+            $invoice = $this->invoicePaymentSnapshot($db, $id);
+        } catch (\RuntimeException) {
             return new JsonResponse(['error' => 'Facture introuvable.'], 404);
         }
 
         $db->beginTransaction();
         try {
             if ($status === 'PAYE') {
-                $remaining = max(0, (float) $invoice['total_dzd'] - (float) $invoice['paid_amount']);
+                $remaining = (float) $invoice['remaining_amount'];
                 if ($remaining <= 0) {
                     $this->syncInvoiceStatus($db, $id);
                     $db->commit();
 
-                    return new JsonResponse(['ok' => true]);
+                    return new JsonResponse(['ok' => true] + $this->invoicePaymentSnapshot($db, $id));
                 }
 
                 $db->prepare(
@@ -1199,18 +1237,36 @@ final class AdminApiController
 
                 return new JsonResponse(['error' => 'Des paiements existent deja pour cette facture.'], 409);
             } elseif ($status === 'PARTIEL') {
-                $paidAmount = (float) $invoice['paid_amount'];
-                $totalAmount = (float) $invoice['total_dzd'];
-                if ($paidAmount <= 0 || $paidAmount >= $totalAmount) {
+                $remaining = (float) $invoice['remaining_amount'];
+                if ($remaining <= 0) {
                     $db->rollBack();
 
-                    return new JsonResponse(['error' => 'Le statut partiel exige un paiement intermediaire existant.'], 409);
+                    return new JsonResponse(['error' => 'Cette facture est deja payee.'], 409);
                 }
+                if ($amountPaid <= 0) {
+                    $db->rollBack();
+
+                    return new JsonResponse(['error' => 'Saisissez le montant paye partiellement.'], 422);
+                }
+                if ($amountPaid >= $remaining) {
+                    $db->rollBack();
+
+                    return new JsonResponse(['error' => 'Le montant partiel doit etre inferieur au reste a payer. Utilisez PAYE pour solder la facture.'], 422);
+                }
+
+                $db->prepare(
+                    "INSERT INTO payments (invoice_id, method, amount_dzd, status, received_by)
+                     VALUES (:invoice_id, 'ESPECES', :amount_dzd, 'VALIDE', :received_by)"
+                )->execute([
+                    'invoice_id' => $id,
+                    'amount_dzd' => $amountPaid,
+                    'received_by' => $this->app->currentUserId(),
+                ]);
             }
 
             $this->syncInvoiceStatus($db, $id);
             $db->commit();
-            return new JsonResponse(['ok' => true]);
+            return new JsonResponse(['ok' => true] + $this->invoicePaymentSnapshot($db, $id));
         } catch (\Throwable $e) {
             $db->rollBack();
             return new JsonResponse(['error' => 'Mise a jour paiement impossible.'], 500);

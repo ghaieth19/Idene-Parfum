@@ -67,6 +67,7 @@ const setHtmlMessage = (el, html, type = "") => {
 
 const setFaceStatus = (text, type = "") => setMessage(faceStatus, text, type);
 const setFaceSignupStatus = (text, type = "") => setMessage(faceSignupStatus, text, type);
+const setFaceModalStatus = (text, type = "") => setMessage(faceModalText, text, type);
 
 const explainCameraError = (error) => {
     const raw = typeof error?.message === "string" ? error.message : "";
@@ -193,9 +194,7 @@ const closeFaceModal = () => {
 
 const openLoginFaceModal = async () => {
     currentFaceMode = "login";
-    if (faceModalText) {
-        faceModalText.textContent = "Cadrez votre visage puis capturez pour vous connecter.";
-    }
+    setFaceModalStatus("Cadrez votre visage puis capturez pour vous connecter.");
 
     currentFaceStream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -397,11 +396,15 @@ if (faceLoginBtn) {
 if (captureFaceBtn) {
     captureFaceBtn.addEventListener("click", async () => {
         captureFaceBtn.disabled = true;
+        const originalText = captureFaceBtn.textContent;
+        captureFaceBtn.textContent = "Analyse...";
+        setFaceModalStatus("Analyse du visage en cours...");
 
         try {
             const matrix = await buildFaceMatrixFromElements(faceVideo, faceCanvas);
             const result = await postJson(API.faceLogin, { matrix });
             setFaceStatus(result.message || "Connexion par visage validee.", "is-success");
+            setFaceModalStatus(result.message || "Connexion par visage validee.", "is-success");
             closeFaceModal();
 
             if (result.redirect) {
@@ -409,8 +412,10 @@ if (captureFaceBtn) {
             }
         } catch (error) {
             setFaceStatus(error.message || "Connexion par visage impossible.", "is-error");
+            setFaceModalStatus(error.message || "Connexion par visage impossible.", "is-error");
         } finally {
             captureFaceBtn.disabled = false;
+            captureFaceBtn.textContent = originalText;
         }
     });
 }
@@ -443,8 +448,7 @@ if (signupForm) {
 
         const wantsFace = !!(faceSignupOptIn && faceSignupOptIn.checked);
         if (wantsFace && !pendingFaceReady) {
-            setFaceSignupStatus("Validez d'abord le visage dans le bloc camera.", "is-error");
-            return;
+            setFaceSignupStatus("Compte cree sans visage pour le moment. Vous pourrez ajouter votre visage plus tard dans Mon compte.");
         }
 
         signupForm.dataset.submitting = "1";

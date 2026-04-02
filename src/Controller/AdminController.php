@@ -50,7 +50,7 @@ final class AdminController
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/admin-app.css?v=12">
+    <link rel="stylesheet" href="/assets/css/admin-app.css?v=19">
 </head>
 <body data-admin-name="__ADMIN_NAME__" data-admin-role="__ADMIN_ROLE__">
     <button type="button" id="mobileAdminSidebarToggle" class="mobile-sidebar-toggle hamburger-toggle" aria-label="Ouvrir ou fermer le menu admin">
@@ -74,14 +74,14 @@ final class AdminController
             </div>
 
             <nav class="admin-nav">
-                <button class="admin-link active" data-admin-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Vue generale</button>
-                <button class="admin-link" data-admin-view="account"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mon compte</button>
-                <button class="admin-link" data-admin-view="products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Produits</button>
-                <button class="admin-link" data-admin-view="raw-materials"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Stock matieres</button>
-                <button class="admin-link" data-admin-view="orders"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes</button>
-                <button class="admin-link" data-admin-view="users"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</button>
-                <button class="admin-link" data-admin-view="employees"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Employes</button>
-                <button class="admin-link" data-admin-view="expenses"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Charges</button>
+                <button type="button" class="admin-link active" data-admin-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Vue generale</button>
+                <button type="button" class="admin-link" data-admin-view="account"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mon compte</button>
+                <button type="button" class="admin-link" data-admin-view="products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Produits</button>
+                <button type="button" class="admin-link" data-admin-view="raw-materials"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Stock matieres</button>
+                <button type="button" class="admin-link" data-admin-view="orders"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes</button>
+                <button type="button" class="admin-link" data-admin-view="users"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</button>
+                <button type="button" class="admin-link" data-admin-view="employees"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Employes</button>
+                <button type="button" class="admin-link" data-admin-view="expenses"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Charges</button>
             </nav>
 
             <div class="admin-sidebar-footer">
@@ -472,6 +472,10 @@ final class AdminController
                             <h3>Commandes et paiements</h3>
                             <p class="section-copy">Consultez les commandes, voyez le total paye, la recette du jour et gerez les actions de suivi sur chaque dossier.</p>
                         </div>
+                        <div class="orders-view-switch" role="tablist" aria-label="Vue commandes">
+                            <button id="ordersAllBtn" class="soft-btn is-active" type="button">Toutes les commandes</button>
+                            <button id="ordersPartialBtn" class="soft-btn" type="button">Paiements partiels</button>
+                        </div>
                         <div class="section-actions orders-toolbar">
                             <input id="orderSearch" class="search-input" type="search" placeholder="Rechercher commande, client, parfumerie, facture...">
                             <select id="orderShopFilter" class="search-input orders-filter">
@@ -727,8 +731,42 @@ final class AdminController
         </main>
     </div>
 
+    <div id="paymentModal" class="payment-modal admin-hidden" aria-hidden="true">
+        <div id="paymentModalBackdrop" class="payment-modal-backdrop"></div>
+        <div class="payment-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+            <div class="payment-modal-head">
+                <div>
+                    <p class="section-kicker">Paiement partiel</p>
+                    <h3 id="paymentModalTitle">Enregistrer un paiement partiel</h3>
+                </div>
+                <button id="paymentModalCloseBtn" class="soft-btn" type="button">Fermer</button>
+            </div>
+            <div class="payment-modal-body">
+                <div class="payment-modal-stats">
+                    <article class="payment-stat-card">
+                        <span>Deja paye</span>
+                        <strong id="paymentAlreadyPaid">0.00 DT</strong>
+                    </article>
+                    <article class="payment-stat-card">
+                        <span>Reste a payer</span>
+                        <strong id="paymentRemaining">0.00 DT</strong>
+                    </article>
+                </div>
+                <label class="payment-modal-field">
+                    <span>Montant paye maintenant</span>
+                    <input id="paymentAmountInput" class="search-input payment-modal-input" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+                </label>
+                <p id="paymentModalMessage" class="form-note"></p>
+            </div>
+            <div class="payment-modal-actions">
+                <button id="paymentModalCancelBtn" class="soft-btn" type="button">Annuler</button>
+                <button id="paymentModalConfirmBtn" class="primary-btn" type="button">Valider le paiement</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/admin-app.js?v=3"></script>
+    <script src="/assets/js/admin-app.js?v=10"></script>
 </body>
 </html>
 HTML

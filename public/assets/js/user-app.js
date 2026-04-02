@@ -1,159 +1,299 @@
-/* ═══════════════════════════════════════════════════════════════
-   IDENE PARFUM — Client E-Commerce JS v2.1
-   Shop + Panier + Commandes + Factures + Profil
-   ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-
-  /* ── Theme toggle ── */
-  const themeToggleBtn = document.getElementById("themeToggleBtn");
-  const applyTheme = (theme) => {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("idene-user-theme", theme);
-      if(themeToggleBtn) {
-          themeToggleBtn.innerHTML = theme === "dark" 
-              ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' 
-              : '🌙';
-      }
-  };
-  const savedTheme = localStorage.getItem("idene-user-theme") || "light";
-  applyTheme(savedTheme);
-
-  themeToggleBtn?.addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme") || "light";
-      applyTheme(current === "dark" ? "light" : "dark");
-  });
 
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
   const on = (el, ev, fn) => el?.addEventListener(ev, fn);
-
-  const DZD = (n) => new Intl.NumberFormat('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' DZD';
-  const fmtDate = (d) => { const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); };
-  const debounce = (fn, ms = 300) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
-
-  // ── Status helpers ──────────────────────────────────
-  const statusColors = {
-    BROUILLON: 'status-brouillon', CONFIRMEE: 'status-confirmee', EN_PREPARATION: 'status-en_preparation',
-    EXPEDIEE: 'status-expediee', LIVREE: 'status-livree', ANNULEE: 'status-annulee',
-    NON_PAYE: 'status-non_paye', PARTIEL: 'status-partiel', PAYE: 'status-paye', ANNULE: 'status-annule'
+  const debounce = (fn, ms = 300) => {
+    let t;
+    return (...a) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...a), ms);
+    };
   };
-  const statusLabel = (s) => (s || '').replace(/_/g, ' ');
-  const statusPill = (s) => `<span class="status-pill ${statusColors[s] || ''}">${statusLabel(s)}</span>`;
+  const esc = (t) => {
+    const d = document.createElement('div');
+    d.textContent = t ?? '';
+    return d.innerHTML;
+  };
+  const formatDT = (n) => new Intl.NumberFormat('fr-TN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Number(n || 0)) + ' DT';
+  const fmtDate = (d) => {
+    const dt = new Date(d);
+    return isNaN(dt) ? '-' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+  const bottleLabel = (qty) => `${qty} bouteille${qty > 1 ? 's' : ''}`;
 
-  const segEmoji = { HOMME: '🧴', FEMME: '🌸', ENFANT: '🧸', MIXTE: '💧' };
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('idene-user-theme', theme);
+    if (themeToggleBtn) {
+      themeToggleBtn.innerHTML = theme === 'dark'
+        ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>'
+        : '<i class="bi bi-moon-stars-fill"></i>';
+    }
+  };
+  applyTheme(localStorage.getItem('idene-user-theme') || 'light');
+  themeToggleBtn?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  const statusColors = {
+    BROUILLON: 'status-brouillon',
+    CONFIRMEE: 'status-confirmee',
+    EN_PREPARATION: 'status-en_preparation',
+    EXPEDIEE: 'status-expediee',
+    LIVREE: 'status-livree',
+    ANNULEE: 'status-annulee',
+    NON_PAYE: 'status-non_paye',
+    PARTIEL: 'status-partiel',
+    PAYE: 'status-paye',
+    ANNULE: 'status-annule'
+  };
+  const statusPill = (s) => `<span class="status-pill ${statusColors[s] || ''}">${String(s || '').replace(/_/g, ' ')}</span>`;
   const segBadge = (s) => {
     const cls = { HOMME: 'badge-info', FEMME: 'badge-accent', MIXTE: 'badge-primary', ENFANT: 'badge-gold' };
-    return `<span class="badge ${cls[s] || 'badge-neutral'} badge-dot">${s}</span>`;
+    return `<span class="badge ${cls[s] || 'badge-neutral'} badge-dot">${esc(s)}</span>`;
   };
   const stockBadge = (st) => {
     if (st === 'out_of_stock') return '<span class="badge badge-danger">Rupture</span>';
-    if (st === 'limited') return '<span class="badge badge-warning">Limité</span>';
+    if (st === 'limited') return '<span class="badge badge-warning">Limite</span>';
     return '<span class="badge badge-success">En stock</span>';
   };
-  function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-  // ── Layout logic ──────────────────────────────────────
-  const views = { dashboard: 'viewDashboard', shop: 'viewShop', orders: 'viewOrders', invoices: 'viewInvoices', profile: 'viewProfile' };
+  const views = {
+    dashboard: 'viewDashboard',
+    shop: 'viewShop',
+    orders: 'viewOrders',
+    invoices: 'viewInvoices',
+    profile: 'viewProfile'
+  };
+
+  const profileMessage = $('#profileMessage');
+  const passwordMessage = $('#passwordMessage');
+  const faceAccountInfo = $('#faceAccountInfo');
+  const faceAccountSetup = $('#faceAccountSetup');
+  const faceAccountMessage = $('#faceAccountMessage');
+  const accountFaceVideo = $('#accountFaceVideo');
+  const accountFaceCanvas = $('#accountFaceCanvas');
+  const accountFacePassword = $('#faceAccountPassword');
+  const accountFaceOpenBtn = $('#accountFaceOpenBtn');
+  const accountFaceSaveBtn = $('#accountFaceSaveBtn');
+
+  const API = {
+    profile: '/api/client/profile',
+    password: '/api/client/password',
+    faceStatus: '/api/client/account/face-status',
+    faceCreate: '/api/client/account/face'
+  };
+
+  let shopProducts = [];
+  let cart = [];
+  let currentSegment = 'ALL';
+  let allOrders = [];
+  let allInvoices = [];
+  let dashLoaded = false;
+  let editingOrderId = null;
+  let accountFaceStream = null;
+  let accountFaceStatusLoaded = false;
+
+  function renderBottomNav(name) {
+    $$('.mobile-bottom-nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+  }
 
   window.switchView = function (name) {
-    $$('.view').forEach(v => v.classList.remove('active'));
+    if (name !== 'profile') {
+      stopAccountFaceCamera();
+    }
+    $$('.view').forEach((v) => v.classList.remove('active'));
     const el = $(`#${views[name]}`);
     if (el) el.classList.add('active');
-    
-    // Update active state in bottom nav
-    $$('.mobile-bottom-nav button').forEach(b => {
-      b.classList.toggle('active', b.dataset.view === name);
-    });
+    renderBottomNav(name);
 
     if (name === 'dashboard') loadDashboard();
     if (name === 'shop') loadShop();
     if (name === 'orders') loadOrders();
     if (name === 'invoices') loadInvoices();
+    if (name === 'profile') loadFaceAccountStatus();
     window.location.hash = name;
   };
 
-  // Nav actions
   const profileBtn = $('#profileDropdownBtn');
   const profileMenu = $('#profileDropdown');
-  const brandLink = $('.eco-brand');
-  on(brandLink, 'click', (e) => {
+  on($('.eco-brand'), 'click', (e) => {
     e.preventDefault();
     window.location.assign('/accueil');
   });
   on(profileBtn, 'click', (e) => {
-      e.stopPropagation();
-      profileMenu?.classList.toggle('show');
+    e.stopPropagation();
+    profileMenu?.classList.toggle('show');
   });
   window.closeProfileDropdown = () => profileMenu?.classList.remove('show');
   on(document, 'click', (e) => {
-      if (!profileBtn?.contains(e.target) && !profileMenu?.contains(e.target)) {
-          window.closeProfileDropdown();
-      }
+    if (!profileBtn?.contains(e.target) && !profileMenu?.contains(e.target)) {
+      window.closeProfileDropdown();
+    }
   });
-
-  const mobNavToggle = $('#mobileNavToggle');
-  const mobMenu = $('#ecoMobileMenu');
-  on(mobNavToggle, 'click', () => {
-      mobMenu?.classList.toggle('open');
-  });
-
-  // Slide-out cart
-  const cartBtn = $('#floatingCartBtn');
-  on(cartBtn, 'click', () => {
-      document.body.classList.add('cart-open');
-  });
-
-  // Logout
-  window.logoutUser = async function() {
-      try {
-          await fetch('/api/auth/logout', { method: 'POST' });
-          window.location.href = '/accueil';
-      } catch (e) {
-          console.error('Logout error', e);
-          window.location.href = '/accueil';
-      }
+  on($('#mobileNavToggle'), 'click', () => $('#ecoMobileMenu')?.classList.toggle('open'));
+  on($('#floatingCartBtn'), 'click', () => document.body.classList.add('cart-open'));
+  window.logoutUser = async function () {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      window.location.href = '/accueil';
+    }
   };
 
-  // ══════════════════════════════════════════════════════
-  //  DASHBOARD
-  // ══════════════════════════════════════════════════════
-  let dashLoaded = false;
+  const setFeedback = (el, message, type = 'success') => {
+    if (!el) return;
+    if (!message) {
+      el.innerHTML = '';
+      return;
+    }
+    const cls = type === 'error' ? 'alert-danger' : 'alert-success';
+    el.innerHTML = `<div class="alert ${cls} mt-2">${esc(message)}</div>`;
+  };
+
+  const fetchJson = async (url, options = {}) => {
+    const response = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...(options.headers || {}) },
+      ...options
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Erreur serveur.');
+    }
+    return data;
+  };
+
+  const stopAccountFaceCamera = () => {
+    if (accountFaceStream) {
+      accountFaceStream.getTracks().forEach((track) => track.stop());
+      accountFaceStream = null;
+    }
+    if (accountFaceVideo) {
+      accountFaceVideo.srcObject = null;
+    }
+  };
+
+  const explainCameraError = (error) => {
+    const raw = typeof error?.message === 'string' ? error.message : '';
+    const name = typeof error?.name === 'string' ? error.name : '';
+    if (!window.isSecureContext) return 'La camera exige http://localhost ou https.';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return 'Acces a la camera refuse.';
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return 'Aucune camera disponible.';
+    return raw || 'Impossible d ouvrir la camera.';
+  };
+
+  const buildFaceMatrixFromElements = async (videoEl, canvasEl) => {
+    if (!(videoEl instanceof HTMLVideoElement) || !(canvasEl instanceof HTMLCanvasElement)) {
+      throw new Error('Camera indisponible.');
+    }
+
+    const context = canvasEl.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('Canvas indisponible.');
+
+    const width = videoEl.videoWidth || 640;
+    const height = videoEl.videoHeight || 480;
+    canvasEl.width = width;
+    canvasEl.height = height;
+    context.drawImage(videoEl, 0, 0, width, height);
+
+    let crop = { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.7 };
+
+    if ('FaceDetector' in window) {
+      try {
+        const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+        const faces = await detector.detect(canvasEl);
+        if (faces.length > 0) {
+          const box = faces[0].boundingBox;
+          const size = Math.max(box.width, box.height) * 1.3;
+          crop = {
+            x: Math.max(0, box.x + (box.width - size) / 2),
+            y: Math.max(0, box.y + (box.height - size) / 2),
+            width: Math.min(size, width),
+            height: Math.min(size, height)
+          };
+        }
+      } catch (_) {}
+    }
+
+    const matrixCanvas = document.createElement('canvas');
+    matrixCanvas.width = 32;
+    matrixCanvas.height = 32;
+    const matrixContext = matrixCanvas.getContext('2d', { willReadFrequently: true });
+    if (!matrixContext) throw new Error('Canvas de matrice indisponible.');
+
+    matrixContext.drawImage(canvasEl, crop.x, crop.y, crop.width, crop.height, 0, 0, 32, 32);
+    const { data } = matrixContext.getImageData(0, 0, 32, 32);
+    const matrix = [];
+    for (let i = 0; i < data.length; i += 4) {
+      const grayscale = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+      matrix.push(Number(grayscale.toFixed(6)));
+    }
+
+    return matrix;
+  };
+
+  async function loadFaceAccountStatus(force = false) {
+    if (!faceAccountInfo) return;
+    if (accountFaceStatusLoaded && !force) return;
+
+    try {
+      const data = await fetchJson(API.faceStatus);
+      accountFaceStatusLoaded = true;
+      if (data.has_face_profile) {
+        faceAccountInfo.textContent = 'Votre visage est deja configure. Si la connexion ne marche pas, vous pouvez reconfigurer votre visage ici avec votre mot de passe.';
+        if (faceAccountSetup) faceAccountSetup.style.display = '';
+        if (accountFaceSaveBtn) accountFaceSaveBtn.textContent = 'Reconfigurer mon visage';
+      } else {
+        faceAccountInfo.textContent = 'Ajoutez votre visage une seule fois. Votre mot de passe actuel sera demande avant l enregistrement.';
+        if (faceAccountSetup) faceAccountSetup.style.display = '';
+        if (accountFaceSaveBtn) accountFaceSaveBtn.textContent = 'Valider mon visage';
+      }
+    } catch (error) {
+      faceAccountInfo.textContent = error.message || 'Impossible de charger le statut biometrique.';
+      if (faceAccountSetup) faceAccountSetup.style.display = 'none';
+    }
+  }
 
   function loadDashboard() {
     if (dashLoaded) return;
-
     Promise.all([
-      fetch('/api/client/dashboard').then(r => r.json()),
-      fetch('/api/shop/products').then(r => r.json())
+      fetch('/api/client/dashboard').then((r) => r.json()),
+      fetch('/api/shop/products').then((r) => r.json())
     ]).then(([dash, prod]) => {
       dashLoaded = true;
       const stats = dash.stats || {};
       const products = prod.products || [];
-
       if (shopProducts.length === 0) shopProducts = products;
 
       $('#kpiOrders').textContent = stats.total_orders ?? 0;
-      $('#kpiTotal').textContent = DZD(stats.total_amount ?? 0);
-      $('#kpiUnpaid').textContent = DZD(stats.unpaid_amount ?? 0);
-      $('#kpiMonth').textContent = DZD(stats.month_amount ?? 0);
+      $('#kpiTotal').textContent = formatDT(stats.total_amount ?? 0);
+      $('#kpiUnpaid').textContent = formatDT(stats.unpaid_amount ?? 0);
+      $('#kpiMonth').textContent = formatDT(stats.month_amount ?? 0);
 
       const totalProducts = products.length;
-      const inStock = products.filter(p => p.stock_status === 'in_stock').length;
-      const limited = products.filter(p => p.stock_status === 'limited').length;
-      const outStock = products.filter(p => p.stock_status === 'out_of_stock').length;
-      const groups = {};
-      products.forEach(p => { groups[p.catalog_group] = (groups[p.catalog_group] || 0) + 1; });
-
+      const inStock = products.filter((p) => p.stock_status === 'in_stock').length;
+      const limited = products.filter((p) => p.stock_status === 'limited').length;
+      const outStock = products.filter((p) => p.stock_status === 'out_of_stock').length;
       const pctIn = totalProducts ? Math.round(inStock / totalProducts * 100) : 0;
       const pctLimited = totalProducts ? Math.round(limited / totalProducts * 100) : 0;
       const pctOut = totalProducts ? Math.round(outStock / totalProducts * 100) : 0;
+      const groups = {};
+      products.forEach((p) => {
+        groups[p.catalog_group] = (groups[p.catalog_group] || 0) + 1;
+      });
 
       $('#dashProductStats').innerHTML = `
         <div class="dash-stat-card">
           <div class="dash-stat-number">${totalProducts}</div>
           <div class="dash-stat-label">Produits au catalogue</div>
-          <div class="dash-stat-detail">${Object.keys(groups).length} catégories</div>
+          <div class="dash-stat-detail">${Object.keys(groups).length} categories</div>
         </div>
         <div class="dash-stat-card dash-stat-success">
           <div class="dash-stat-number">${inStock}</div>
@@ -163,7 +303,7 @@
         </div>
         <div class="dash-stat-card dash-stat-warning">
           <div class="dash-stat-number">${limited}</div>
-          <div class="dash-stat-label">Stock limité</div>
+          <div class="dash-stat-label">Stock limite</div>
           <div class="dash-stat-bar"><div class="dash-stat-fill dash-fill-warning" style="width:${pctLimited}%"></div></div>
           <div class="dash-stat-detail">${pctLimited}% du catalogue</div>
         </div>
@@ -174,18 +314,17 @@
           <div class="dash-stat-detail">${pctOut}% du catalogue</div>
         </div>`;
 
-      // Segment breakdown
       const segments = {};
-      products.forEach(p => { segments[p.segment] = (segments[p.segment] || 0) + 1; });
+      products.forEach((p) => { segments[p.segment] = (segments[p.segment] || 0) + 1; });
       const segIcons = { HOMME: 'bi-gender-male', FEMME: 'bi-gender-female', MIXTE: 'bi-gender-ambiguous', ENFANT: 'bi-balloon' };
       const segColors = { HOMME: '#1565C0', FEMME: '#AD1457', MIXTE: '#6A1B9A', ENFANT: '#E65100' };
       let segHtml = '';
       Object.entries(segments).sort((a, b) => b[1] - a[1]).forEach(([seg, cnt]) => {
-        const pct = Math.round(cnt / totalProducts * 100);
+        const pct = Math.round(cnt / Math.max(totalProducts, 1) * 100);
         segHtml += `<div class="dash-breakdown-item">
           <div class="dash-breakdown-left">
             <i class="bi ${segIcons[seg] || 'bi-droplet'}" style="color:${segColors[seg] || '#333'}"></i>
-            <span>${seg}</span>
+            <span>${esc(seg)}</span>
           </div>
           <div class="dash-breakdown-right">
             <div class="dash-breakdown-bar-wrap"><div class="dash-breakdown-bar" style="width:${pct}%;background:${segColors[seg] || '#333'}"></div></div>
@@ -193,90 +332,63 @@
           </div>
         </div>`;
       });
-
-      // Category breakdown appended
-      Object.entries(groups).sort((a, b) => b[1] - a[1]).forEach(([grp, cnt]) => {
-        const pct = Math.round(cnt / totalProducts * 100);
-        segHtml += `<div class="dash-breakdown-item">
-          <div class="dash-breakdown-left">
-            <i class="bi bi-tag" style="color:#546E7A"></i>
-            <span>${grp}</span>
-          </div>
-          <div class="dash-breakdown-right">
-            <div class="dash-breakdown-bar-wrap"><div class="dash-breakdown-bar" style="width:${pct}%;background:#546E7A"></div></div>
-            <strong>${cnt}</strong>
-          </div>
-        </div>`;
-      });
       $('#dashSegmentBreakdown').innerHTML = segHtml || '<p class="muted">Aucun produit.</p>';
 
-      // Recent orders
       const recent = dash.recent_orders || [];
       if (!recent.length) {
         $('#dashRecentOrders').innerHTML = '<p class="muted" style="padding:16px">Aucune commande.</p>';
       } else {
-        let html = '<table class="dash-mini-table"><thead><tr><th>N°</th><th>Montant</th><th>Statut</th></tr></thead><tbody>';
-        recent.forEach(o => {
-          html += `<tr><td>${esc(o.order_number)}</td><td>${DZD(o.total_dzd)}</td><td>${statusPill(o.status)}</td></tr>`;
+        let html = '<table class="dash-mini-table"><thead><tr><th>Numero</th><th>Montant</th><th>Statut</th></tr></thead><tbody>';
+        recent.forEach((o) => {
+          html += `<tr><td>${esc(o.order_number)}</td><td>${formatDT(o.total_dzd)}</td><td>${statusPill(o.status)}</td></tr>`;
         });
         html += '</tbody></table>';
         $('#dashRecentOrders').innerHTML = html;
       }
+
+      const topPerfumes = dash.top_perfumes || [];
+      if (!topPerfumes.length) {
+        $('#dashTopPerfumes').innerHTML = '<p class="muted" style="padding:16px">Aucune vente disponible pour le moment.</p>';
+      } else {
+        $('#dashTopPerfumes').innerHTML = topPerfumes.map((perfume, index) => `
+          <article class="dash-top-card">
+            <div class="dash-top-rank">#${index + 1}</div>
+            <div class="dash-top-copy">
+              <h4>${esc(perfume.name || '-')}</h4>
+              <p>${esc(perfume.segment || 'AUTRE')} - ${esc(perfume.catalog_group || 'Catalogue')}</p>
+            </div>
+            <div class="dash-top-metrics">
+              <strong>${Number(perfume.sold_qty || 0)} ventes</strong>
+              <span>${Number(perfume.orders_count || 0)} commandes</span>
+            </div>
+          </article>
+        `).join('');
+      }
     }).catch(() => {
       $('#dashProductStats').innerHTML = '<p class="text-danger">Erreur de chargement.</p>';
+      $('#dashTopPerfumes').innerHTML = '<p class="text-danger">Erreur de chargement.</p>';
     });
   }
 
-  // ══════════════════════════════════════════════════════
-  //  SHOP + CART
-  // ══════════════════════════════════════════════════════
-  let shopProducts = [], cart = [], currentSegment = 'ALL';
-
-  function loadShop() {
-    if (!$('#shopProductGrid')) return;
-    if (shopProducts.length === 0) {
-        fetch('/api/shop/products').then(r => r.json()).then(d => {
-          shopProducts = d.products || [];
-          renderShopProducts();
-        }).catch(() => {
-          $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;">Erreur de chargement. Veuillez réessayer.</p>';
-        });
-    } else {
-        renderShopProducts();
-    }
-  }
-
-  // Segment Filter helper
-  window.filterSegment = function(seg, btn) {
-      if (btn) {
-          $$('.eco-nav-links button').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-      }
-      currentSegment = seg;
-      renderShopProducts();
-      // Ensure we are in shop view
-      if (!$('#viewShop').classList.contains('active')) {
-          switchView('shop');
-      }
-  };
-
   function renderShopProducts() {
     const search = ($('#shopSearch')?.value || $('#shopSearchMobile')?.value || '').toLowerCase();
-    
     let filtered = shopProducts;
-    if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search) || (p.code || '').toLowerCase().includes(search));
-    if (currentSegment !== 'ALL') filtered = filtered.filter(p => p.segment === currentSegment);
+    if (search) {
+      filtered = filtered.filter((p) => p.name.toLowerCase().includes(search) || String(p.code || '').toLowerCase().includes(search));
+    }
+    if (currentSegment !== 'ALL') {
+      filtered = filtered.filter((p) => p.segment === currentSegment);
+    }
 
     $('#shopResultsCount').textContent = `${filtered.length} parfum${filtered.length !== 1 ? 's' : ''}`;
-
     if (!filtered.length) {
-      $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:40px;">Aucun parfum ne correspond à vos critères.</p>';
+      $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:40px;">Aucun parfum ne correspond a vos criteres.</p>';
       return;
     }
 
     $('#shopProductGrid').innerHTML = filtered.map((p, index) => {
       const isOut = p.stock_status === 'out_of_stock';
-      return `<div class="pcard ${isOut ? 'is-out' : ''}" data-id="${p.id}" style="animation-delay: ${index * 0.05}s">
+      return `<div class="pcard ${isOut ? 'is-out' : ''}" data-id="${p.id}" style="animation-delay:${index * 0.05}s">
         <div class="pcard-visual">
           <img src="/assets/images/perfume-bottle.png" alt="Parfum" class="perfume-image">
           <span class="seg-tag">${segBadge(p.segment)}</span>
@@ -284,20 +396,15 @@
         </div>
         <div class="pcard-body">
           <div class="pcard-name">${esc(p.name)}</div>
-          <div class="pcard-meta">${p.catalog_group} · ${p.code || ''}</div>
+          <div class="pcard-meta">${esc(p.catalog_group)} - ${esc(p.code || '')}</div>
           <div class="pcard-row">
-            <span class="pcard-price">${DZD(p.price || 0)}</span>
-          </div>
-          <div class="pcard-quick-btns">
-            <button onclick="setQty(this,250)">250ml</button>
-            <button onclick="setQty(this,500)">500ml</button>
-            <button onclick="setQty(this,1000)">1L</button>
+            <span class="pcard-price">${formatDT(p.price || 0)}</span>
           </div>
           <div class="pcard-actions">
             <div class="pcard-qty">
-              <button onclick="adjQty(this,-50)">−</button>
-              <input type="number" value="250" min="50" step="50" class="qty-input">
-              <button onclick="adjQty(this,50)">+</button>
+              <button onclick="adjQty(this,-1)">-</button>
+              <input type="number" value="1" min="1" step="1" class="qty-input">
+              <button onclick="adjQty(this,1)">+</button>
             </div>
             <button class="pcard-add" ${isOut ? 'disabled' : ''} onclick="addToCart(${p.id}, this)">
               <i class="bi bi-cart-plus"></i> Ajouter
@@ -308,199 +415,242 @@
     }).join('');
   }
 
+  function loadShop() {
+    if (!$('#shopProductGrid')) return;
+    if (shopProducts.length === 0) {
+      fetch('/api/shop/products').then((r) => r.json()).then((d) => {
+        shopProducts = d.products || [];
+        renderShopProducts();
+      }).catch(() => {
+        $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;">Erreur de chargement. Veuillez reessayer.</p>';
+      });
+    } else {
+      renderShopProducts();
+    }
+  }
+
+  window.filterSegment = function (seg, btn) {
+    if (btn) {
+      $$('.eco-nav-links button').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentSegment = seg;
+    renderShopProducts();
+    if (!$('#viewShop').classList.contains('active')) switchView('shop');
+  };
+
   on($('#shopSearch'), 'input', debounce(renderShopProducts, 200));
   on($('#shopSearchMobile'), 'input', debounce(renderShopProducts, 200));
 
   window.setQty = function (btn, val) {
-    const card = btn.closest('.pcard');
-    const inp = card?.querySelector('.qty-input');
+    const inp = btn.closest('.pcard')?.querySelector('.qty-input');
     if (inp) inp.value = val;
   };
   window.adjQty = function (btn, delta) {
-    const card = btn.closest('.pcard-qty');
-    const inp = card?.querySelector('.qty-input');
-    if (inp) { let v = parseInt(inp.value, 10) + delta; inp.value = Math.max(50, v); }
+    const inp = btn.closest('.pcard-qty')?.querySelector('.qty-input');
+    if (inp) inp.value = Math.max(1, parseInt(inp.value || '1', 10) + delta);
   };
 
   window.addToCart = function (productId, btnEl) {
-    const p = shopProducts.find(x => x.id === productId);
+    const p = shopProducts.find((x) => x.id === productId);
     if (!p) return;
-    const card = $(`.pcard[data-id="${productId}"]`);
-    const qty = parseFloat(card?.querySelector('.qty-input')?.value || 250);
-    const existing = cart.find(c => c.product_id === p.product_id);
+    const qty = parseInt($(`.pcard[data-id="${productId}"] .qty-input`)?.value || '1', 10);
+    const existing = cart.find((c) => c.product_id === p.product_id);
     if (existing) {
       existing.qty += qty;
     } else {
       cart.push({
-        perfume_id: p.id,          // perfume_catalog.id
-        product_id: p.product_id,  // products.id
+        perfume_id: p.id,
+        product_id: p.product_id,
         name: p.name,
-        price: p.price || 0,
+        price: Number(p.price || 0),
         qty,
         segment: p.segment
       });
     }
     renderCart();
-    
+
     if (btnEl) {
-      btnEl.innerHTML = '<i class="bi bi-check"></i> Ajouté !'; 
-      setTimeout(() => { btnEl.innerHTML = '<i class="bi bi-cart-plus"></i> Ajouter'; }, 1000);
-      
-      // Auto open cart on mobile? Or just pulse icon.
-      const icon = $('#floatingCartBtn');
-      if (icon) {
-          icon.style.transform = 'scale(1.2)';
-          setTimeout(() => icon.style.transform = 'scale(1)', 200);
-      }
+      btnEl.innerHTML = '<i class="bi bi-check"></i> Ajoute !';
+      setTimeout(() => {
+        btnEl.innerHTML = '<i class="bi bi-cart-plus"></i> Ajouter';
+      }, 1000);
     }
   };
 
+  function updateCartCounts() {
+    const count = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    if ($('#cartCount')) $('#cartCount').textContent = count;
+    if ($('#floatingCartCount')) $('#floatingCartCount').textContent = count;
+  }
+
   function renderCart() {
-    const body = $('#cartBody'), footer = $('#cartFooter');
+    const body = $('#cartBody');
+    const footer = $('#cartFooter');
+    if (!body || !footer) return;
+
     if (!cart.length) {
       body.innerHTML = '<div class="cart-empty"><i class="bi bi-bag-x"></i><p>Votre panier est vide</p></div>';
       footer.style.display = 'none';
       updateCartCounts();
       return;
     }
+
     let total = 0;
     body.innerHTML = cart.map((c, i) => {
-      const lineTotal = c.qty * c.price;
+      const lineTotal = Number(c.qty || 0) * Number(c.price || 0);
       total += lineTotal;
       return `<div class="cart-item">
         <div class="cart-item-info">
           <div class="cart-item-name">${esc(c.name)}</div>
-          <div class="cart-item-meta">${c.qty} ml × ${DZD(c.price)}</div>
+          <div class="cart-item-meta">${bottleLabel(c.qty)} - ${formatDT(c.price)}</div>
         </div>
         <div class="cart-item-actions">
-          <span class="cart-item-price">${DZD(lineTotal)}</span>
+          <div class="cart-item-qty">
+            <button class="qty-btn" onclick="changeCartQty(${i}, -1)">-</button>
+            <span>${c.qty}</span>
+            <button class="qty-btn" onclick="changeCartQty(${i}, 1)">+</button>
+          </div>
+          <span class="cart-item-price">${formatDT(lineTotal)}</span>
           <button class="cart-item-remove" onclick="removeFromCart(${i})"><i class="bi bi-trash3"></i></button>
         </div>
       </div>`;
     }).join('');
     footer.style.display = 'block';
-    $('#cartTotal').textContent = DZD(total);
+    $('#cartTotal').textContent = formatDT(total);
     updateCartCounts();
-  }
-
-  function updateCartCounts() {
-    const count = cart.length;
-    const el = $('#cartCount'); if (el) el.textContent = count;
-    const fl = $('#floatingCartCount'); if (fl) fl.textContent = count;
   }
 
   window.removeFromCart = function (idx) {
     cart.splice(idx, 1);
     renderCart();
   };
+  window.changeCartQty = function (idx, delta) {
+    const item = cart[idx];
+    if (!item) return;
+    item.qty = Math.max(1, Number(item.qty || 1) + delta);
+    renderCart();
+  };
+  on($('#cartClear'), 'click', () => {
+    cart = [];
+    renderCart();
+  });
 
-  on($('#cartClear'), 'click', () => { cart = []; renderCart(); });
-
-  // ══════════════════════════════════════════════════════
-  //  CHECKOUT WORKFLOW
-  // ══════════════════════════════════════════════════════
   function shopStep(stepId) {
-    $$('.wf-step').forEach(c => c.classList.remove('active'));
-    $$('.wf-tab').forEach(t => t.classList.remove('active'));
+    $$('.wf-step').forEach((c) => c.classList.remove('active'));
+    $$('.wf-tab').forEach((t) => t.classList.remove('active'));
     $(`#step${stepId.charAt(0).toUpperCase() + stepId.slice(1)}`)?.classList.add('active');
     $(`.wf-tab[data-step="${stepId}"]`)?.classList.add('active');
-    if (stepId !== 'browse') {
-      $('#shopTabs').style.display = 'flex';
-      document.body.classList.remove('cart-open');
-    } else {
-      $('#shopTabs').style.display = 'none';
-    }
+    $('#shopTabs').style.display = stepId !== 'browse' ? 'flex' : 'none';
+    if (stepId !== 'browse') document.body.classList.remove('cart-open');
+  }
+
+  function renderCheckoutSummary() {
+    if (!cart.length) return;
+    let total = 0;
+    const itemsHtml = cart.map((c) => {
+      const lineTotal = Number(c.qty || 0) * Number(c.price || 0);
+      total += lineTotal;
+      return `<tr><td><strong>${esc(c.name)}</strong><br><small class="text-muted">${bottleLabel(c.qty)} - ${esc(c.segment || '')}</small></td>
+        <td>${formatDT(c.price)}</td>
+        <td style="text-align:right">${formatDT(lineTotal)}</td></tr>`;
+    }).join('');
+    $('#ckSummaryTable').innerHTML = `<table><thead><tr><th>Produit</th><th>P.U</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>`;
+    $('#ckTotals').innerHTML = `<div class="ck-total-row total"><span>Total net a payer</span><span>${formatDT(total)}</span></div>`;
   }
 
   on($('#goToCheckout'), 'click', () => {
-    if (!cart.length) return alert("Votre panier est vide.");
-    let total = 0;
-    const itemsHtml = cart.map(c => {
-      const lineTotal = c.qty * c.price;
-      total += lineTotal;
-      return `<tr><td><strong>${esc(c.name)}</strong><br><small class="text-muted">${c.qty}ml - ${c.segment}</small></td>
-              <td>${DZD(c.price)}</td><td style="text-align:right">${DZD(lineTotal)}</td></tr>`;
-    }).join('');
-    
-    $('#ckSummaryTable').innerHTML = `<table><thead><tr><th>Produit</th><th>P.U</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>`;
-    $('#ckTotals').innerHTML = `<div class="ck-total-row"><span>Sous-total HT</span><span>${DZD(total)}</span></div>
-                                <div class="ck-total-row total"><span>Total à payer</span><span>${DZD(total)}</span></div>`;
+    if (!cart.length) return alert('Votre panier est vide.');
+    renderCheckoutSummary();
     shopStep('checkout');
   });
-
   on($('#backToBrowse'), 'click', () => shopStep('browse'));
 
   on($('#goToConfirm'), 'click', () => {
     if (!$('#ckLine1').value || !$('#ckCity').value) {
-      alert("Veuillez remplir les champs obligatoires (*) de l'adresse.");
+      alert("Veuillez remplir les champs obligatoires de l'adresse.");
       return;
     }
     const btn = $('#goToConfirm');
-    btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Validation...';
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Validation...';
 
     const orderData = {
-      items: cart.map(c => ({
-        perfume_id: Number(c.perfume_id ?? c.id ?? 0),
-        qty: Number(c.qty ?? 0)
+      items: cart.map((c) => ({
+        perfume_id: Number(c.perfume_id || 0),
+        product_id: Number(c.product_id || 0),
+        qty: Number(c.qty || 0)
       })),
       shipping_address: {
-        line1: $('#ckLine1').value, line2: $('#ckLine2').value,
-        city: $('#ckCity').value, region: $('#ckRegion').value,
-        postal_code: $('#ckPostal').value, country: $('#ckCountry').value
+        line1: $('#ckLine1').value,
+        phone: $('#ckLine2').value,
+        city: $('#ckCity').value,
+        region: $('#ckRegion').value,
+        country: $('#ckCountry').value
       }
     };
 
-    fetch('/api/client/orders', {
-      method: 'POST',
+    fetch(editingOrderId ? `/api/client/orders/${editingOrderId}` : '/api/client/orders', {
+      method: editingOrderId ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify(orderData)
-    }).then(r => r.json()).then(d => {
-      btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirmer la commande';
+    }).then((r) => r.json()).then((d) => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirmer la commande';
       if (!d.success) return alert(d.error || 'Erreur lors de la validation.');
-      cart = []; renderCart();
+      cart = [];
+      editingOrderId = null;
+      renderCart();
+      loadOrders();
       shopStep('confirm');
-    }).catch(e => {
-      console.error(e);
-      alert('Erreur réseau. Impossible de valider la commande.');
-      btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirmer la commande';
+    }).catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirmer la commande';
+      alert('Erreur reseau. Impossible de valider la commande.');
     });
   });
 
-  window.resetShop = function () { shopStep('browse'); window.scrollTo(0,0); };
+  window.resetShop = function () {
+    editingOrderId = null;
+    shopStep('browse');
+    window.scrollTo(0, 0);
+  };
 
-  // ══════════════════════════════════════════════════════
-  //  ORDERS
-  // ══════════════════════════════════════════════════════
-  let allOrders = [];
   function loadOrders() {
     $('#ordersPanel').innerHTML = '<p class="muted">Chargement...</p>';
-    fetch('/api/client/orders').then(r => r.json()).then(d => {
+    fetch('/api/client/orders').then((r) => r.json()).then((d) => {
       allOrders = d.orders || [];
       renderOrders();
-    }).catch(() => { $('#ordersPanel').innerHTML = '<p class="text-danger">Erreur serveur.</p>'; });
+    }).catch(() => {
+      $('#ordersPanel').innerHTML = '<p class="text-danger">Erreur serveur.</p>';
+    });
   }
 
   function renderOrders() {
     const q = ($('#orderSearch')?.value || '').toLowerCase();
     const st = $('#orderStatusFilter')?.value || 'ALL';
-    let f = allOrders;
-    if (q) f = f.filter(o => o.order_number.toLowerCase().includes(q));
-    if (st !== 'ALL') f = f.filter(o => o.status === st);
+    let filtered = allOrders;
+    if (q) filtered = filtered.filter((o) => String(o.order_number || '').toLowerCase().includes(q));
+    if (st !== 'ALL') filtered = filtered.filter((o) => o.status === st);
 
-    if (!f.length) {
-      $('#ordersPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-box"></i><p>Aucune commande trouvée.</p></div>';
+    if (!filtered.length) {
+      $('#ordersPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-box"></i><p>Aucune commande trouvee.</p></div>';
       return;
     }
+
     let html = `<div class="orders-table-wrap"><table class="orders-table"><thead><tr>
-      <th>N° Commande</th><th>Date</th><th>Montant</th><th>Statut</th><th>Action</th>
+      <th>NÂ° Commande</th><th>Date</th><th>Montant</th><th>Statut</th><th>Action</th>
       </tr></thead><tbody>`;
-    f.forEach(o => {
+    filtered.forEach((o) => {
       html += `<tr>
         <td><strong>${esc(o.order_number)}</strong></td>
         <td>${fmtDate(o.created_at)}</td>
-        <td>${DZD(o.total_dzd)}</td>
+        <td>${formatDT(o.total_dzd)}</td>
         <td>${statusPill(o.status)}</td>
-        <td><button class="btn btn-sm btn-outline"><i class="bi bi-eye"></i> Voir</button></td>
+        <td>${o.can_manage
+          ? `<button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})"><i class="bi bi-pencil"></i> Modifier</button>
+             <button class="btn btn-sm btn-ghost" onclick="deleteOrder(${o.id})"><i class="bi bi-trash3"></i> Supprimer</button>`
+          : '<span class="text-muted">Validee / depassee 24h</span>'}</td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -509,40 +659,80 @@
   on($('#orderSearch'), 'input', renderOrders);
   on($('#orderStatusFilter'), 'change', renderOrders);
 
-  // ══════════════════════════════════════════════════════
-  //  INVOICES
-  // ══════════════════════════════════════════════════════
-  let allInvoices = [];
+  window.editOrder = function (orderId) {
+    fetch(`/api/client/orders/${orderId}`).then((r) => r.json()).then((d) => {
+      if (!d.success || !d.can_manage) {
+        alert(d.error || 'Cette commande ne peut plus etre modifiee.');
+        return;
+      }
+      editingOrderId = orderId;
+      cart = (d.items || []).map((item) => ({
+        perfume_id: Number(item.perfume_id || 0),
+        product_id: Number(item.product_id || 0),
+        name: item.product_name,
+        price: Number(item.unit_price_dzd || 0),
+        qty: Number(item.quantity_ml || 1),
+        segment: item.segment || ''
+      }));
+      const shipping = d.shipping_address || {};
+      $('#ckLine1').value = shipping.line1 || '';
+      $('#ckLine2').value = shipping.phone || shipping.line2 || '';
+      $('#ckCity').value = shipping.city || '';
+      $('#ckRegion').value = shipping.region || '';
+      $('#ckCountry').value = shipping.country || 'Tunisie';
+      renderCart();
+      renderCheckoutSummary();
+      switchView('shop');
+      shopStep('checkout');
+    }).catch(() => alert('Impossible de charger la commande.'));
+  };
+
+  window.deleteOrder = function (orderId) {
+    if (!confirm('Supprimer cette commande ?')) return;
+    fetch(`/api/client/orders/${orderId}`, { method: 'DELETE' }).then((r) => r.json()).then((d) => {
+      if (!d.success) {
+        alert(d.error || 'Suppression impossible.');
+        return;
+      }
+      loadOrders();
+    }).catch(() => alert('Erreur reseau lors de la suppression.'));
+  };
+
   function loadInvoices() {
     $('#invoicesPanel').innerHTML = '<p class="muted">Chargement...</p>';
-    fetch('/api/client/invoices').then(r => r.json()).then(d => {
+    fetch('/api/client/invoices').then((r) => r.json()).then((d) => {
       allInvoices = d.invoices || [];
       renderInvoices();
-    }).catch(() => { $('#invoicesPanel').innerHTML = '<p class="text-danger">Erreur serveur.</p>'; });
+    }).catch(() => {
+      $('#invoicesPanel').innerHTML = '<p class="text-danger">Erreur serveur.</p>';
+    });
   }
 
   function renderInvoices() {
     const q = ($('#invoiceSearch')?.value || '').toLowerCase();
     const st = $('#invoiceStatusFilter')?.value || 'ALL';
-    let f = allInvoices;
-    if (q) f = f.filter(x => x.invoice_number.toLowerCase().includes(q) || x.order_number.toLowerCase().includes(q));
-    if (st !== 'ALL') f = f.filter(x => x.payment_status === st);
+    let filtered = allInvoices;
+    if (q) filtered = filtered.filter((x) => String(x.invoice_number || '').toLowerCase().includes(q) || String(x.order_number || '').toLowerCase().includes(q));
+    if (st !== 'ALL') filtered = filtered.filter((x) => x.payment_status === st || x.status === st);
 
-    if (!f.length) {
-      $('#invoicesPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-receipt"></i><p>Aucune facture trouvée.</p></div>';
+    if (!filtered.length) {
+      $('#invoicesPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-receipt"></i><p>Aucune facture trouvee.</p></div>';
       return;
     }
     let html = `<div class="orders-table-wrap"><table class="orders-table"><thead><tr>
-      <th>N° Facture</th><th>Date d'émission</th><th>Commande liée</th><th>À Payer</th><th>Statut Paiement</th><th>PDF</th>
+      <th>Facture</th><th>Date d'emission</th><th>Commande liee</th><th>Total</th><th>Paye</th><th>Reste</th><th>Statut Paiement</th><th>PDF</th>
       </tr></thead><tbody>`;
-    f.forEach(x => {
+    filtered.forEach((x) => {
+      const payStatus = x.payment_status || x.status;
       html += `<tr>
         <td><strong>${esc(x.invoice_number)}</strong></td>
         <td>${fmtDate(x.issued_at)}</td>
-        <td>${esc(x.order_number || '—')}</td>
-        <td><strong>${DZD(x.total_dzd)}</strong></td>
-        <td>${statusPill(x.payment_status)}</td>
-        <td><button class="btn btn-sm btn-ghost"><i class="bi bi-download"></i></button></td>
+        <td>${esc(x.order_number || '-')}</td>
+        <td><strong>${formatDT(x.total_dzd)}</strong></td>
+        <td>${formatDT(x.paid_amount || 0)}</td>
+        <td><strong>${formatDT(x.remaining_amount || 0)}</strong></td>
+        <td>${statusPill(payStatus)}</td>
+        <td><a class="btn btn-sm btn-ghost" href="/invoice/${x.id}/pdf" target="_blank" rel="noopener noreferrer"><i class="bi bi-download"></i></a></td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -551,116 +741,166 @@
   on($('#invoiceSearch'), 'input', renderInvoices);
   on($('#invoiceStatusFilter'), 'change', renderInvoices);
 
-  // ══════════════════════════════════════════════════════
-  //  PROFILE
-  // ══════════════════════════════════════════════════════
-  on($('#profileForm'), 'submit', (e) => {
+  on($('#profileForm'), 'submit', async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Enregistrement...';
-    // Simulation since no endpoint implemented yet
-    setTimeout(() => {
-        $('#profileMessage').innerHTML = '<div class="alert alert-success mt-2">Profil mis à jour avec succès.</div>';
-        btn.disabled = false; btn.textContent = 'Enregistrer les modifications';
-    }, 1000);
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement...';
+    setFeedback(profileMessage, '');
+    try {
+      await fetchJson(API.profile, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          first_name: $('#profFirstName')?.value?.trim() || '',
+          last_name: $('#profLastName')?.value?.trim() || '',
+          shop_name: $('#profShop')?.value?.trim() || '',
+          phone: $('#profPhone')?.value?.trim() || '',
+          email: $('#profEmail')?.value?.trim() || '',
+          location: $('#profLocation')?.value?.trim() || ''
+        })
+      });
+      setFeedback(profileMessage, 'Profil mis a jour avec succes.');
+    } catch (error) {
+      setFeedback(profileMessage, error.message || 'Mise a jour impossible.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer les modifications';
+    }
   });
 
-  on($('#passwordForm'), 'submit', (e) => {
+  on($('#passwordForm'), 'submit', async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Mise à jour...';
-    // Simulation
-    setTimeout(() => {
-        $('#passwordMessage').innerHTML = '<div class="alert alert-success mt-2">Mot de passe modifié avec succès.</div>';
-        btn.disabled = false; btn.textContent = 'Changer le mot de passe';
-        e.target.reset();
-    }, 1000);
+    const btn = e.target.querySelector('button');
+    const currentPassword = $('#profCurrentPwd')?.value || '';
+    const newPassword = $('#profNewPwd')?.value || '';
+    const confirmPassword = $('#profConfirmPwd')?.value || '';
+    if (newPassword !== confirmPassword) {
+      setFeedback(passwordMessage, 'La confirmation du mot de passe ne correspond pas.', 'error');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Mise a jour...';
+    setFeedback(passwordMessage, '');
+    try {
+      const result = await fetchJson(API.password, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      });
+      setFeedback(passwordMessage, result.message || 'Mot de passe modifie avec succes.');
+      e.target.reset();
+    } catch (error) {
+      setFeedback(passwordMessage, error.message || 'Mise a jour impossible.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Changer le mot de passe';
+    }
   });
 
-  // ══════════════════════════════════════════════════════
-  //  ONBOARDING GUIDE
-  // ══════════════════════════════════════════════════════
+  on(accountFaceOpenBtn, 'click', async () => {
+    setFeedback(faceAccountMessage, '');
+    try {
+      stopAccountFaceCamera();
+      accountFaceStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      });
+      if (accountFaceVideo) {
+        accountFaceVideo.srcObject = accountFaceStream;
+        await accountFaceVideo.play();
+      }
+      setFeedback(faceAccountMessage, 'Camera ouverte. Verifiez votre mot de passe puis validez votre visage.');
+    } catch (error) {
+      setFeedback(faceAccountMessage, explainCameraError(error), 'error');
+    }
+  });
+
+  on(accountFaceSaveBtn, 'click', async () => {
+    const password = accountFacePassword?.value || '';
+    if (!password) {
+      setFeedback(faceAccountMessage, 'Veuillez saisir votre mot de passe actuel.', 'error');
+      return;
+    }
+    const originalText = accountFaceSaveBtn.textContent;
+    accountFaceSaveBtn.disabled = true;
+    accountFaceSaveBtn.textContent = 'Validation...';
+    setFeedback(faceAccountMessage, '');
+    try {
+      const matrix = await buildFaceMatrixFromElements(accountFaceVideo, accountFaceCanvas);
+      const result = await fetchJson(API.faceCreate, {
+        method: 'POST',
+        body: JSON.stringify({ password, matrix })
+      });
+      setFeedback(faceAccountMessage, result.message || 'Visage ajoute avec succes.');
+      if (accountFacePassword) accountFacePassword.value = '';
+      stopAccountFaceCamera();
+      accountFaceStatusLoaded = false;
+      await loadFaceAccountStatus(true);
+    } catch (error) {
+      setFeedback(faceAccountMessage, error.message || 'Enregistrement du visage impossible.', 'error');
+    } finally {
+      accountFaceSaveBtn.disabled = false;
+      accountFaceSaveBtn.textContent = originalText;
+    }
+  });
+
   (function initOnboarding() {
-    const STORAGE_KEY = 'idene_onboarding_done';
-    const modal   = document.getElementById('obModal');
-    const backdrop= document.getElementById('obBackdrop');
-    const slides  = document.querySelectorAll('.ob-slide');
-    const dotsWrap= document.getElementById('obDots');
-    const counter = document.getElementById('obCounter');
-    const btnNext = document.getElementById('obNext');
-    const btnPrev = document.getElementById('obPrev');
-    const btnSkip = document.getElementById('obSkip');
-    const TOTAL   = slides.length;
-
+    const key = 'idene_onboarding_done';
+    const modal = $('#obModal');
+    const backdrop = $('#obBackdrop');
+    const slides = $$('.ob-slide');
+    const dotsWrap = $('#obDots');
+    const counter = $('#obCounter');
+    const btnNext = $('#obNext');
+    const btnPrev = $('#obPrev');
+    const btnSkip = $('#obSkip');
     if (!modal || !slides.length) return;
 
-    // Build dots
     slides.forEach((_, i) => {
       const d = document.createElement('button');
       d.className = 'ob-dot';
-      d.setAttribute('aria-label', `Étape ${i + 1}`);
+      d.setAttribute('aria-label', `Etape ${i + 1}`);
       d.addEventListener('click', () => goTo(i));
       dotsWrap.appendChild(d);
     });
 
     let current = 0;
-
     function goTo(idx) {
-      slides[current].classList.remove('active', 'prev');
-      slides[current].classList.add(idx > current ? 'prev' : 'next-out');
+      slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+      $$('.ob-dot', dotsWrap).forEach((d, i) => d.classList.toggle('active', i === idx));
       current = idx;
-      slides[current].classList.remove('prev', 'next-out');
-      slides[current].classList.add('active');
-
-      dotsWrap.querySelectorAll('.ob-dot').forEach((d, i) => d.classList.toggle('active', i === current));
-      counter.textContent = `${current + 1} / ${TOTAL}`;
+      counter.textContent = `${current + 1} / ${slides.length}`;
       btnPrev.disabled = current === 0;
-
-      const isLast = current === TOTAL - 1;
-      btnNext.innerHTML = isLast
-        ? '<i class="bi bi-rocket-takeoff"></i> Démarrer !'
+      btnNext.innerHTML = current === slides.length - 1
+        ? '<i class="bi bi-rocket-takeoff"></i> Demarrer !'
         : '<i class="bi bi-chevron-right"></i> Suivant';
-      btnNext.classList.toggle('ob-btn-final', isLast);
     }
-
     function close() {
-      modal.classList.add('ob-exit');
-      backdrop.classList.add('ob-exit');
-      localStorage.setItem(STORAGE_KEY, '1');
-      setTimeout(() => {
-        modal.style.display = 'none';
-        backdrop.style.display = 'none';
-      }, 350);
+      modal.style.display = 'none';
+      backdrop.style.display = 'none';
+      localStorage.setItem(key, '1');
     }
-
-    btnNext.addEventListener('click', () => {
-      if (current < TOTAL - 1) goTo(current + 1);
-      else close();
-    });
-    btnPrev.addEventListener('click', () => {
-      if (current > 0) goTo(current - 1);
-    });
-    btnSkip.addEventListener('click', close);
-    backdrop.addEventListener('click', close);
-
-    // Show only if not already seen
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    on(btnNext, 'click', () => current < slides.length - 1 ? goTo(current + 1) : close());
+    on(btnPrev, 'click', () => current > 0 && goTo(current - 1));
+    on(btnSkip, 'click', close);
+    on(backdrop, 'click', close);
+    if (!localStorage.getItem(key)) {
       modal.style.display = 'flex';
       backdrop.style.display = 'block';
       goTo(0);
-      setTimeout(() => {
-        modal.classList.add('ob-enter');
-        backdrop.classList.add('ob-enter');
-      }, 50);
     }
   })();
 
-  // ══════════════════════════════════════════════════════
-  //  INIT
-  // ══════════════════════════════════════════════════════
   const hash = window.location.hash.substring(1);
   if (views[hash]) {
     switchView(hash);
   } else {
     switchView('shop');
   }
-
 })();

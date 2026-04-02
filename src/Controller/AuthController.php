@@ -162,7 +162,7 @@ final class AuthController
                             </div>
                             <canvas id="inlineFaceCanvas" class="face-canvas" width="320" height="240" style="display:none"></canvas>
                             <div class="inline-face-actions" style="display:flex; gap:10px;">
-                                <button id="faceSignupBtn" type="button" class="btn-outline" style="flex:1;"><i class="bi bi-camera"></i> Ouvrir la caméra</button>
+                                <button id="faceSignupBtn" type="button" class="btn-outline" style="flex:1;"><i class="bi bi-camera"></i> Ouvrir la camera</button>
                                 <button id="validateFaceSignupBtn" type="button" class="btn-primary" style="flex:1;"><i class="bi bi-check2-circle"></i> Valider le visage</button>
                             </div>
                         </div>
@@ -205,7 +205,7 @@ final class AuthController
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/auth.js?v=8"></script>
+    <script src="/assets/js/auth.js?v=10"></script>
 </body>
 </html>
 HTML);
@@ -226,36 +226,44 @@ HTML);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/auth.css?v=5">
+    <link rel="stylesheet" href="/assets/css/auth.css?v=9">
 </head>
 <body>
     <main class="auth-shell">
         <section class="auth-card auth-compact">
-            <header class="card-header">
-                <div class="logo-wrap">
-                    <img src="/assets/images/logo.png" alt="Logo Idene Parfum" class="logo-image">
-                </div>
-                <p class="hero-tag">Verification securisee</p>
-                <h1>IDENE PARFUM</h1>
-                <p class="intro-text">Entrez le code recu pour continuer la reinitialisation.</p>
-            </header>
+            <div class="auth-form-panel auth-form-panel--compact">
+                <header class="card-header">
+                    <div class="logo-wrap">
+                        <img src="/assets/images/logo.png" alt="Logo Idene Parfum" class="logo-image">
+                    </div>
+                    <p class="hero-tag">Verification securisee</p>
+                    <h1>IDENE PARFUM</h1>
+                    <p class="intro-text">Entrez le code recu pour continuer la reinitialisation.</p>
+                </header>
 
-            <form id="verifyResetCodeForm" class="form active" action="#" method="post">
-                <div class="form-intro">
-                    <p class="form-kicker">Recuperation</p>
-                    <h2>Verifier le code</h2>
-                </div>
-                <p id="verifyResetCodeMessage" class="helper-text form-message"></p>
-                <label>Email
-                    <input type="email" name="email" required>
-                </label>
-                <button id="sendResetCodeBtn" type="button" class="btn-primary">Envoyer le code</button>
-                <label>Code
-                    <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="123456" required>
-                </label>
-                <button type="submit" class="btn-primary">Verifier le code</button>
-                <a href="/auth" class="muted-link">Retour au login</a>
-            </form>
+                <form id="verifyResetCodeForm" class="form active" action="#" method="post">
+                    <div class="form-intro">
+                        <p class="form-kicker">Recuperation</p>
+                        <h2>Verifier le code</h2>
+                    </div>
+                    <p id="verifyResetCodeMessage" class="helper-text form-message"></p>
+
+                    <div class="floating-label">
+                        <input type="email" name="email" id="verifyEmail" placeholder=" " required>
+                        <label for="verifyEmail">Email</label>
+                    </div>
+
+                    <button id="sendResetCodeBtn" type="button" class="btn-primary auth-submit auth-submit-secondary">Envoyer le code</button>
+
+                    <div class="floating-label">
+                        <input type="text" name="code" id="verifyCode" inputmode="numeric" maxlength="6" placeholder=" " required>
+                        <label for="verifyCode">Code</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary auth-submit">Verifier le code</button>
+                    <a href="/auth" class="muted-link muted-link-center">Retour au login</a>
+                </form>
+            </div>
         </section>
     </main>
 
@@ -271,7 +279,7 @@ HTML);
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/verify-reset-code.js?v=2"></script>
+    <script src="/assets/js/verify-reset-code.js?v=3"></script>
 </body>
 </html>
 HTML);
@@ -292,36 +300,43 @@ HTML);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/auth.css?v=5">
+    <link rel="stylesheet" href="/assets/css/auth.css?v=9">
 </head>
 <body>
     <main class="auth-shell">
         <section class="auth-card auth-compact">
-            <header class="card-header">
-                <div class="logo-wrap">
-                    <img src="/assets/images/logo.png" alt="Logo Idene Parfum" class="logo-image">
-                </div>
-                <p class="hero-tag">Mise a jour securisee</p>
-                <h1>IDENE PARFUM</h1>
-                <p class="intro-text">Choisissez un nouveau mot de passe pour votre compte.</p>
-            </header>
+            <div class="auth-form-panel auth-form-panel--compact">
+                <header class="card-header">
+                    <div class="logo-wrap">
+                        <img src="/assets/images/logo.png" alt="Logo Idene Parfum" class="logo-image">
+                    </div>
+                    <p class="hero-tag">Mise a jour securisee</p>
+                    <h1>IDENE PARFUM</h1>
+                    <p class="intro-text">Choisissez un nouveau mot de passe pour votre compte.</p>
+                </header>
 
-            <form id="resetPasswordForm" class="form active" action="#" method="post">
-                <div class="form-intro">
-                    <p class="form-kicker">Reinitialisation</p>
-                    <h2>Nouveau mot de passe</h2>
-                </div>
-                <p id="resetPasswordMessage" class="helper-text form-message"></p>
-                <input id="resetToken" type="hidden" value="">
-                <label>Nouveau mot de passe
-                    <input type="password" name="password" minlength="8" required>
-                </label>
-                <label>Confirmer le mot de passe
-                    <input type="password" name="password_confirm" minlength="8" required>
-                </label>
-                <button type="submit" class="btn-primary">Mettre a jour</button>
-                <a href="/auth" class="muted-link">Retour au login</a>
-            </form>
+                <form id="resetPasswordForm" class="form active" action="#" method="post">
+                    <div class="form-intro">
+                        <p class="form-kicker">Reinitialisation</p>
+                        <h2>Nouveau mot de passe</h2>
+                    </div>
+                    <p id="resetPasswordMessage" class="helper-text form-message"></p>
+                    <input id="resetToken" type="hidden" value="">
+
+                    <div class="floating-label">
+                        <input type="password" name="password" id="resetPassword" minlength="8" placeholder=" " required>
+                        <label for="resetPassword">Nouveau mot de passe</label>
+                    </div>
+
+                    <div class="floating-label">
+                        <input type="password" name="password_confirm" id="resetPasswordConfirm" minlength="8" placeholder=" " required>
+                        <label for="resetPasswordConfirm">Confirmer le mot de passe</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary auth-submit">Mettre a jour</button>
+                    <a href="/auth" class="muted-link muted-link-center">Retour au login</a>
+                </form>
+            </div>
         </section>
     </main>
 
@@ -337,7 +352,7 @@ HTML);
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/reset-password.js?v=4"></script>
+    <script src="/assets/js/reset-password.js?v=5"></script>
 </body>
 </html>
 HTML);
