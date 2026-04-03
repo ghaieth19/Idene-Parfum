@@ -39,7 +39,7 @@ final class AuthController
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=2">
-    <link rel="stylesheet" href="/assets/css/auth.css?v=6">
+    <link rel="stylesheet" href="/assets/css/auth.css?v=11">
     <link rel="stylesheet" href="/assets/css/i18n-rtl.css">
 </head>
 <body>
@@ -166,6 +166,7 @@ final class AuthController
                         <div class="inline-face-box">
                             <div class="inline-camera-shell" style="border-radius:var(--radius-md); overflow:hidden; border:1px solid rgba(0,0,0,0.1); margin-bottom:12px;">
                                 <video id="inlineFaceVideo" class="face-video" autoplay playsinline muted style="width:100%; display:block;"></video>
+                                <div class="camera-guide-circle"></div>
                                 <div class="camera-frame"></div>
                             </div>
                             <canvas id="inlineFaceCanvas" class="face-canvas" width="320" height="240" style="display:none"></canvas>
@@ -188,14 +189,16 @@ final class AuthController
     <div id="faceModal" class="face-modal" hidden>
         <div class="face-modal-card">
             <h3 data-i18n="auth.faceScan">Scan du visage</h3>
-            <p id="faceModalText" class="helper-text" data-i18n="auth.facePosition">Positionnez votre visage dans le cadre puis capturez.</p>
+            <p id="faceModalText" class="helper-text" data-i18n="auth.facePosition">Controle vivant active: centre, gauche, droite, haut, puis retour centre.</p>
+            <div id="faceChallengeProgress" class="face-challenge-progress" hidden></div>
             <div class="camera-shell">
                 <video id="faceVideo" class="face-video" autoplay playsinline muted></video>
+                <div class="camera-guide-circle"></div>
                 <div class="camera-frame"></div>
             </div>
             <canvas id="faceCanvas" class="face-canvas" width="320" height="240"></canvas>
             <div class="face-modal-actions">
-                <button id="captureFaceBtn" type="button" class="btn-primary" data-i18n="auth.capture">Capturer</button>
+                <button id="captureFaceBtn" type="button" class="btn-primary" data-i18n="auth.capture">Scanner en secours</button>
                 <button id="closeFaceModalBtn" type="button" class="btn-secondary" data-i18n="auth.cancel">Annuler</button>
             </div>
         </div>
@@ -213,7 +216,7 @@ final class AuthController
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/auth.js?v=10"></script>
+    <script src="/assets/js/auth.js?v=14"></script>
     <script src="/assets/js/i18n.js"></script>
 </body>
 </html>
@@ -235,7 +238,7 @@ HTML);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/auth.css?v=9">
+    <link rel="stylesheet" href="/assets/css/auth.css?v=11">
 </head>
 <body>
     <main class="auth-shell">
@@ -309,7 +312,7 @@ HTML);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/auth.css?v=9">
+    <link rel="stylesheet" href="/assets/css/auth.css?v=11">
 </head>
 <body>
     <main class="auth-shell">

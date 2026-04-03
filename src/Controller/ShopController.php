@@ -37,7 +37,7 @@ final class ShopController
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=600">
-    <link rel="stylesheet" href="/assets/css/user-app.css?v=605">
+    <link rel="stylesheet" href="/assets/css/user-app.css?v=608">
     <link rel="stylesheet" href="/assets/css/client-ecommerce.css?v=600">
 </head>
 <body class="ecommerce-layout">
@@ -231,7 +231,7 @@ final class ShopController
         });
     </script>
     <script src="/assets/js/client-ecommerce.js?v=601"></script>
-    <script src="/assets/js/user-app.js?v=611"></script>
+    <script src="/assets/js/user-app.js?v=615"></script>
     <script src="/assets/js/i18n.js?v=3"></script>
 </body>
 </html>

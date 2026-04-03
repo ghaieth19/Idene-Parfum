@@ -54,7 +54,7 @@ final class UserInterfaceController
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=600">
-    <link rel="stylesheet" href="/assets/css/user-app.css?v=606">
+    <link rel="stylesheet" href="/assets/css/user-app.css?v=608">
     <link rel="stylesheet" href="/assets/css/client-ecommerce.css?v=602">
     <link rel="stylesheet" href="/assets/css/i18n-rtl.css">
 </head>
@@ -124,6 +124,7 @@ final class UserInterfaceController
                 <a href="#invoices" onclick="switchView('invoices'); document.getElementById('ecoMobileMenu')?.classList.remove('open'); return false;"><i class="bi bi-receipt"></i> <span data-i18n="dash.invoices">Facture</span></a>
                 <a href="#orders" onclick="switchView('orders'); document.getElementById('ecoMobileMenu')?.classList.remove('open'); return false;"><i class="bi bi-clock-history"></i> <span data-i18n="dash.orders">Historique commande</span></a>
                 <a href="#profile" onclick="switchView('profile'); document.getElementById('ecoMobileMenu')?.classList.remove('open'); return false;"><i class="bi bi-person-circle"></i> <span data-i18n="dash.myAccount">Mon compte</span></a>
+                <a href="#" class="text-danger" onclick="document.getElementById('ecoMobileMenu')?.classList.remove('open'); window.logoutUser(); return false;"><i class="bi bi-box-arrow-right"></i> <span data-i18n="dash.logout">Deconnexion</span></a>
             </div>
         </div>
     </header>
@@ -239,7 +240,7 @@ final class UserInterfaceController
                             </div>
                             <div class="form-row">
                                 <div class="form-group"><label data-i18n="checkout.city">Ville *</label><input type="text" id="ckCity" class="form-control" name="city" required></div>
-                                <div class="form-group"><label data-i18n="checkout.region">Gouvernorat</label><select id="ckRegion" class="form-control" name="region"><option value="">Choisir un gouvernorat</option><option value="Ariana">Ariana</option><option value="Beja">Beja</option><option value="Ben Arous">Ben Arous</option><option value="Bizerte">Bizerte</option><option value="Gabes">Gabes</option><option value="Gafsa">Gafsa</option><option value="Jendouba">Jendouba</option><option value="Kairouan">Kairouan</option><option value="Kasserine">Kasserine</option><option value="Kebili">Kebili</option><option value="Kef">Kef</option><option value="Mahdia">Mahdia</option><option value="Manouba">Manouba</option><option value="Medenine">Medenine</option><option value="Monastir">Monastir</option><option value="Nabeul">Nabeul</option><option value="Sfax">Sfax</option><option value="Sidi Bouzid">Sidi Bouzid</option><option value="Siliana">Siliana</option><option value="Sousse">Sousse</option><option value="Tataouine">Tataouine</option><option value="Tozeur">Tozeur</option><option value="Tunis">Tunis</option><option value="Zaghouan">Zaghouan</option></select></div>
+                                <div class="form-group"><label data-i18n="checkout.region">Gouvernorat</label><select id="ckRegion" class="form-control desktop-region-select" name="region"><option value="">Choisir un gouvernorat</option><option value="Ariana">Ariana</option><option value="Beja">Beja</option><option value="Ben Arous">Ben Arous</option><option value="Bizerte">Bizerte</option><option value="Gabes">Gabes</option><option value="Gafsa">Gafsa</option><option value="Jendouba">Jendouba</option><option value="Kairouan">Kairouan</option><option value="Kasserine">Kasserine</option><option value="Kebili">Kebili</option><option value="Kef">Kef</option><option value="Mahdia">Mahdia</option><option value="Manouba">Manouba</option><option value="Medenine">Medenine</option><option value="Monastir">Monastir</option><option value="Nabeul">Nabeul</option><option value="Sfax">Sfax</option><option value="Sidi Bouzid">Sidi Bouzid</option><option value="Siliana">Siliana</option><option value="Sousse">Sousse</option><option value="Tataouine">Tataouine</option><option value="Tozeur">Tozeur</option><option value="Tunis">Tunis</option><option value="Zaghouan">Zaghouan</option></select><button type="button" id="ckRegionMobileBtn" class="form-control mobile-region-trigger"><span id="ckRegionMobileLabel">Choisir un gouvernorat</span><i class="bi bi-chevron-down"></i></button></div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -306,14 +307,31 @@ final class UserInterfaceController
             <div class="panel">
                 <div class="filters-row mb-4">
                     <input type="search" id="orderSearch" class="form-control auto-w" placeholder="Numero de commande...">
-                    <select id="orderStatusFilter" class="form-control auto-w">
+                    <select id="orderStatusFilter" class="form-control auto-w mobile-hide-select">
                         <option value="ALL">Tous les statuts</option>
                         <option value="EN_PREPARATION">En preparation</option>
                         <option value="LIVREE">Livree</option>
                         <option value="ANNULEE">Annulee</option>
                     </select>
+                    <div class="status-chip-group" data-filter-chips="orderStatusFilter" aria-label="Filtrer les commandes par statut">
+                        <button type="button" class="status-chip is-active" data-filter-value="ALL">Tous</button>
+                        <button type="button" class="status-chip" data-filter-value="EN_PREPARATION">Preparation</button>
+                        <button type="button" class="status-chip" data-filter-value="LIVREE">Livree</button>
+                        <button type="button" class="status-chip" data-filter-value="ANNULEE">Annulee</button>
+                    </div>
                 </div>
                 <div id="ordersPanel"><p class="muted">Chargement de l'historique...</p></div>
+            </div>
+        </div>
+
+        <div id="ckRegionSheet" class="mobile-region-sheet" aria-hidden="true">
+            <button type="button" class="mobile-region-sheet-backdrop" id="ckRegionSheetBackdrop" aria-label="Fermer"></button>
+            <div class="mobile-region-sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="ckRegionSheetTitle">
+                <div class="mobile-region-sheet-head">
+                    <strong id="ckRegionSheetTitle">Choisir un gouvernorat</strong>
+                    <button type="button" class="mobile-region-sheet-close" id="ckRegionCloseBtn" aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div id="ckRegionOptions" class="mobile-region-options"></div>
             </div>
         </div>
 
@@ -327,12 +345,18 @@ final class UserInterfaceController
             <div class="panel">
                 <div class="filters-row mb-4">
                     <input type="search" id="invoiceSearch" class="form-control auto-w" placeholder="Numero de facture...">
-                    <select id="invoiceStatusFilter" class="form-control auto-w">
+                    <select id="invoiceStatusFilter" class="form-control auto-w mobile-hide-select">
                         <option value="ALL">Tous les statuts</option>
                         <option value="NON_PAYE">Non payee</option>
                         <option value="PARTIEL">Paiement Partiel</option>
                         <option value="PAYE">Payee</option>
                     </select>
+                    <div class="status-chip-group" data-filter-chips="invoiceStatusFilter" aria-label="Filtrer les factures par statut">
+                        <button type="button" class="status-chip is-active" data-filter-value="ALL">Tous</button>
+                        <button type="button" class="status-chip" data-filter-value="NON_PAYE">Non payee</button>
+                        <button type="button" class="status-chip" data-filter-value="PARTIEL">Partiel</button>
+                        <button type="button" class="status-chip" data-filter-value="PAYE">Payee</button>
+                    </div>
                 </div>
                 <div id="invoicesPanel"><p class="muted">Chargement des factures...</p></div>
             </div>
@@ -535,7 +559,7 @@ final class UserInterfaceController
 
     </div><!-- /ob-modal -->
 
-    <script src="/assets/js/user-app.js?v=612"></script>
+    <script src="/assets/js/user-app.js?v=615"></script>
     <script>
         // Init Dark Mode User
         const initUserTheme = () => {

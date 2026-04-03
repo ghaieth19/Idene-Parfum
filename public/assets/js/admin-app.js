@@ -27,6 +27,8 @@ const adminLinks = document.querySelectorAll(".admin-link");
 const adminViews = document.querySelectorAll(".admin-view");
 const adminLogoutBtn = document.getElementById("adminLogoutBtn");
 const adminSidebar = document.getElementById("adminSidebar");
+const mobileAdminSidebarPanel = document.getElementById("mobileAdminSidebarPanel");
+const adminMobileViewSelect = document.getElementById("adminMobileViewSelect");
 const mobileAdminSidebarToggle = document.getElementById("mobileAdminSidebarToggle");
 const mobileAdminSidebarToggleInline = document.getElementById("mobileAdminSidebarToggleInline");
 const mobileAdminSidebarBackdrop = document.getElementById("mobileAdminSidebarBackdrop");
@@ -332,8 +334,96 @@ const getOrderDocumentLabel = (saleType) => {
     return normalized === "GROS" ? "Facture stock" : "Bon de commande";
 };
 
+const getOrderAlternateDocumentConfig = (row) => {
+    const isWholesale = String(row?.sale_type || "").trim().toUpperCase() === "GROS";
+    if (isWholesale) {
+        return row?.generated_purchase_pdf
+            ? {
+                mode: "pdf",
+                label: "Bon PDF",
+                variant: "DETAIL_SITE",
+                dataset: "data-order-alt-pdf",
+            }
+            : {
+                mode: "generate",
+                label: "Generer bon de commande",
+                dataset: "data-order-generate-purchase",
+            };
+    }
+
+    return row?.generated_invoice_pdf
+        ? {
+            mode: "pdf",
+            label: "Facture PDF",
+            variant: "WHOLESALE_STOCK",
+            dataset: "data-order-alt-pdf",
+        }
+        : {
+            mode: "generate",
+            label: "Generer facture",
+            dataset: "data-order-generate-invoice",
+        };
+};
+
+const getDocumentVariantSaleType = (row, variant = "") => {
+    const normalizedVariant = String(variant || "").trim().toUpperCase();
+    if (normalizedVariant === "WHOLESALE_STOCK") {
+        return "GROS";
+    }
+    if (normalizedVariant === "DETAIL_SITE") {
+        return "DETAIL";
+    }
+
+    return String(row?.sale_type || "").trim().toUpperCase() === "GROS" ? "GROS" : "DETAIL";
+};
+
+const getDocumentVariantLabel = (row, variant = "") => getOrderDocumentLabel(getDocumentVariantSaleType(row, variant));
+
+const buildOrderDocumentRows = () => state.orders.flatMap((row) => {
+    const documents = [
+        {
+            ...row,
+            order_id: row.id,
+            document_variant: "",
+            document_key: `${row.id}:PRIMARY`,
+            document_sale_type: getDocumentVariantSaleType(row, ""),
+            document_label: getDocumentVariantLabel(row, ""),
+            document_pdf_variant: "",
+            is_generated_document: false,
+        },
+    ];
+
+    if (row.generated_invoice_pdf) {
+        documents.push({
+            ...row,
+            order_id: row.id,
+            document_variant: "WHOLESALE_STOCK",
+            document_key: `${row.id}:WHOLESALE_STOCK`,
+            document_sale_type: "GROS",
+            document_label: getDocumentVariantLabel(row, "WHOLESALE_STOCK"),
+            document_pdf_variant: "WHOLESALE_STOCK",
+            is_generated_document: true,
+        });
+    }
+
+    if (row.generated_purchase_pdf) {
+        documents.push({
+            ...row,
+            order_id: row.id,
+            document_variant: "DETAIL_SITE",
+            document_key: `${row.id}:DETAIL_SITE`,
+            document_sale_type: "DETAIL",
+            document_label: getDocumentVariantLabel(row, "DETAIL_SITE"),
+            document_pdf_variant: "DETAIL_SITE",
+            is_generated_document: true,
+        });
+    }
+
+    return documents;
+});
+
 const getOrderDisplayAmount = (row) => {
-    const normalized = String(row?.sale_type || "").trim().toUpperCase();
+    const normalized = String(row?.document_sale_type || row?.sale_type || "").trim().toUpperCase();
     return normalized === "GROS"
         ? Number(row?.invoice_total || row?.total_dzd || 0)
         : Number(row?.total_dzd || 0);
@@ -553,6 +643,24 @@ const openOrderPdf = (orderId, variant = "") => {
     window.open(`/admin/orders/${orderId}/pdf${query ? `?${query}` : ""}`, "_blank");
 };
 
+const markOrderDocumentGenerated = async (orderId, variant) => {
+    if (!orderId || !variant) return;
+    await fetchJson(`${API.orders}/${orderId}/generated-document`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variant }),
+    });
+};
+
+const removeOrderGeneratedDocument = async (orderId, variant) => {
+    if (!orderId || !variant) return;
+    await fetchJson(`${API.orders}/${orderId}/generated-document`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variant }),
+    });
+};
+
 const formatDT = (value) => `${Number(value || 0).toFixed(2)} DT`;
 const formatAdminDateTime = (value) => {
     const date = new Date(value);
@@ -620,6 +728,127 @@ const explainCameraError = (error) => {
 
     return raw || "Impossible d ouvrir la camera.";
 };
+const FACE_MATRIX_SIZE = 32;
+const FACE_CAPTURE_SAMPLES = 5;
+const FACE_CAPTURE_DELAY_MS = 120;
+const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+const clampCrop = (crop, width, height) => {
+    const cropWidth = Math.max(1, Math.min(crop.width, width));
+    const cropHeight = Math.max(1, Math.min(crop.height, height));
+
+    return {
+        x: Math.min(Math.max(0, crop.x), Math.max(0, width - cropWidth)),
+        y: Math.min(Math.max(0, crop.y), Math.max(0, height - cropHeight)),
+        width: cropWidth,
+        height: cropHeight,
+    };
+};
+
+const normalizeCapturedMatrix = (matrix) => {
+    if (!Array.isArray(matrix) || matrix.length !== FACE_MATRIX_SIZE * FACE_MATRIX_SIZE) {
+        throw new Error("Capture visage invalide.");
+    }
+
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+
+    for (const value of matrix) {
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+    }
+
+    const range = max - min;
+    if (range < 0.02) {
+        throw new Error("Rapprochez votre visage et assurez un bon eclairage.");
+    }
+
+    return matrix.map((value) => Number(((value - min) / range).toFixed(6)));
+};
+
+const captureSingleFaceMatrix = async (videoEl, canvasEl) => {
+    if (!(videoEl instanceof HTMLVideoElement) || !(canvasEl instanceof HTMLCanvasElement)) {
+        throw new Error("Camera indisponible.");
+    }
+
+    const context = canvasEl.getContext("2d", { willReadFrequently: true });
+    if (!context) {
+        throw new Error("Canvas indisponible.");
+    }
+
+    const width = videoEl.videoWidth || 640;
+    const height = videoEl.videoHeight || 480;
+    canvasEl.width = width;
+    canvasEl.height = height;
+    context.drawImage(videoEl, 0, 0, width, height);
+
+    const fallbackSize = Math.min(width * 0.62, height * 0.62);
+    let crop = clampCrop(
+        {
+            x: (width - fallbackSize) / 2,
+            y: height * 0.14,
+            width: fallbackSize,
+            height: fallbackSize,
+        },
+        width,
+        height
+    );
+
+    if ("FaceDetector" in window) {
+        try {
+            const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+            const faces = await detector.detect(canvasEl);
+            if (faces.length > 0) {
+                const box = faces[0].boundingBox;
+                const size = Math.max(box.width, box.height) * 1.45;
+                crop = clampCrop(
+                    {
+                        x: box.x + (box.width - size) / 2,
+                        y: box.y + (box.height - size) / 2 - size * 0.08,
+                        width: size,
+                        height: size,
+                    },
+                    width,
+                    height
+                );
+            }
+        } catch {
+            // fallback
+        }
+    }
+
+    const matrixCanvas = document.createElement("canvas");
+    matrixCanvas.width = FACE_MATRIX_SIZE;
+    matrixCanvas.height = FACE_MATRIX_SIZE;
+    const matrixContext = matrixCanvas.getContext("2d", { willReadFrequently: true });
+    if (!matrixContext) {
+        throw new Error("Canvas de matrice indisponible.");
+    }
+
+    matrixContext.drawImage(
+        canvasEl,
+        crop.x,
+        crop.y,
+        crop.width,
+        crop.height,
+        0,
+        0,
+        FACE_MATRIX_SIZE,
+        FACE_MATRIX_SIZE
+    );
+
+    const { data } = matrixContext.getImageData(0, 0, FACE_MATRIX_SIZE, FACE_MATRIX_SIZE);
+    const matrix = [];
+    for (let index = 0; index < data.length; index += 4) {
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        const grayscale = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+        matrix.push(grayscale);
+    }
+
+    return normalizeCapturedMatrix(matrix);
+};
 
 const stopStream = (stream) => {
     if (!stream) return;
@@ -660,97 +889,61 @@ const openAdminFaceModal = async () => {
 };
 
 const buildFaceMatrixFromElements = async (videoEl, canvasEl) => {
-    if (!(videoEl instanceof HTMLVideoElement) || !(canvasEl instanceof HTMLCanvasElement)) {
-        throw new Error("Camera indisponible.");
-    }
+    const samples = [];
+    let lastError = null;
 
-    const context = canvasEl.getContext("2d", { willReadFrequently: true });
-    if (!context) {
-        throw new Error("Canvas indisponible.");
-    }
-
-    const width = videoEl.videoWidth || 640;
-    const height = videoEl.videoHeight || 480;
-    canvasEl.width = width;
-    canvasEl.height = height;
-    context.drawImage(videoEl, 0, 0, width, height);
-
-    let crop = {
-        x: width * 0.25,
-        y: height * 0.15,
-        width: width * 0.5,
-        height: height * 0.7,
-    };
-
-    if ("FaceDetector" in window) {
+    for (let index = 0; index < FACE_CAPTURE_SAMPLES; index += 1) {
         try {
-            const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-            const faces = await detector.detect(canvasEl);
-            if (faces.length > 0) {
-                const box = faces[0].boundingBox;
-                const size = Math.max(box.width, box.height) * 1.3;
-                crop = {
-                    x: Math.max(0, box.x + (box.width - size) / 2),
-                    y: Math.max(0, box.y + (box.height - size) / 2),
-                    width: Math.min(size, width),
-                    height: Math.min(size, height),
-                };
-            }
-        } catch {
-            // fallback
+            samples.push(await captureSingleFaceMatrix(videoEl, canvasEl));
+        } catch (error) {
+            lastError = error;
+        }
+
+        if (index < FACE_CAPTURE_SAMPLES - 1) {
+            await wait(FACE_CAPTURE_DELAY_MS);
         }
     }
 
-    const matrixCanvas = document.createElement("canvas");
-    matrixCanvas.width = 32;
-    matrixCanvas.height = 32;
-    const matrixContext = matrixCanvas.getContext("2d", { willReadFrequently: true });
-    if (!matrixContext) {
-        throw new Error("Canvas de matrice indisponible.");
+    if (samples.length < 3) {
+        throw lastError || new Error("Capture visage impossible.");
     }
 
-    matrixContext.drawImage(
-        canvasEl,
-        crop.x,
-        crop.y,
-        crop.width,
-        crop.height,
-        0,
-        0,
-        32,
-        32
-    );
+    return samples[0].map((_, matrixIndex) => {
+        let total = 0;
+        for (const sample of samples) {
+            total += sample[matrixIndex];
+        }
 
-    const { data } = matrixContext.getImageData(0, 0, 32, 32);
-    const matrix = [];
-    for (let index = 0; index < data.length; index += 4) {
-        const red = data[index];
-        const green = data[index + 1];
-        const blue = data[index + 2];
-        const grayscale = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-        matrix.push(Number(grayscale.toFixed(6)));
-    }
-
-    return matrix;
+        return Number((total / samples.length).toFixed(6));
+    });
 };
 
 const activateAdminView = (viewName) => {
     adminViews.forEach((view) => view.classList.toggle("active", view.id === `admin-view-${viewName}`));
     adminLinks.forEach((link) => link.classList.toggle("active", link.dataset.adminView === viewName));
+    if (adminMobileViewSelect) {
+        adminMobileViewSelect.value = viewName;
+    }
     window.location.hash = `admin-${viewName}`;
     window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
+const getActiveMobileSidebar = () => mobileAdminSidebarPanel || adminSidebar;
+
 const closeAdminMobileSidebar = () => {
-    if (!adminSidebar || !mobileAdminSidebarBackdrop) return;
-    adminSidebar.classList.remove("mobile-open");
+    const mobileSidebar = getActiveMobileSidebar();
+    if (!mobileSidebar || !mobileAdminSidebarBackdrop) return;
+    mobileSidebar.classList.remove("mobile-open");
+    mobileSidebar.setAttribute("aria-hidden", "true");
     mobileAdminSidebarBackdrop.classList.remove("active");
     document.body.classList.remove("sidebar-open");
 };
 
 const openAdminMobileSidebar = () => {
-    if (!adminSidebar || !mobileAdminSidebarBackdrop) return;
-    adminSidebar.classList.add("mobile-open");
+    const mobileSidebar = getActiveMobileSidebar();
+    if (!mobileSidebar || !mobileAdminSidebarBackdrop) return;
+    mobileSidebar.classList.add("mobile-open");
+    mobileSidebar.setAttribute("aria-hidden", "false");
     mobileAdminSidebarBackdrop.classList.add("active");
     document.body.classList.add("sidebar-open");
 };
@@ -763,6 +956,9 @@ const handleAdminLinkNavigation = (link, event) => {
     event?.stopPropagation();
 
     if (viewName === "overview" && !adminOverviewUnlocked) {
+        if (window.innerWidth <= 940) {
+            closeAdminMobileSidebar();
+        }
         openOverviewAccessModal();
         return;
     }
@@ -777,19 +973,28 @@ adminLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
         handleAdminLinkNavigation(link, event);
     });
-
-    link.addEventListener("pointerup", (event) => {
-        handleAdminLinkNavigation(link, event);
-    }, { passive: false });
-
-    link.addEventListener("touchend", (event) => {
-        handleAdminLinkNavigation(link, event);
-    }, { passive: false });
 });
+
+adminMobileViewSelect?.addEventListener("change", () => {
+    const selectedView = String(adminMobileViewSelect.value || "").trim();
+    if (!selectedView) return;
+
+    const targetLink = Array.from(adminLinks).find((link) => link.dataset.adminView === selectedView);
+    if (targetLink instanceof HTMLElement) {
+        handleAdminLinkNavigation(targetLink);
+        return;
+    }
+
+    activateAdminView(selectedView);
+});
+
+const hashViewName = String(window.location.hash || "").replace(/^#admin-/, "").trim();
+const initialActiveView = hashViewName || String(document.querySelector(".admin-link.active")?.dataset.adminView || "products").trim() || "products";
+activateAdminView(initialActiveView === "overview" ? "products" : initialActiveView);
 
 [mobileAdminSidebarToggle, mobileAdminSidebarToggleInline].forEach((button) => {
     button?.addEventListener("click", () => {
-        if (adminSidebar?.classList.contains("mobile-open")) closeAdminMobileSidebar();
+        if (getActiveMobileSidebar()?.classList.contains("mobile-open")) closeAdminMobileSidebar();
         else openAdminMobileSidebar();
     });
 });
@@ -1539,7 +1744,7 @@ const getFilteredOrderDocuments = () => {
     const dateFrom = documentDateFrom?.value || "";
     const dateTo = documentDateTo?.value || "";
 
-    return state.orders.filter((row) => {
+    return buildOrderDocumentRows().filter((row) => {
         const rowDate = String(row.created_at || "").slice(0, 10);
         const fullSearch = [
             row.order_number,
@@ -1548,12 +1753,12 @@ const getFilteredOrderDocuments = () => {
             row.phone,
             row.first_name,
             row.last_name,
-            getOrderDocumentLabel(row.sale_type),
-            row.sale_type,
+            row.document_label,
+            row.document_sale_type,
         ].join(" ").toLowerCase();
 
         const matchSearch = q === "" || fullSearch.includes(q);
-        const matchType = type === "ALL" || String(row.sale_type || "DETAIL").toUpperCase() === type;
+        const matchType = type === "ALL" || String(row.document_sale_type || "DETAIL").toUpperCase() === type;
         const matchShop = shop === "" || String(row.perfume_shop_name || "").toLowerCase().includes(shop);
         const matchPhone = phone === "" || String(row.phone || "").toLowerCase().includes(phone);
         const matchFirstName = firstName === "" || String(row.first_name || "").toLowerCase().includes(firstName);
@@ -1576,8 +1781,8 @@ const renderOrderDocuments = () => {
     const paged = filtered.slice(start, start + pagination.perPage);
 
     if (documentSectionStats) {
-        const grossCount = filtered.filter((row) => String(row.sale_type || "").toUpperCase() === "GROS").length;
-        const detailCount = filtered.filter((row) => String(row.sale_type || "").toUpperCase() !== "GROS").length;
+        const grossCount = filtered.filter((row) => String(row.document_sale_type || "").toUpperCase() === "GROS").length;
+        const detailCount = filtered.filter((row) => String(row.document_sale_type || "").toUpperCase() !== "GROS").length;
         const visibleShops = new Set(filtered.map((row) => String(row.perfume_shop_name || "").trim()).filter(Boolean)).size;
         documentSectionStats.innerHTML = `
             <article class="inline-stat">
@@ -1601,7 +1806,7 @@ const renderOrderDocuments = () => {
 
     adminDocumentsBody.innerHTML = paged.map((row) => `
         <tr>
-            <td>${row.order_number}<br><small>${getOrderDocumentLabel(row.sale_type)}</small><br><small>${row.invoice_number || "-"}</small></td>
+            <td>${row.order_number}<br><small>${row.document_label}</small><br><small>${row.invoice_number || "-"}</small></td>
             <td>${row.perfume_shop_name || "-"}</td>
             <td>${row.first_name || "-"} ${row.last_name || ""}</td>
             <td>${row.phone || "-"}</td>
@@ -1609,10 +1814,10 @@ const renderOrderDocuments = () => {
             <td><strong>${formatDT(getOrderDisplayAmount(row))}</strong></td>
             <td>
                 <div class="table-actions">
-                    <button class="mini-btn" data-document-view="${row.id}"><span data-i18n="admin.view">Consulter</span></button>
-                    <button class="mini-btn" data-document-edit="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
-                    <button class="mini-btn" data-document-pdf="${row.id}">${String(row.sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
-                    <button class="mini-btn bad" data-document-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
+                    <button class="mini-btn" data-document-view="${row.order_id}" data-document-variant="${row.document_variant}"><span data-i18n="admin.view">Consulter</span></button>
+                    <button class="mini-btn" data-document-edit="${row.order_id}" data-document-variant="${row.document_variant}"><span data-i18n="admin.edit">Modifier</span></button>
+                    <button class="mini-btn" data-document-pdf="${row.order_id}" data-document-variant="${row.document_pdf_variant}">${String(row.document_sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
+                    <button class="mini-btn bad" data-document-delete="${row.order_id}" data-document-variant="${row.document_variant}"><span data-i18n="admin.delete">Supprimer</span></button>
                 </div>
             </td>
         </tr>
@@ -1669,7 +1874,13 @@ const renderOrders = () => {
     }
 
     adminOrdersBody.innerHTML = paged
-        .map((row) => `
+        .map((row) => {
+            const alternateDocument = getOrderAlternateDocumentConfig(row);
+            const alternateAction = alternateDocument.mode === "pdf"
+                ? `<button class="mini-btn" ${alternateDocument.dataset}="${row.id}" data-order-pdf-variant="${alternateDocument.variant || ""}">${alternateDocument.label}</button>`
+                : `<button class="mini-btn" ${alternateDocument.dataset}="${row.id}">${alternateDocument.label}</button>`;
+
+            return `
             <tr>
                 <td>${row.order_number}<br><small>${getOrderDocumentLabel(row.sale_type)}</small><br><small>${formatAdminDateTime(row.created_at)}</small></td>
                 <td>${row.perfume_shop_name || "-"}<br><small>${row.first_name} ${row.last_name}</small></td>
@@ -1692,10 +1903,7 @@ const renderOrders = () => {
                     <div class="table-actions">
                         <button class="mini-btn" data-order-view="${row.id}"><span data-i18n="admin.view">Consulter</span></button>
                         <button class="mini-btn" data-order-edit-open="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
-                        ${String(row.sale_type || "").toUpperCase() === "GROS"
-                            ? `<button class="mini-btn" data-order-generate-purchase="${row.id}"><span data-i18n="admin.generatePurchaseOrder">Generer bon de commande</span></button>`
-                            : `<button class="mini-btn" data-order-generate-invoice="${row.id}"><span data-i18n="admin.generateInvoice">Generer facture</span></button>`
-                        }
+                        ${alternateAction}
                         <button class="mini-btn" data-order-pdf="${row.id}">${String(row.sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
                         <button class="mini-btn bad" data-order-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                         <button class="mini-btn warn" data-order-apply="${row.id}">Valider livraison</button>
@@ -1703,7 +1911,8 @@ const renderOrders = () => {
                     </div>
                 </td>
             </tr>
-        `)
+        `;
+        })
         .join("");
 
     if (ordersPagination) {
@@ -2044,18 +2253,23 @@ const collectOrderDetailItems = () => {
     });
 };
 
-const fillOrderDetail = (payload) => {
+const fillOrderDetail = (payload, selectedVariant = "") => {
     const order = payload.order || {};
     const items = payload.items || [];
     const client = parseOrderNotes(order.notes);
     const lineItemsMeta = Array.isArray(client?.document_meta?.line_items) ? client.document_meta.line_items : [];
-    const documentLabel = getOrderDocumentLabel(order.sale_type);
+    const normalizedVariant = String(selectedVariant || "").trim().toUpperCase();
+    const documentLabel = getDocumentVariantLabel(order, normalizedVariant);
     const isWholesale = String(order.sale_type || "").toUpperCase() === "GROS";
 
     orderDetailTitle.textContent = `${documentLabel} ${order.order_number || ""}`;
     orderEditId.value = order.id || "";
     if (orderEditForm) {
         orderEditForm.dataset.saleType = String(order.sale_type || "DETAIL").toUpperCase();
+        orderEditForm.dataset.documentVariant = normalizedVariant;
+    }
+    if (orderDetailPanel) {
+        orderDetailPanel.dataset.documentVariant = normalizedVariant;
     }
     orderEditLastName.value = client.last_name || order.last_name || "";
     orderEditFirstName.value = client.first_name || order.first_name || "";
@@ -2073,7 +2287,7 @@ const fillOrderDetail = (payload) => {
         </article>
         <article class="inline-stat">
             <span data-i18n="admin.amount">Montant</span>
-            <strong>${formatDT(getOrderDisplayAmount(order))}</strong>
+            <strong>${formatDT(getOrderDisplayAmount({ ...order, document_sale_type: getDocumentVariantSaleType(order, normalizedVariant) }))}</strong>
         </article>
         <article class="inline-stat">
             <span data-i18n="admin.paidRemaining">Paye / Reste</span>
@@ -2103,11 +2317,17 @@ const fillOrderDetail = (payload) => {
 
     if (exportOrderPdfBtn) {
         exportOrderPdfBtn.textContent = t("admin.exportPdf") + " " + documentLabel;
+        exportOrderPdfBtn.dataset.variant = normalizedVariant;
     }
     if (generateInvoiceFromOrderBtn) {
         const canGenerateInvoice = String(order.sale_type || "").toUpperCase() !== "GROS";
-        generateInvoiceFromOrderBtn.classList.toggle("admin-hidden", !canGenerateInvoice);
+        const showAlternateInvoiceAction = canGenerateInvoice && normalizedVariant !== "DETAIL_SITE";
+        generateInvoiceFromOrderBtn.classList.toggle("admin-hidden", !showAlternateInvoiceAction);
         generateInvoiceFromOrderBtn.dataset.orderId = canGenerateInvoice ? String(order.id || "") : "";
+        generateInvoiceFromOrderBtn.dataset.pdfVariant = canGenerateInvoice && order.generated_invoice_pdf ? "WHOLESALE_STOCK" : "";
+        generateInvoiceFromOrderBtn.textContent = showAlternateInvoiceAction
+            ? (order.generated_invoice_pdf ? "Facture PDF" : "Generer facture")
+            : "";
     }
 
     setNote(orderDetailMessage, "");
@@ -2666,12 +2886,14 @@ productForm?.addEventListener("submit", async (event) => {
 adminProductsBody?.addEventListener("click", async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    if (target.dataset.productEdit) {
-        const row = state.products.find((item) => String(item.id) === target.dataset.productEdit);
+    const action = target.closest("[data-product-edit], [data-product-delete]");
+    if (!(action instanceof HTMLElement)) return;
+    if (action.dataset.productEdit) {
+        const row = state.products.find((item) => String(item.id) === action.dataset.productEdit);
         if (row) fillProductForm(row);
     }
-    if (target.dataset.productDelete) {
-        await fetchJson(`${API.products}/${target.dataset.productDelete}`, { method: "DELETE" });
+    if (action.dataset.productDelete) {
+        await fetchJson(`${API.products}/${action.dataset.productDelete}`, { method: "DELETE" });
         await loadProducts();
         await loadSummary();
     }
@@ -2680,36 +2902,52 @@ adminProductsBody?.addEventListener("click", async (event) => {
 adminOrdersBody?.addEventListener("click", async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    if (target.dataset.orderView || target.dataset.orderEditOpen) {
-        const id = target.dataset.orderView || target.dataset.orderEditOpen;
+    const action = target.closest("[data-order-view], [data-order-edit-open], [data-order-pdf], [data-order-alt-pdf], [data-order-generate-invoice], [data-order-generate-purchase], [data-order-delete], [data-order-apply], [data-invoice-apply]");
+    if (!(action instanceof HTMLElement)) return;
+    if (action.dataset.orderView || action.dataset.orderEditOpen) {
+        const id = action.dataset.orderView || action.dataset.orderEditOpen;
         const detail = await fetchJson(`${API.orders}/${id}`);
         fillOrderDetail(detail);
         return;
     }
-    if (target.dataset.orderPdf) {
-        openOrderPdf(target.dataset.orderPdf);
+    if (action.dataset.orderPdf) {
+        openOrderPdf(action.dataset.orderPdf);
         return;
     }
-    if (target.dataset.orderGenerateInvoice) {
-        const detail = await fetchJson(`${API.orders}/${target.dataset.orderGenerateInvoice}`);
-        prefillInvoiceFromOrder(detail);
+    if (action.dataset.orderAltPdf) {
+        openOrderPdf(action.dataset.orderAltPdf, action.dataset.orderPdfVariant || "");
         return;
     }
-    if (target.dataset.orderGeneratePurchase) {
-        const detail = await fetchJson(`${API.orders}/${target.dataset.orderGeneratePurchase}`);
-        prefillPurchaseOrderFromInvoice(detail);
+    if (action.dataset.orderGenerateInvoice) {
+        await markOrderDocumentGenerated(action.dataset.orderGenerateInvoice, "WHOLESALE_STOCK");
+        openOrderPdf(action.dataset.orderGenerateInvoice, "WHOLESALE_STOCK");
+        await loadOrders();
+        if (orderEditId?.value === String(action.dataset.orderGenerateInvoice)) {
+            const detail = await fetchJson(`${API.orders}/${action.dataset.orderGenerateInvoice}`);
+            fillOrderDetail(detail);
+        }
         return;
     }
-    if (target.dataset.orderDelete) {
-        await fetchJson(`${API.orders}/${target.dataset.orderDelete}`, { method: "DELETE" });
+    if (action.dataset.orderGeneratePurchase) {
+        await markOrderDocumentGenerated(action.dataset.orderGeneratePurchase, "DETAIL_SITE");
+        openOrderPdf(action.dataset.orderGeneratePurchase, "DETAIL_SITE");
+        await loadOrders();
+        if (orderEditId?.value === String(action.dataset.orderGeneratePurchase)) {
+            const detail = await fetchJson(`${API.orders}/${action.dataset.orderGeneratePurchase}`);
+            fillOrderDetail(detail);
+        }
+        return;
+    }
+    if (action.dataset.orderDelete) {
+        await fetchJson(`${API.orders}/${action.dataset.orderDelete}`, { method: "DELETE" });
         orderDetailPanel?.classList.add("admin-hidden");
         await loadOrders();
         await loadSummary();
         return;
     }
-    if (target.dataset.orderApply) {
-        const select = adminOrdersBody.querySelector(`[data-order-status="${target.dataset.orderApply}"]`);
-        await fetchJson(`${API.orders}/${target.dataset.orderApply}/status`, {
+    if (action.dataset.orderApply) {
+        const select = adminOrdersBody.querySelector(`[data-order-status="${action.dataset.orderApply}"]`);
+        await fetchJson(`${API.orders}/${action.dataset.orderApply}/status`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status: select.value }),
@@ -2717,9 +2955,9 @@ adminOrdersBody?.addEventListener("click", async (event) => {
         await loadOrders();
         await loadSummary();
     }
-    if (target.dataset.invoiceApply) {
-        const invoiceId = target.dataset.invoiceApply;
-        const select = adminOrdersBody.querySelector(`[data-invoice-status="${target.dataset.invoiceApply}"]`);
+    if (action.dataset.invoiceApply) {
+        const invoiceId = action.dataset.invoiceApply;
+        const select = adminOrdersBody.querySelector(`[data-invoice-status="${action.dataset.invoiceApply}"]`);
         const row = state.orders.find((item) => String(item.invoice_id) === String(invoiceId));
         const payload = { status: select.value };
         if (select.value === "PARTIEL") {
@@ -2740,20 +2978,26 @@ adminOrdersBody?.addEventListener("click", async (event) => {
 adminDocumentsBody?.addEventListener("click", async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
+    const action = target.closest("[data-document-view], [data-document-edit], [data-document-pdf], [data-document-delete]");
+    if (!(action instanceof HTMLElement)) return;
 
-    if (target.dataset.documentView || target.dataset.documentEdit) {
-        const id = target.dataset.documentView || target.dataset.documentEdit;
+    if (action.dataset.documentView || action.dataset.documentEdit) {
+        const id = action.dataset.documentView || action.dataset.documentEdit;
         activateAdminView("orders");
         const detail = await fetchJson(`${API.orders}/${id}`);
-        fillOrderDetail(detail);
+        fillOrderDetail(detail, action.dataset.documentVariant || "");
         return;
     }
-    if (target.dataset.documentPdf) {
-        openOrderPdf(target.dataset.documentPdf);
+    if (action.dataset.documentPdf) {
+        openOrderPdf(action.dataset.documentPdf, action.dataset.documentVariant || "");
         return;
     }
-    if (target.dataset.documentDelete) {
-        await fetchJson(`${API.orders}/${target.dataset.documentDelete}`, { method: "DELETE" });
+    if (action.dataset.documentDelete) {
+        if (action.dataset.documentVariant) {
+            await removeOrderGeneratedDocument(action.dataset.documentDelete, action.dataset.documentVariant);
+        } else {
+            await fetchJson(`${API.orders}/${action.dataset.documentDelete}`, { method: "DELETE" });
+        }
         orderDetailPanel?.classList.add("admin-hidden");
         await loadOrders();
         await loadSummary();
@@ -2853,13 +3097,21 @@ hideOrderDetailBtn?.addEventListener("click", () => {
 });
 
 exportOrderPdfBtn?.addEventListener("click", () => {
-    openOrderPdf(orderEditId.value);
+    openOrderPdf(orderEditId.value, exportOrderPdfBtn?.dataset.variant || "");
 });
 
 generateInvoiceFromOrderBtn?.addEventListener("click", async () => {
     if (!generateInvoiceFromOrderBtn?.dataset.orderId) return;
+    if (generateInvoiceFromOrderBtn.dataset.pdfVariant) {
+        openOrderPdf(generateInvoiceFromOrderBtn.dataset.orderId, generateInvoiceFromOrderBtn.dataset.pdfVariant);
+        return;
+    }
+
+    await markOrderDocumentGenerated(generateInvoiceFromOrderBtn.dataset.orderId, "WHOLESALE_STOCK");
+    openOrderPdf(generateInvoiceFromOrderBtn.dataset.orderId, "WHOLESALE_STOCK");
     const detail = await fetchJson(`${API.orders}/${generateInvoiceFromOrderBtn.dataset.orderId}`);
-    prefillInvoiceFromOrder(detail);
+    fillOrderDetail(detail);
+    await loadOrders();
 });
 
 orderEditForm?.addEventListener("submit", async (event) => {

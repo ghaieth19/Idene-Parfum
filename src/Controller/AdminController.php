@@ -50,7 +50,7 @@ final class AdminController
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/admin-app.css?v=22">
+    <link rel="stylesheet" href="/assets/css/admin-app.css?v=25">
 </head>
 <body data-admin-name="__ADMIN_NAME__" data-admin-role="__ADMIN_ROLE__">
     <button type="button" id="mobileAdminSidebarToggle" class="mobile-sidebar-toggle hamburger-toggle" aria-label="Ouvrir ou fermer le menu admin">
@@ -59,6 +59,36 @@ final class AdminController
         <span></span>
     </button>
     <div id="mobileAdminSidebarBackdrop" class="mobile-sidebar-backdrop"></div>
+    <aside id="mobileAdminSidebarPanel" class="admin-sidebar mobile-admin-sidebar-panel" aria-hidden="true">
+        <div class="mobile-sidebar-head">
+            <strong data-i18n="admin.navTitle">Navigation</strong>
+            <button type="button" id="mobileAdminSidebarClose" class="mobile-sidebar-close" aria-label="Fermer le menu admin">Fermer</button>
+        </div>
+        <div class="admin-brand">
+            <img src="/assets/images/logo.png" alt="Logo Idene Parfum">
+            <div>
+                <p class="eyebrow" data-i18n="admin.administration">Administration</p>
+                <h1>IDENE PARFUM</h1>
+                <p class="muted" data-i18n="admin.centralMgmt">Gestion centrale</p>
+            </div>
+        </div>
+
+        <nav class="admin-nav">
+            <button type="button" class="admin-link" data-admin-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-i18n="admin.overview">Vue generale</span></button>
+            <button type="button" class="admin-link" data-admin-view="account"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span data-i18n="admin.myAccount">Mon compte</span></button>
+            <button type="button" class="admin-link active" data-admin-view="products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span data-i18n="admin.products">Produits</span></button>
+            <button type="button" class="admin-link" data-admin-view="raw-materials"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span data-i18n="admin.materialStock">Stock matieres</span></button>
+            <button type="button" class="admin-link" data-admin-view="orders"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span data-i18n="admin.orders">Commandes</span></button>
+            <button type="button" class="admin-link" data-admin-view="documents"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg><span data-i18n="admin.documents">Documents</span></button>
+            <button type="button" class="admin-link" data-admin-view="users"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-i18n="admin.users">Users</span></button>
+            <button type="button" class="admin-link" data-admin-view="employees"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span data-i18n="admin.employees">Employes</span></button>
+            <button type="button" class="admin-link" data-admin-view="expenses"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span data-i18n="admin.expenses">Charges</span></button>
+        </nav>
+
+        <div class="admin-sidebar-footer mobile-admin-sidebar-footer">
+            <a href="/accueil" class="ghost-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span data-i18n="admin.clientView">Vue client</span></a>
+        </div>
+    </aside>
     <div class="admin-shell container-fluid px-3 px-lg-4">
         <aside id="adminSidebar" class="admin-sidebar">
             <div class="mobile-sidebar-head">
@@ -100,6 +130,23 @@ final class AdminController
                 <div>
                     <p class="eyebrow" data-i18n="admin.uxTitle">Administration UX</p>
                     <h2 class="admin-topbar-title" data-i18n="admin.pilotBoard">Tableau de pilotage</h2>
+                    <div class="admin-mobile-controls">
+                        <button type="button" id="mobileAdminSidebarToggleInline" class="mobile-sidebar-toggle-inline">Menu</button>
+                        <label class="admin-mobile-switcher" for="adminMobileViewSelect">
+                            <span>Navigation rapide</span>
+                            <select id="adminMobileViewSelect" class="search-input">
+                                <option value="products">Produits</option>
+                                <option value="raw-materials">Stock matieres</option>
+                                <option value="orders">Commandes</option>
+                                <option value="documents">Documents</option>
+                                <option value="users">Users</option>
+                                <option value="employees">Employes</option>
+                                <option value="expenses">Charges</option>
+                                <option value="account">Mon compte</option>
+                                <option value="overview">Vue generale</option>
+                            </select>
+                        </label>
+                    </div>
                 </div>
                 <div class="admin-topbar-actions">
                     <div class="admin-topbar-tags">
@@ -1040,7 +1087,7 @@ final class AdminController
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/i18n.js"></script><script src="/assets/js/admin-app.js?v=999"></script>
+    <script src="/assets/js/i18n.js"></script><script src="/assets/js/admin-app.js?v=1006"></script>
 </body>
 </html>
 HTML

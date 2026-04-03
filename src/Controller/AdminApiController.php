@@ -227,6 +227,17 @@ final class AdminApiController
         ]);
     }
 
+    private function extractGeneratedDocuments(array $notesPayload): array
+    {
+        $documentMeta = is_array($notesPayload['document_meta'] ?? null) ? $notesPayload['document_meta'] : [];
+        $generatedDocuments = is_array($documentMeta['generated_documents'] ?? null) ? $documentMeta['generated_documents'] : [];
+
+        return [
+            'generated_invoice_pdf' => !empty($generatedDocuments['WHOLESALE_STOCK']),
+            'generated_purchase_pdf' => !empty($generatedDocuments['DETAIL_SITE']),
+        ];
+    }
+
     private function fetchAccountFaceProfiles(int $userId): array
     {
         $this->migrateLegacyMatrixToFaceProfiles($userId);
@@ -869,6 +880,7 @@ final class AdminApiController
                 o.sale_type,
                 o.status AS order_status,
                 o.total_dzd,
+                o.notes,
                 o.created_at,
                 u.first_name,
                 u.last_name,
@@ -882,7 +894,7 @@ final class AdminApiController
              INNER JOIN users u ON u.id = o.customer_user_id
              LEFT JOIN invoices i ON i.order_id = o.id
              LEFT JOIN payments p ON p.invoice_id = i.id
-             GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.created_at,
+             GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.notes, o.created_at,
                       u.first_name, u.last_name, u.perfume_shop_name,
                       i.id, i.invoice_number, i.status, i.total_dzd
              ORDER BY o.id DESC"
@@ -892,6 +904,11 @@ final class AdminApiController
             $invoiceTotal = (float) ($row['invoice_total'] ?? 0);
             $paidAmount = (float) ($row['paid_amount'] ?? 0);
             $row['remaining_amount'] = max(0, $invoiceTotal - $paidAmount);
+            $notesPayload = json_decode((string) ($row['notes'] ?? '{}'), true);
+            if (!is_array($notesPayload)) {
+                $notesPayload = [];
+            }
+            $row = array_merge($row, $this->extractGeneratedDocuments($notesPayload));
         }
         unset($row);
 
@@ -1122,6 +1139,11 @@ final class AdminApiController
             return new JsonResponse(['error' => 'Commande introuvable.'], 404);
         }
         $order['remaining_amount'] = max(0, (float) ($order['invoice_total'] ?? 0) - (float) ($order['paid_amount'] ?? 0));
+        $notesPayload = json_decode((string) ($order['notes'] ?? '{}'), true);
+        if (!is_array($notesPayload)) {
+            $notesPayload = [];
+        }
+        $order = array_merge($order, $this->extractGeneratedDocuments($notesPayload));
 
         $itemsStmt = $db->prepare(
             "SELECT
@@ -1145,6 +1167,53 @@ final class AdminApiController
         return new JsonResponse([
             'order' => $order,
             'items' => $itemsStmt->fetchAll(),
+        ]);
+    }
+
+    #[Route('/api/admin/orders/{id}/generated-document', name: 'api_admin_order_generated_document', methods: ['POST', 'DELETE'])]
+    public function markGeneratedDocument(int $id, Request $request): JsonResponse
+    {
+        if ($deny = $this->denyUnlessAdmin()) {
+            return $deny;
+        }
+
+        $payload = json_decode((string) $request->getContent(), true) ?: [];
+        $variant = strtoupper(trim((string) ($payload['variant'] ?? '')));
+        if (!in_array($variant, ['WHOLESALE_STOCK', 'DETAIL_SITE'], true)) {
+            return new JsonResponse(['error' => 'Variant document invalide.'], 422);
+        }
+
+        $db = $this->app->db();
+        $stmt = $db->prepare('SELECT notes FROM orders WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $order = $stmt->fetch();
+        if (!$order) {
+            return new JsonResponse(['error' => 'Commande introuvable.'], 404);
+        }
+
+        $notesPayload = json_decode((string) ($order['notes'] ?? '{}'), true);
+        if (!is_array($notesPayload)) {
+            $notesPayload = [];
+        }
+
+        $documentMeta = is_array($notesPayload['document_meta'] ?? null) ? $notesPayload['document_meta'] : [];
+        $generatedDocuments = is_array($documentMeta['generated_documents'] ?? null) ? $documentMeta['generated_documents'] : [];
+        if ($request->isMethod('DELETE')) {
+            unset($generatedDocuments[$variant]);
+        } else {
+            $generatedDocuments[$variant] = date(DATE_ATOM);
+        }
+        $documentMeta['generated_documents'] = $generatedDocuments;
+        $notesPayload['document_meta'] = $documentMeta;
+
+        $db->prepare('UPDATE orders SET notes = :notes WHERE id = :id')->execute([
+            'notes' => json_encode($notesPayload, JSON_UNESCAPED_UNICODE),
+            'id' => $id,
+        ]);
+
+        return new JsonResponse([
+            'ok' => true,
+            'generated_documents' => $generatedDocuments,
         ]);
     }
 

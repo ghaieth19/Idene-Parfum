@@ -15,8 +15,10 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AuthApiController
 {
     private const FACE_MATRIX_LENGTH = 1024;
-    private const FACE_MATCH_THRESHOLD = 10.5;
+    private const FACE_MATCH_THRESHOLD = 0.78;
     private const FACE_MATCH_MIN_COSINE = 0.72;
+    private const FACE_MATCH_MIN_COSINE_GAP = 0.015;
+    private const FACE_MATCH_MIN_DISTANCE_GAP = 0.04;
     private const FACE_PROFILE_LABEL_MAX_LENGTH = 120;
     private const SESSION_PENDING_FACE_MATRIX = 'face_auth.pending.matrix';
     private const SESSION_FIRST_LOGIN_GUIDE = 'auth.first_login_guide';
@@ -55,6 +57,37 @@ final class AuthApiController
         }
 
         return $matrix;
+    }
+
+    private function normalizeFaceMatrices(mixed $value): array
+    {
+        if (!is_array($value)) {
+            throw new \RuntimeException('Matrices de visage invalides.');
+        }
+
+        $matrices = [];
+        $seen = [];
+
+        foreach ($value as $item) {
+            $matrix = $this->normalizeFaceMatrix($item);
+            $key = json_encode($matrix, JSON_THROW_ON_ERROR);
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $matrices[] = $matrix;
+
+            if (count($matrices) >= 8) {
+                break;
+            }
+        }
+
+        if ($matrices === []) {
+            throw new \RuntimeException('Matrices de visage invalides.');
+        }
+
+        return $matrices;
     }
 
     private function putPendingFaceMatrix(array $matrix): void
@@ -432,8 +465,25 @@ final class AuthApiController
 
     private function findUserByFaceMatrix(array $probeMatrix): ?array
     {
+        return $this->findUserByFaceMatrices([$probeMatrix]);
+    }
+
+    private function findUserByFaceMatrices(array $probeMatrices): ?array
+    {
         $this->ensureFaceAuthProfilesTable();
-        $normalizedProbeMatrix = $this->normalizeFaceVectorForComparison($probeMatrix);
+        $normalizedProbeMatrices = [];
+        foreach ($probeMatrices as $probeMatrix) {
+            if (!is_array($probeMatrix) || count($probeMatrix) !== self::FACE_MATRIX_LENGTH) {
+                continue;
+            }
+
+            $normalizedProbeMatrices[] = $this->normalizeFaceVectorForComparison($probeMatrix);
+        }
+
+        if ($normalizedProbeMatrices === []) {
+            return null;
+        }
+
         $stmt = $this->app->db()->query(
             'SELECT *
              FROM (
@@ -494,9 +544,7 @@ final class AuthApiController
                AND matrice <> ""'
         );
 
-        $bestUser = null;
-        $bestDistance = null;
-        $bestCosine = null;
+        $bestMatchByUser = [];
 
         foreach ($stmt->fetchAll() as $row) {
             $stored = json_decode((string) $row['matrice'], true);
@@ -504,38 +552,80 @@ final class AuthApiController
                 continue;
             }
 
-            $sum = 0.0;
-            for ($index = 0; $index < self::FACE_MATRIX_LENGTH; $index += 1) {
-                $delta = ((float) $stored[$index]) - $probeMatrix[$index];
-                $sum += $delta * $delta;
-            }
-
-            $distance = sqrt($sum);
-            if ($distance > self::FACE_MATCH_THRESHOLD) {
-                continue;
-            }
-
             $normalizedStoredMatrix = $this->normalizeFaceVectorForComparison($stored);
-            $cosineSimilarity = $this->cosineSimilarity($normalizedStoredMatrix, $normalizedProbeMatrix);
-            if ($cosineSimilarity < self::FACE_MATCH_MIN_COSINE) {
+            $userId = (int) ($row['id'] ?? 0);
+            if ($userId <= 0) {
                 continue;
             }
 
-            if (
-                $bestDistance === null
-                || $distance < $bestDistance
-                || ($distance === $bestDistance && ($bestCosine === null || $cosineSimilarity > $bestCosine))
-            ) {
-                $bestDistance = $distance;
-                $bestCosine = $cosineSimilarity;
-                $bestUser = $row;
+            foreach ($normalizedProbeMatrices as $normalizedProbeMatrix) {
+                $sum = 0.0;
+                for ($index = 0; $index < self::FACE_MATRIX_LENGTH; $index += 1) {
+                    $delta = $normalizedStoredMatrix[$index] - $normalizedProbeMatrix[$index];
+                    $sum += $delta * $delta;
+                }
+
+                $distance = sqrt($sum);
+                if ($distance > self::FACE_MATCH_THRESHOLD) {
+                    continue;
+                }
+
+                $cosineSimilarity = $this->cosineSimilarity($normalizedStoredMatrix, $normalizedProbeMatrix);
+                if ($cosineSimilarity < self::FACE_MATCH_MIN_COSINE) {
+                    continue;
+                }
+
+                $candidate = [
+                    'user' => $row,
+                    'distance' => $distance,
+                    'cosine' => $cosineSimilarity,
+                ];
+
+                if (
+                    !isset($bestMatchByUser[$userId])
+                    || $distance < $bestMatchByUser[$userId]['distance']
+                    || (
+                        abs($distance - $bestMatchByUser[$userId]['distance']) < 0.000001
+                        && $cosineSimilarity > $bestMatchByUser[$userId]['cosine']
+                    )
+                ) {
+                    $bestMatchByUser[$userId] = $candidate;
+                }
             }
         }
 
-        if (!$bestUser) {
+        if ($bestMatchByUser === []) {
             return null;
         }
 
+        $matches = array_values($bestMatchByUser);
+        usort(
+            $matches,
+            static function (array $left, array $right): int {
+                if (abs($left['distance'] - $right['distance']) > 0.000001) {
+                    return $left['distance'] <=> $right['distance'];
+                }
+
+                return $right['cosine'] <=> $left['cosine'];
+            }
+        );
+
+        $bestMatch = $matches[0];
+        $secondBestMatch = $matches[1] ?? null;
+
+        if ($secondBestMatch !== null) {
+            $cosineGap = $bestMatch['cosine'] - $secondBestMatch['cosine'];
+            $distanceGap = $secondBestMatch['distance'] - $bestMatch['distance'];
+
+            if (
+                $cosineGap < self::FACE_MATCH_MIN_COSINE_GAP
+                && $distanceGap < self::FACE_MATCH_MIN_DISTANCE_GAP
+            ) {
+                return ['_ambiguous' => true];
+            }
+        }
+
+        $bestUser = $bestMatch['user'];
         unset($bestUser['matrice']);
 
         return $bestUser;
@@ -719,14 +809,35 @@ final class AuthApiController
         $payload = json_decode((string) $request->getContent(), true) ?: [];
 
         try {
-            $matrix = $this->normalizeFaceMatrix($payload['matrix'] ?? null);
+            $probeMatrices = [];
+
+            if (array_key_exists('matrices', $payload) && $payload['matrices'] !== null) {
+                $probeMatrices = $this->normalizeFaceMatrices($payload['matrices']);
+            }
+
+            if (array_key_exists('matrix', $payload)) {
+                $primaryMatrix = $this->normalizeFaceMatrix($payload['matrix']);
+                $primaryKey = json_encode($primaryMatrix, JSON_THROW_ON_ERROR);
+                $probeMatrices = array_values(array_filter(
+                    $probeMatrices,
+                    static fn (array $matrix): bool => json_encode($matrix, JSON_THROW_ON_ERROR) !== $primaryKey
+                ));
+                array_unshift($probeMatrices, $primaryMatrix);
+            }
+
+            if ($probeMatrices === []) {
+                throw new \RuntimeException('Matrice de visage invalide.');
+            }
         } catch (\RuntimeException $e) {
             return ApiResponse::error($e->getMessage(), 422);
         }
 
-        $user = $this->findUserByFaceMatrix($matrix);
+        $user = $this->findUserByFaceMatrices($probeMatrices);
         if (!$user) {
             return ApiResponse::error('Aucun compte ne correspond a ce visage.', 404);
+        }
+        if (($user['_ambiguous'] ?? false) === true) {
+            return ApiResponse::error('Plusieurs comptes ressemblent a cette capture. Reprenez le scan bien en face ou reconfigurez le visage du compte.', 409);
         }
 
         $this->app->loginUser($user);

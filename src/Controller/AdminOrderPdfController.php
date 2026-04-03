@@ -34,6 +34,7 @@ final class AdminOrderPdfController
 
         $variant = strtoupper(trim((string) $request->query->get('variant', '')));
         $exportSiteOrder = $variant === 'DETAIL_SITE';
+        $exportWholesaleOrder = $variant === 'WHOLESALE_STOCK';
 
         $db = $this->app->db();
         $stmt = $db->prepare(
@@ -64,7 +65,8 @@ final class AdminOrderPdfController
                 oi.quantity_ml,
                 oi.unit_price_dzd,
                 oi.line_total_dzd,
-                pp_detail.price_dzd AS detail_unit_price_dzd
+                pp_detail.price_dzd AS detail_unit_price_dzd,
+                pp_gros.price_dzd AS gros_unit_price_dzd
              FROM order_items oi
              INNER JOIN products p ON p.id = oi.product_id
              INNER JOIN perfume_catalog pc ON pc.id = p.perfume_catalog_id
@@ -72,6 +74,10 @@ final class AdminOrderPdfController
                     ON pp_detail.product_id = p.id
                    AND pp_detail.sale_type = 'DETAIL'
                    AND pp_detail.ends_at IS NULL
+             LEFT JOIN product_prices pp_gros
+                    ON pp_gros.product_id = p.id
+                   AND pp_gros.sale_type = 'GROS'
+                   AND pp_gros.ends_at IS NULL
              WHERE oi.order_id = :order_id
              ORDER BY oi.id ASC"
         );
@@ -83,7 +89,7 @@ final class AdminOrderPdfController
         $documentMeta = is_array($client['document_meta'] ?? null) ? $client['document_meta'] : [];
         $saleType = strtoupper((string) ($order['sale_type'] ?? 'DETAIL'));
         $isWholesale = $saleType === 'GROS';
-        $renderWholesaleDocument = $isWholesale && !$exportSiteOrder;
+        $renderWholesaleDocument = $exportWholesaleOrder || ($isWholesale && !$exportSiteOrder);
 
         $htBrut = 0.0;
         $rowsHtml = '';
@@ -91,9 +97,13 @@ final class AdminOrderPdfController
         foreach ($items as $index => $item) {
             $lineMeta = is_array($lineItemsMeta[$index] ?? null) ? $lineItemsMeta[$index] : [];
             $quantityValue = (float) ($item['quantity_ml'] ?? 0);
-            $unitPrice = $exportSiteOrder
-                ? (float) ($item['detail_unit_price_dzd'] ?? 0)
-                : (float) ($item['unit_price_dzd'] ?? 0);
+            if ($exportSiteOrder) {
+                $unitPrice = (float) ($item['detail_unit_price_dzd'] ?? 0);
+            } elseif ($exportWholesaleOrder && !$isWholesale) {
+                $unitPrice = (float) ($item['gros_unit_price_dzd'] ?? 0);
+            } else {
+                $unitPrice = (float) ($item['unit_price_dzd'] ?? 0);
+            }
             if ($unitPrice <= 0) {
                 $unitPrice = (float) ($item['unit_price_dzd'] ?? 0);
             }

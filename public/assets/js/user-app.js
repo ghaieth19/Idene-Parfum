@@ -85,6 +85,103 @@
     if (st === 'limited') return '<span class="badge badge-warning">Limite</span>';
     return '<span class="badge badge-success">En stock</span>';
   };
+  const regionSelect = $('#ckRegion');
+  const regionMobileBtn = $('#ckRegionMobileBtn');
+  const regionMobileLabel = $('#ckRegionMobileLabel');
+  const regionSheet = $('#ckRegionSheet');
+  const regionSheetBackdrop = $('#ckRegionSheetBackdrop');
+  const regionSheetCloseBtn = $('#ckRegionCloseBtn');
+  const regionOptions = $('#ckRegionOptions');
+  const syncStatusChipGroup = (selectId) => {
+    const select = document.getElementById(selectId);
+    if (!(select instanceof HTMLSelectElement)) return;
+
+    const chips = document.querySelectorAll(`[data-filter-chips="${selectId}"] .status-chip`);
+    chips.forEach((chip) => {
+      chip.classList.toggle('is-active', chip.dataset.filterValue === select.value);
+    });
+  };
+
+  const initStatusChipGroup = (selectId, onChange) => {
+    const select = document.getElementById(selectId);
+    if (!(select instanceof HTMLSelectElement)) return;
+
+    const group = document.querySelector(`[data-filter-chips="${selectId}"]`);
+    if (!group) return;
+
+    group.addEventListener('click', (event) => {
+      const chip = event.target instanceof Element ? event.target.closest('.status-chip') : null;
+      if (!(chip instanceof HTMLButtonElement)) return;
+
+      const nextValue = chip.dataset.filterValue || 'ALL';
+      if (select.value !== nextValue) {
+        select.value = nextValue;
+        onChange();
+      }
+
+      syncStatusChipGroup(selectId);
+    });
+
+    select.addEventListener('change', () => {
+      syncStatusChipGroup(selectId);
+    });
+
+    syncStatusChipGroup(selectId);
+  };
+  const syncMobileRegionPicker = () => {
+    if (!regionSelect || !regionMobileLabel) return;
+
+    const selectedOption = regionSelect.options[regionSelect.selectedIndex];
+    const label = selectedOption?.textContent?.trim() || 'Choisir un gouvernorat';
+    regionMobileLabel.textContent = label;
+
+    if (regionOptions) {
+      regionOptions.querySelectorAll('.mobile-region-option').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.regionValue === regionSelect.value);
+      });
+    }
+  };
+  const closeMobileRegionSheet = () => {
+    if (!regionSheet) return;
+    regionSheet.classList.remove('is-open');
+    regionSheet.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('region-sheet-open');
+    regionMobileBtn?.setAttribute('aria-expanded', 'false');
+  };
+  const openMobileRegionSheet = () => {
+    if (!regionSheet || !regionOptions || !(regionSelect instanceof HTMLSelectElement)) return;
+
+    const optionsHtml = [...regionSelect.options].map((option) => {
+      const value = String(option.value || '');
+      const label = esc(option.textContent || '');
+      const activeClass = value === regionSelect.value ? ' is-active' : '';
+
+      return `<button type="button" class="mobile-region-option${activeClass}" data-region-value="${esc(value)}">${label}</button>`;
+    }).join('');
+
+    regionOptions.innerHTML = optionsHtml;
+    regionSheet.classList.add('is-open');
+    regionSheet.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('region-sheet-open');
+    regionMobileBtn?.setAttribute('aria-expanded', 'true');
+  };
+
+  if (regionSelect instanceof HTMLSelectElement) {
+    regionSelect.addEventListener('change', syncMobileRegionPicker);
+    syncMobileRegionPicker();
+  }
+
+  regionMobileBtn?.addEventListener('click', openMobileRegionSheet);
+  regionSheetBackdrop?.addEventListener('click', closeMobileRegionSheet);
+  regionSheetCloseBtn?.addEventListener('click', closeMobileRegionSheet);
+  regionOptions?.addEventListener('click', (event) => {
+    const optionButton = event.target instanceof Element ? event.target.closest('.mobile-region-option') : null;
+    if (!(optionButton instanceof HTMLButtonElement) || !(regionSelect instanceof HTMLSelectElement)) return;
+
+    regionSelect.value = optionButton.dataset.regionValue || '';
+    regionSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    closeMobileRegionSheet();
+  });
 
   const views = {
     dashboard: 'viewDashboard',
@@ -121,6 +218,10 @@
   let editingOrderId = null;
   let accountFaceStream = null;
   let accountFaceStatusLoaded = false;
+  const FACE_MATRIX_SIZE = 32;
+  const FACE_CAPTURE_SAMPLES = 5;
+  const FACE_CAPTURE_DELAY_MS = 120;
+  const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
   function renderBottomNav(name) {
     $$('.mobile-bottom-nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
@@ -210,7 +311,39 @@
     return raw || 'Impossible d ouvrir la camera.';
   };
 
-  const buildFaceMatrixFromElements = async (videoEl, canvasEl) => {
+  const clampCrop = (crop, width, height) => {
+    const cropWidth = Math.max(1, Math.min(crop.width, width));
+    const cropHeight = Math.max(1, Math.min(crop.height, height));
+
+    return {
+      x: Math.min(Math.max(0, crop.x), Math.max(0, width - cropWidth)),
+      y: Math.min(Math.max(0, crop.y), Math.max(0, height - cropHeight)),
+      width: cropWidth,
+      height: cropHeight
+    };
+  };
+
+  const normalizeCapturedMatrix = (matrix) => {
+    if (!Array.isArray(matrix) || matrix.length !== FACE_MATRIX_SIZE * FACE_MATRIX_SIZE) {
+      throw new Error('Capture visage invalide.');
+    }
+
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    for (const value of matrix) {
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+    }
+
+    const range = max - min;
+    if (range < 0.02) {
+      throw new Error('Rapprochez votre visage et assurez un bon eclairage.');
+    }
+
+    return matrix.map((value) => Number(((value - min) / range).toFixed(6)));
+  };
+
+  const captureSingleFaceMatrix = async (videoEl, canvasEl) => {
     if (!(videoEl instanceof HTMLVideoElement) || !(canvasEl instanceof HTMLCanvasElement)) {
       throw new Error('Camera indisponible.');
     }
@@ -224,7 +357,13 @@
     canvasEl.height = height;
     context.drawImage(videoEl, 0, 0, width, height);
 
-    let crop = { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.7 };
+    const fallbackSize = Math.min(width * 0.62, height * 0.62);
+    let crop = clampCrop({
+      x: (width - fallbackSize) / 2,
+      y: height * 0.14,
+      width: fallbackSize,
+      height: fallbackSize
+    }, width, height);
 
     if ('FaceDetector' in window) {
       try {
@@ -232,32 +371,62 @@
         const faces = await detector.detect(canvasEl);
         if (faces.length > 0) {
           const box = faces[0].boundingBox;
-          const size = Math.max(box.width, box.height) * 1.3;
-          crop = {
-            x: Math.max(0, box.x + (box.width - size) / 2),
-            y: Math.max(0, box.y + (box.height - size) / 2),
-            width: Math.min(size, width),
-            height: Math.min(size, height)
-          };
+          const size = Math.max(box.width, box.height) * 1.45;
+          crop = clampCrop({
+            x: box.x + (box.width - size) / 2,
+            y: box.y + (box.height - size) / 2 - size * 0.08,
+            width: size,
+            height: size
+          }, width, height);
         }
       } catch (_) {}
     }
 
     const matrixCanvas = document.createElement('canvas');
-    matrixCanvas.width = 32;
-    matrixCanvas.height = 32;
+    matrixCanvas.width = FACE_MATRIX_SIZE;
+    matrixCanvas.height = FACE_MATRIX_SIZE;
     const matrixContext = matrixCanvas.getContext('2d', { willReadFrequently: true });
     if (!matrixContext) throw new Error('Canvas de matrice indisponible.');
 
-    matrixContext.drawImage(canvasEl, crop.x, crop.y, crop.width, crop.height, 0, 0, 32, 32);
-    const { data } = matrixContext.getImageData(0, 0, 32, 32);
+    matrixContext.drawImage(canvasEl, crop.x, crop.y, crop.width, crop.height, 0, 0, FACE_MATRIX_SIZE, FACE_MATRIX_SIZE);
+    const { data } = matrixContext.getImageData(0, 0, FACE_MATRIX_SIZE, FACE_MATRIX_SIZE);
     const matrix = [];
     for (let i = 0; i < data.length; i += 4) {
       const grayscale = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
-      matrix.push(Number(grayscale.toFixed(6)));
+      matrix.push(grayscale);
     }
 
-    return matrix;
+    return normalizeCapturedMatrix(matrix);
+  };
+
+  const buildFaceMatrixFromElements = async (videoEl, canvasEl) => {
+    const samples = [];
+    let lastError = null;
+
+    for (let index = 0; index < FACE_CAPTURE_SAMPLES; index += 1) {
+      try {
+        samples.push(await captureSingleFaceMatrix(videoEl, canvasEl));
+      } catch (error) {
+        lastError = error;
+      }
+
+      if (index < FACE_CAPTURE_SAMPLES - 1) {
+        await wait(FACE_CAPTURE_DELAY_MS);
+      }
+    }
+
+    if (samples.length < 3) {
+      throw lastError || new Error('Capture visage impossible.');
+    }
+
+    return samples[0].map((_, matrixIndex) => {
+      let total = 0;
+      for (const sample of samples) {
+        total += sample[matrixIndex];
+      }
+
+      return Number((total / samples.length).toFixed(6));
+    });
   };
 
   async function loadFaceAccountStatus(force = false) {
@@ -687,6 +856,7 @@
   }
   on($('#orderSearch'), 'input', renderOrders);
   on($('#orderStatusFilter'), 'change', renderOrders);
+  initStatusChipGroup('orderStatusFilter', renderOrders);
 
   window.editOrder = function (orderId) {
     fetch(`/api/client/orders/${orderId}`).then((r) => r.json()).then((d) => {
@@ -708,6 +878,7 @@
       $('#ckLine2').value = shipping.phone || shipping.line2 || '';
       $('#ckCity').value = shipping.city || '';
       $('#ckRegion').value = shipping.region || '';
+      syncMobileRegionPicker();
       $('#ckCountry').value = shipping.country || 'Tunisie';
       if ($('#ckDeliveryAddress')) $('#ckDeliveryAddress').value = shipping.delivery_address || '';
       renderCart();
@@ -777,6 +948,7 @@
   }
   on($('#invoiceSearch'), 'input', renderInvoices);
   on($('#invoiceStatusFilter'), 'change', renderInvoices);
+  initStatusChipGroup('invoiceStatusFilter', renderInvoices);
 
   on($('#profileForm'), 'submit', async (e) => {
     e.preventDefault();
