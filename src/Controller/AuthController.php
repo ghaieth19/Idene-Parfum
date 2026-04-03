@@ -40,8 +40,16 @@ final class AuthController
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css?v=2">
     <link rel="stylesheet" href="/assets/css/auth.css?v=6">
+    <link rel="stylesheet" href="/assets/css/i18n-rtl.css">
 </head>
 <body>
+    <!-- Language Toggle -->
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 100;">
+        <button class="lang-toggle-btn" type="button" aria-label="Switch language">
+            <span class="lang-toggle-flag">🇸🇦</span>
+            <span class="lang-toggle-label">العربية</span>
+        </button>
+    </div>
     <main class="auth-shell">
         <section class="auth-card auth-layout">
             
@@ -51,21 +59,21 @@ final class AuthController
                     <div class="logo-wrap">
                         <img src="/assets/images/logo.png" alt="IDENE PARFUM" class="logo-image">
                     </div>
-                    <p class="hero-tag">Acheter en gros</p>
-                    <h1>L'huile de parfum<br>au plus près de la source.</h1>
-                    <p class="intro-text">Créez votre compte B2B pour accéder instantanément aux tarifs professionnels et aux commandes directes usine.</p>
+                    <p class="hero-tag" data-i18n="auth.buyBulk">Acheter en gros</p>
+                    <h1 data-i18n="auth.heroTitle">L'huile de parfum<br>au plus près de la source.</h1>
+                    <p class="intro-text" data-i18n="auth.heroText">Créez votre compte B2B pour accéder instantanément aux tarifs professionnels et aux commandes directes usine.</p>
                 </header>
 
                 <div class="showcase-grid">
                     <div class="showcase-card">
-                        <span>Sélection</span>
-                        <strong>+200 Parfums en stock</strong>
-                        <p>Disponible en 250ml, 500ml et 1 Litre pour s'adapter à vos besoins.</p>
+                        <span data-i18n="auth.selection">Sélection</span>
+                        <strong data-i18n="auth.selectionDetail">+200 Parfums en stock</strong>
+                        <p data-i18n="auth.selectionText">Disponible en 250ml, 500ml et 1 Litre pour s'adapter à vos besoins.</p>
                     </div>
                     <div class="showcase-card">
-                        <span>Qualité & Service</span>
-                        <strong>Expédition prioritaire 48h</strong>
-                        <p>Commandez en quelques clics, suivez votre livraison en temps réel.</p>
+                        <span data-i18n="auth.qualityService">Qualité & Service</span>
+                        <strong data-i18n="auth.qualityDetail">Expédition prioritaire 48h</strong>
+                        <p data-i18n="auth.qualityText">Commandez en quelques clics, suivez votre livraison en temps réel.</p>
                     </div>
                 </div>
             </aside>
@@ -73,87 +81,87 @@ final class AuthController
             <!-- Right Panel Form -->
             <section class="auth-form-panel">
                 <div class="switcher">
-                    <button class="tab active" data-target="login">Connexion</button>
-                    <button class="tab" data-target="signup">Créer un compte</button>
+                    <button class="tab active" data-target="login" data-i18n="auth.loginTab">Connexion</button>
+                    <button class="tab" data-target="signup" data-i18n="auth.signupTab">Créer un compte</button>
                 </div>
 
                 <form id="loginForm" class="form active" action="#" method="post">
                     <div class="form-intro">
-                        <p class="form-kicker">Bienvenue</p>
-                        <h2>Accédez à votre espace</h2>
+                        <p class="form-kicker" data-i18n="auth.welcome">Bienvenue</p>
+                        <h2 data-i18n="auth.accessSpace">Accédez à votre espace</h2>
                     </div>
                     <p id="loginMessage" class="helper-text form-message"></p>
                     <div class="floating-label">
                         <input type="email" name="email" id="loginEmail" placeholder=" " required>
-                        <label for="loginEmail">Email</label>
+                        <label for="loginEmail" data-i18n="auth.email">Email</label>
                     </div>
                     <div class="floating-label">
                         <input type="password" name="password" id="loginPassword" placeholder=" " required minlength="8">
-                        <label for="loginPassword">Mot de passe</label>
+                        <label for="loginPassword" data-i18n="auth.password">Mot de passe</label>
                     </div>
                     
-                    <a href="/verify-reset-code" id="forgotToggle" class="muted-link align-right">Mot de passe oublié ?</a>
+                    <a href="/verify-reset-code" id="forgotToggle" class="muted-link align-right" data-i18n="auth.forgotPassword">Mot de passe oublié ?</a>
                     
-                    <button type="submit" class="btn-primary auth-submit">Se connecter <i class="bi bi-arrow-right"></i></button>
+                    <button type="submit" class="btn-primary auth-submit"><span data-i18n="auth.loginBtn">Se connecter</span> <i class="bi bi-arrow-right"></i></button>
 
-                    <div class="divider"><span>ou</span></div>
+                    <div class="divider"><span data-i18n="auth.or">ou</span></div>
 
                     <button id="faceLoginBtn" type="button" class="btn-outline face-btn">
-                        <i class="bi bi-person-bounding-box"></i> Connexion Faciale
+                        <i class="bi bi-person-bounding-box"></i> <span data-i18n="auth.faceLogin">Connexion Faciale</span>
                     </button>
                     <p id="faceStatus" class="helper-text"></p>
                 </form>
 
                 <form id="signupForm" class="form" action="#" method="post">
                     <div class="form-intro text-center">
-                        <p class="form-kicker">Nouveau client</p>
-                        <h2>Créer un compte professionnel</h2>
+                        <p class="form-kicker" data-i18n="auth.newClient">Nouveau client</p>
+                        <h2 data-i18n="auth.createPro">Créer un compte professionnel</h2>
                     </div>
                     <p id="signupMessage" class="helper-text form-message"></p>
                     <div class="grid">
                         <div class="floating-label">
                             <input type="text" name="last_name" id="regLastName" placeholder=" " required>
-                            <label for="regLastName">Nom</label>
+                            <label for="regLastName" data-i18n="auth.lastName">Nom</label>
                         </div>
                         <div class="floating-label">
                             <input type="text" name="first_name" id="regFirstName" placeholder=" " required>
-                            <label for="regFirstName">Prénom</label>
+                            <label for="regFirstName" data-i18n="auth.firstName">Prénom</label>
                         </div>
                     </div>
                     <div class="floating-label">
                         <input type="text" name="shop_name" id="regShopName" placeholder=" " required>
-                        <label for="regShopName">Nom de la parfumerie</label>
+                        <label for="regShopName" data-i18n="auth.shopName">Nom de la parfumerie</label>
                     </div>
                     <div class="grid">
                         <div class="floating-label">
                             <input type="tel" name="phone" id="regPhone" placeholder=" " required>
-                            <label for="regPhone">Téléphone</label>
+                            <label for="regPhone" data-i18n="auth.phone">Téléphone</label>
                         </div>
                         <div class="floating-label">
                             <input type="text" name="location" id="regLocation" placeholder=" " required>
-                            <label for="regLocation">Ville / Localisation</label>
+                            <label for="regLocation" data-i18n="auth.location">Ville / Localisation</label>
                         </div>
                     </div>
                     <div class="floating-label">
                         <input type="email" name="email" id="regEmail" placeholder=" " required>
-                        <label for="regEmail">Email professionnel</label>
+                        <label for="regEmail" data-i18n="auth.proEmail">Email professionnel</label>
                     </div>
                     <div class="floating-label">
                         <input type="password" name="password" id="regPassword" placeholder=" " required minlength="8">
-                        <label for="regPassword">Créer un mot de passe</label>
+                        <label for="regPassword" data-i18n="auth.createPassword">Créer un mot de passe</label>
                     </div>
 
                     <label class="check custom-checkbox">
                         <input id="faceSignupOptIn" type="checkbox" name="face_signup_opt_in" checked>
-                        <span>Activer la reconnaissance faciale pour les prochaines connexions </span>
+                        <span data-i18n="auth.enableFace">Activer la reconnaissance faciale pour les prochaines connexions </span>
                     </label>
 
                     <section class="biometric-panel glass-panel mt-3 mb-4">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-camera-video" style="font-size:1.2rem; margin-right:8px; color:var(--primary);"></i>
-                            <p class="panel-title mb-0" style="margin:0;">Enregistrement biométrique</p>
+                            <p class="panel-title mb-0" style="margin:0;" data-i18n="auth.biometric">Enregistrement biométrique</p>
                         </div>
-                        <p class="panel-text mb-3">Capturez votre visage une seule fois pour accélérer les connexions futures.</p>
+                        <p class="panel-text mb-3" data-i18n="auth.biometricText">Capturez votre visage une seule fois pour accélérer les connexions futures.</p>
                         
                         <div class="inline-face-box">
                             <div class="inline-camera-shell" style="border-radius:var(--radius-md); overflow:hidden; border:1px solid rgba(0,0,0,0.1); margin-bottom:12px;">
@@ -162,33 +170,33 @@ final class AuthController
                             </div>
                             <canvas id="inlineFaceCanvas" class="face-canvas" width="320" height="240" style="display:none"></canvas>
                             <div class="inline-face-actions" style="display:flex; gap:10px;">
-                                <button id="faceSignupBtn" type="button" class="btn-outline" style="flex:1;"><i class="bi bi-camera"></i> Ouvrir la camera</button>
-                                <button id="validateFaceSignupBtn" type="button" class="btn-primary" style="flex:1;"><i class="bi bi-check2-circle"></i> Valider le visage</button>
+                                <button id="faceSignupBtn" type="button" class="btn-outline" style="flex:1;"><i class="bi bi-camera"></i> <span data-i18n="auth.openCamera">Ouvrir la camera</span></button>
+                                <button id="validateFaceSignupBtn" type="button" class="btn-primary" style="flex:1;"><i class="bi bi-check2-circle"></i> <span data-i18n="auth.validateFace">Valider le visage</span></button>
                             </div>
                         </div>
                     </section>
                     <p id="faceSignupStatus" class="helper-text"></p>
 
-                    <button type="submit" class="btn-primary auth-submit mt-4" style="width:100%;">S'inscrire <i class="bi bi-person-plus"></i></button>
+                    <button type="submit" class="btn-primary auth-submit mt-4" style="width:100%;"><span data-i18n="auth.signupBtn">S'inscrire</span> <i class="bi bi-person-plus"></i></button>
                 </form>
 
-                <p class="legal">En continuant, vous acceptez les conditions d'utilisation et la politique de confidentialite.</p>
+                <p class="legal" data-i18n="auth.legal">En continuant, vous acceptez les conditions d'utilisation et la politique de confidentialite.</p>
             </section>
         </section>
     </main>
 
     <div id="faceModal" class="face-modal" hidden>
         <div class="face-modal-card">
-            <h3>Scan du visage</h3>
-            <p id="faceModalText" class="helper-text">Positionnez votre visage dans le cadre puis capturez.</p>
+            <h3 data-i18n="auth.faceScan">Scan du visage</h3>
+            <p id="faceModalText" class="helper-text" data-i18n="auth.facePosition">Positionnez votre visage dans le cadre puis capturez.</p>
             <div class="camera-shell">
                 <video id="faceVideo" class="face-video" autoplay playsinline muted></video>
                 <div class="camera-frame"></div>
             </div>
             <canvas id="faceCanvas" class="face-canvas" width="320" height="240"></canvas>
             <div class="face-modal-actions">
-                <button id="captureFaceBtn" type="button" class="btn-primary">Capturer</button>
-                <button id="closeFaceModalBtn" type="button" class="btn-secondary">Annuler</button>
+                <button id="captureFaceBtn" type="button" class="btn-primary" data-i18n="auth.capture">Capturer</button>
+                <button id="closeFaceModalBtn" type="button" class="btn-secondary" data-i18n="auth.cancel">Annuler</button>
             </div>
         </div>
     </div>
@@ -196,7 +204,7 @@ final class AuthController
     <footer class="site-contact-bar">
         <div class="container-fluid">
             <div class="site-contact-inner">
-                <span class="contact-label">Contact Idene Parfum</span>
+                <span class="contact-label" data-i18n="auth.contactIdene">Contact Idene Parfum</span>
                 <a href="tel:+21558606233">+21558606233</a>
                 <a href="tel:+21658367468">+21658367468</a>
                 <a href="mailto:idene.parfum@gmail.com">idene.parfum@gmail.com</a>
@@ -206,6 +214,7 @@ final class AuthController
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="/assets/js/auth.js?v=10"></script>
+    <script src="/assets/js/i18n.js"></script>
 </body>
 </html>
 HTML);
@@ -261,7 +270,7 @@ HTML);
                     </div>
 
                     <button type="submit" class="btn-primary auth-submit">Verifier le code</button>
-                    <a href="/auth" class="muted-link muted-link-center">Retour au login</a>
+                    <a href="/auth" class="muted-link muted-link-center" data-i18n="auth.backToLogin">Retour au login</a>
                 </form>
             </div>
         </section>
@@ -334,7 +343,7 @@ HTML);
                     </div>
 
                     <button type="submit" class="btn-primary auth-submit">Mettre a jour</button>
-                    <a href="/auth" class="muted-link muted-link-center">Retour au login</a>
+                    <a href="/auth" class="muted-link muted-link-center" data-i18n="auth.backToLogin">Retour au login</a>
                 </form>
             </div>
         </section>
@@ -353,6 +362,7 @@ HTML);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="/assets/js/reset-password.js?v=5"></script>
+    <script src="/assets/js/i18n.js?v=3"></script>
 </body>
 </html>
 HTML);

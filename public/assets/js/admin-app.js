@@ -1,4 +1,12 @@
-/* â”€â”€ Theme toggle â”€â”€ */
+﻿/* â”€â”€ Theme toggle â”€â”€ */
+
+/* -- i18n Translation Helper -- */
+const t = (key) => {
+    if (window.ideneI18n && window.ideneI18n.t) {
+        return window.ideneI18n.t(key) || key;
+    }
+    return key;
+};
 const themeToggleBtn = document.getElementById("themeToggleBtn");
 
 const applyTheme = (theme) => {
@@ -63,7 +71,7 @@ const perfumeStockSort = document.getElementById("perfumeStockSort");
 const perfumeStockStats = document.getElementById("perfumeStockStats");
 const perfumeStockBody = document.getElementById("perfumeStockBody");
 const perfumeStockPagination = document.getElementById("perfumeStockPagination");
-const formatBottleCount = (value) => `${Number(value || 0).toFixed(2)} bouteille${Number(value || 0) > 1 ? "s" : ""}`;
+const formatBottleCount = (value) => `${Number(value || 0).toFixed(2)} ${t("admin.bottle")}${Number(value || 0) > 1 ? "s" : ""}`;
 
 const orderSearch = document.getElementById("orderSearch");
 const ordersAllBtn = document.getElementById("ordersAllBtn");
@@ -567,6 +575,7 @@ const escapeHtmlAttr = (value) => String(value ?? "")
     .replace(/>/g, "&gt;");
 
 const setNote = (el, text, type = "") => {
+    text = t(text);
     if (!el) return;
     el.textContent = text;
     el.classList.remove("error", "success");
@@ -806,19 +815,19 @@ if (adminLogoutBtn) {
 }
 
 const metricLabel = {
-    today_revenue: "Recette du jour",
-    month_revenue: "CA du mois",
-    month_expenses: "Charges du mois",
-    month_raw_material_expenses: "Achats matieres",
-    month_payroll: "Salaires",
-    month_profit: "Benefice estime",
-    stock_value: "Valeur stock",
-    raw_materials_stock_value: "Stock matieres",
-    products_count: "Produits",
-    out_of_stock_count: "Hors stock",
-    employees_count: "Employes",
-    pending_orders: "Commandes ouvertes",
-    raw_materials_alert_count: "Alertes matieres",
+    today_revenue: "admin.todayRevenue",
+    month_revenue: "admin.monthRevenue",
+    month_expenses: "admin.monthExpenses",
+    month_raw_material_expenses: "admin.monthMaterials",
+    month_payroll: "admin.salaries",
+    month_profit: "admin.estimatedProfit",
+    stock_value: "admin.stockValue",
+    raw_materials_stock_value: "admin.materialStock",
+    products_count: "admin.products",
+    out_of_stock_count: "admin.outOfStock",
+    employees_count: "admin.employees",
+    pending_orders: "admin.openOrders",
+    raw_materials_alert_count: "admin.materialAlerts",
 };
 
 const renderSummary = () => {
@@ -846,7 +855,7 @@ const renderSummary = () => {
         const klass = key === "month_profit" ? (Number(value) >= 0 ? "profit-positive" : "profit-negative") : "";
         return `
             <article class="metric-tile ${klass}">
-                <span>${metricLabel[key]}</span>
+                <span data-i18n="${metricLabel[key]}">${metricLabel[key]}</span>
                 <strong>${isMoney ? number : value}</strong>
             </article>
         `;
@@ -898,8 +907,8 @@ const productRow = (row) => `
         <td>${Number(row.raw_material_stock_ml || 0).toFixed(2)} ml</td>
         <td>
             <div class="table-actions">
-                <button class="mini-btn" data-product-edit="${row.id}">Modifier</button>
-                <button class="mini-btn bad" data-product-delete="${row.id}">Supprimer</button>
+                <button class="mini-btn" data-product-edit="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
+                <button class="mini-btn bad" data-product-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
             </div>
         </td>
     </tr>
@@ -922,19 +931,19 @@ const renderProducts = () => {
         const totalValue = state.products.reduce((sum, row) => sum + Number(row.price_dzd || 0) * Number(row.stock_bottles || 0), 0);
         productSectionStats.innerHTML = `
             <article class="inline-stat">
-                <span>Produits actifs</span>
+                <span data-i18n="admin.activeProducts">Produits actifs</span>
                 <strong>${active}</strong>
             </article>
             <article class="inline-stat">
-                <span>Hors stock</span>
+                <span data-i18n="admin.outOfStock">Hors stock</span>
                 <strong>${out}</strong>
             </article>
             <article class="inline-stat">
-                <span>Valeur stock bouteilles</span>
+                <span data-i18n="admin.bottleStockValue">Valeur stock bouteilles</span>
                 <strong>${formatDT(totalValue)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Bases a surveiller</span>
+                <span data-i18n="admin.basesToWatch">Bases a surveiller</span>
                 <strong>${lowRawMaterial}</strong>
             </article>
         `;
@@ -987,20 +996,20 @@ const renderPerfumeStock = () => {
         const lowBase = filtered.filter((row) => Number(row.raw_material_stock_ml || 0) <= Number(row.raw_material_alert_ml || 0)).length;
         perfumeStockStats.innerHTML = `
             <article class="inline-stat">
-                <span>Parfums visibles</span>
+                <span data-i18n="admin.visiblePerfumes">Parfums visibles</span>
                 <strong>${filtered.length}</strong>
             </article>
             <article class="inline-stat">
-                <span>Stock base visible</span>
+                <span data-i18n="admin.visibleBaseStock">Stock base visible</span>
                 <strong>${formatBottleCount(totalBaseStock)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Bases a surveiller</span>
+                <span data-i18n="admin.basesToWatch">Bases a surveiller</span>
                 <strong>${lowBase}</strong>
             </article>
             <article class="inline-stat">
-                <span>Saisie directeur</span>
-                <strong>Par bouteille</strong>
+                <span data-i18n="admin.directorEntry">Saisie directeur</span>
+                <strong data-i18n="admin.perBottle">Par bouteille</strong>
             </article>
         `;
     }
@@ -1034,9 +1043,9 @@ const rawMaterialCategoryOptions = (selected) => [
 const rawMaterialRow = (row, isDraft = false) => {
     const total = Number(row.quantity_in_stock || 0) * Number(row.unit_cost_dzd || 0);
     const actionButtons = isDraft
-        ? `<button class="mini-btn" type="button" data-raw-material-create="1">Creer</button>`
+        ? `<button class="mini-btn" type="button" data-raw-material-create="1"><span data-i18n="admin.create">Creer</span></button>`
         : `<button class="mini-btn" type="button" data-raw-material-save="${row.id}">Enregistrer</button>
-           <button class="mini-btn bad" type="button" data-raw-material-delete="${row.id}">Supprimer</button>`;
+           <button class="mini-btn bad" type="button" data-raw-material-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>`;
 
     return `
         <tr data-raw-material-row="${isDraft ? "new" : row.id}">
@@ -1097,19 +1106,19 @@ const renderRawMaterials = () => {
     if (rawMaterialSectionStats) {
         rawMaterialSectionStats.innerHTML = `
             <article class="inline-stat">
-                <span>Lignes stock</span>
+                <span data-i18n="admin.stockLines">Lignes stock</span>
                 <strong>${state.rawMaterials.length}</strong>
             </article>
             <article class="inline-stat">
-                <span>Achats du mois</span>
+                <span data-i18n="admin.monthPurchases">Achats du mois</span>
                 <strong>${formatDT(monthCost)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Valeur stock matieres</span>
+                <span data-i18n="admin.materialStockValue">Valeur stock matieres</span>
                 <strong>${formatDT(totalValue)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Alertes stock</span>
+                <span data-i18n="admin.stockAlerts">Alertes stock</span>
                 <strong>${alerts}</strong>
             </article>
         `;
@@ -1256,7 +1265,7 @@ const renderOrderCreateProductOptions = () => {
     });
 
     orderCreateProduct.innerHTML = [
-        `<option value="">${saleType === "GROS" ? "Choix facultatif" : "Choisir un produit"}</option>`,
+        `<option value="">${saleType === "GROS" ? t("admin.optionalChoice") : t("admin.chooseProduct")}</option>`,
         ...products.map((row) => `<option value="${row.id}">${row.name} - ${row.catalog_group}/${row.segment} - ${formatDT(getAdminProductUnitPrice(row, saleType))}</option>`),
     ].join("");
 
@@ -1324,15 +1333,15 @@ const addAdminOrderItem = () => {
         : (isWholesale ? getQuickInvoiceAggregateStock() : Number(product?.stock_bottles || 0));
 
     if (!product) {
-        setNote(orderCreateMessage, isWholesale ? "Choisissez un parfum ou au moins un type rapide." : "Choisissez un produit.", "error");
+        setNote(orderCreateMessage, isWholesale ? "admin.choosePerfume" : "admin.chooseProduct", "error");
         return;
     }
     if (qty <= 0) {
-        setNote(orderCreateMessage, "Quantite invalide.", "error");
+        setNote(orderCreateMessage, "admin.invalidQty", "error");
         return;
     }
     if (unitPrice <= 0) {
-        setNote(orderCreateMessage, "Prix unitaire invalide.", "error");
+        setNote(orderCreateMessage, "admin.invalidPrice", "error");
         return;
     }
 
@@ -1370,7 +1379,7 @@ const addAdminOrderItem = () => {
         });
     }
 
-    setNote(orderCreateMessage, "Produit ajoute au panier admin.", "success");
+    setNote(orderCreateMessage, "admin.productAdded", "success");
     if (orderCreateQty) orderCreateQty.value = "1";
     if (orderCreatePackageCount) orderCreatePackageCount.value = "0";
     syncOrderCreateUnitPrice();
@@ -1572,19 +1581,19 @@ const renderOrderDocuments = () => {
         const visibleShops = new Set(filtered.map((row) => String(row.perfume_shop_name || "").trim()).filter(Boolean)).size;
         documentSectionStats.innerHTML = `
             <article class="inline-stat">
-                <span>Documents filtres</span>
+                <span data-i18n="admin.filteredDocs">Documents filtres</span>
                 <strong>${filtered.length}</strong>
             </article>
             <article class="inline-stat">
-                <span>Factures stock</span>
+                <span data-i18n="admin.stockInvoices">Factures stock</span>
                 <strong>${grossCount}</strong>
             </article>
             <article class="inline-stat">
-                <span>Bons de commande</span>
+                <span data-i18n="admin.purchaseOrders">Bons de commande</span>
                 <strong>${detailCount}</strong>
             </article>
             <article class="inline-stat">
-                <span>Parfumeries visibles</span>
+                <span data-i18n="admin.visiblePerfumery">Parfumeries visibles</span>
                 <strong>${visibleShops}</strong>
             </article>
         `;
@@ -1600,10 +1609,10 @@ const renderOrderDocuments = () => {
             <td><strong>${formatDT(getOrderDisplayAmount(row))}</strong></td>
             <td>
                 <div class="table-actions">
-                    <button class="mini-btn" data-document-view="${row.id}">Consulter</button>
-                    <button class="mini-btn" data-document-edit="${row.id}">Modifier</button>
+                    <button class="mini-btn" data-document-view="${row.id}"><span data-i18n="admin.view">Consulter</span></button>
+                    <button class="mini-btn" data-document-edit="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
                     <button class="mini-btn" data-document-pdf="${row.id}">${String(row.sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
-                    <button class="mini-btn bad" data-document-delete="${row.id}">Supprimer</button>
+                    <button class="mini-btn bad" data-document-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                 </div>
             </td>
         </tr>
@@ -1629,32 +1638,32 @@ const renderOrders = () => {
         const uniqueShops = new Set(filtered.map((row) => String(row.perfume_shop_name || "").trim()).filter(Boolean)).size;
         orderSectionStats.innerHTML = `
             <article class="inline-stat">
-                <span>Total commandes payees</span>
+                <span data-i18n="admin.totalPaidOrders">Total commandes payees</span>
                 <strong>${formatDT(summary.paid_orders_total || 0)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Recette du jour</span>
+                <span data-i18n="admin.todayRevenue">Recette du jour</span>
                 <strong>${formatDT(summary.today_revenue || 0)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Resultats filtres</span>
+                <span data-i18n="admin.filteredResults">Resultats filtres</span>
                 <strong>${filtered.length} / ${summary.orders_count || 0}</strong>
             </article>
             <article class="inline-stat">
-                <span>Commandes partielles</span>
+                <span data-i18n="admin.partialOrders">Commandes partielles</span>
                 <strong>${partialOrders.length}</strong>
             </article>
             <article class="inline-stat">
-                <span>Total reste a payer</span>
+                <span data-i18n="admin.totalRemaining">Total reste a payer</span>
                 <strong>${formatDT(partialRemainingTotal)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Parfumeries visibles</span>
+                <span data-i18n="admin.visiblePerfumery">Parfumeries visibles</span>
                 <strong>${uniqueShops}</strong>
             </article>
             <article class="inline-stat">
-                <span>Vue active</span>
-                <strong>${state.orderViewMode === "PARTIAL_ONLY" ? "Paiements partiels" : "Toutes les commandes"}</strong>
+                <span data-i18n="admin.activeView">Vue active</span>
+                <strong>${state.orderViewMode === "PARTIAL_ONLY" ? t("admin.partialPayments") : t("admin.allOrders")}</strong>
             </article>
         `;
     }
@@ -1681,16 +1690,16 @@ const renderOrders = () => {
                 </td>
                 <td>
                     <div class="table-actions">
-                        <button class="mini-btn" data-order-view="${row.id}">Consulter</button>
-                        <button class="mini-btn" data-order-edit-open="${row.id}">Modifier</button>
+                        <button class="mini-btn" data-order-view="${row.id}"><span data-i18n="admin.view">Consulter</span></button>
+                        <button class="mini-btn" data-order-edit-open="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
                         ${String(row.sale_type || "").toUpperCase() === "GROS"
-                            ? `<button class="mini-btn" data-order-generate-purchase="${row.id}">Generer bon de commande</button>`
-                            : `<button class="mini-btn" data-order-generate-invoice="${row.id}">Generer facture</button>`
+                            ? `<button class="mini-btn" data-order-generate-purchase="${row.id}"><span data-i18n="admin.generatePurchaseOrder">Generer bon de commande</span></button>`
+                            : `<button class="mini-btn" data-order-generate-invoice="${row.id}"><span data-i18n="admin.generateInvoice">Generer facture</span></button>`
                         }
                         <button class="mini-btn" data-order-pdf="${row.id}">${String(row.sale_type || "").toUpperCase() === "GROS" ? "Facture PDF" : "Bon PDF"}</button>
-                        <button class="mini-btn bad" data-order-delete="${row.id}">Supprimer</button>
+                        <button class="mini-btn bad" data-order-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                         <button class="mini-btn warn" data-order-apply="${row.id}">Valider livraison</button>
-                        ${row.invoice_id ? `<button class="mini-btn" data-invoice-apply="${row.invoice_id}">Valider paiement</button>` : ""}
+                        ${row.invoice_id ? `<button class="mini-btn" data-invoice-apply="${row.invoice_id}"><span data-i18n="admin.validatePayment">Valider paiement</span></button>` : ""}
                     </div>
                 </td>
             </tr>
@@ -1738,15 +1747,15 @@ const renderEmployees = () => {
         const payroll = state.employees.reduce((sum, row) => sum + Number(row.salary_dzd || 0), 0);
         employeeSectionStats.innerHTML = `
             <article class="inline-stat">
-                <span>Employes actifs</span>
+                <span data-i18n="admin.activeEmployees">Employes actifs</span>
                 <strong>${active}</strong>
             </article>
             <article class="inline-stat">
-                <span>Masse salariale</span>
+                <span data-i18n="admin.payroll">Masse salariale</span>
                 <strong>${formatDT(payroll)}</strong>
             </article>
             <article class="inline-stat">
-                <span>Resultats</span>
+                <span data-i18n="admin.results">Resultats</span>
                 <strong>${filtered.length}</strong>
             </article>
         `;
@@ -1760,13 +1769,13 @@ const renderEmployees = () => {
                     <span class="status-pill ${row.employment_status === "ACTIF" ? "ok" : row.employment_status === "SUSPENDU" ? "warn" : "bad"}">${row.employment_status}</span>
                 </div>
                 <div class="employee-identity">
-                    <p class="employee-label">Employe</p>
+                    <p class="employee-label" data-i18n="admin.employee">Employe</p>
                     <h4>${row.last_name} ${row.first_name}</h4>
                     <p class="employee-job">${row.job_title}</p>
                 </div>
                 <div class="employee-meta">
                     <div>
-                        <span class="employee-label">Salaire mensuel</span>
+                        <span class="employee-label" data-i18n="admin.monthlySalary">Salaire mensuel</span>
                         <strong class="employee-salary">${formatDT(row.salary_dzd)}</strong>
                     </div>
                     <div>
@@ -1775,8 +1784,8 @@ const renderEmployees = () => {
                     </div>
                 </div>
                 <div class="table-actions">
-                    <button class="mini-btn" data-employee-edit="${row.id}">Modifier</button>
-                    <button class="mini-btn bad" data-employee-delete="${row.id}">Supprimer</button>
+                    <button class="mini-btn" data-employee-edit="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
+                    <button class="mini-btn bad" data-employee-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                 </div>
             </article>
         `)
@@ -1798,15 +1807,15 @@ const renderUsers = () => {
         const clients = state.users.filter((row) => row.role_name === "CLIENT").length;
         userSectionStats.innerHTML = `
             <article class="inline-stat">
-                <span>Users actifs</span>
+                <span data-i18n="admin.activeUsers">Users actifs</span>
                 <strong>${active}</strong>
             </article>
             <article class="inline-stat">
-                <span>Clients</span>
+                <span data-i18n="admin.clients">Clients</span>
                 <strong>${clients}</strong>
             </article>
             <article class="inline-stat">
-                <span>Resultats</span>
+                <span data-i18n="admin.results">Resultats</span>
                 <strong>${filtered.length}</strong>
             </article>
         `;
@@ -1822,9 +1831,9 @@ const renderUsers = () => {
             <td><span class="status-pill ${Number(row.is_active) === 1 ? "ok" : "bad"}">${Number(row.is_active) === 1 ? "ACTIF" : "INACTIF"}</span></td>
             <td>
                 <div class="table-actions">
-                    <button class="mini-btn" data-user-view="${row.id}">Consulter</button>
-                    <button class="mini-btn" data-user-edit="${row.id}">Modifier</button>
-                    <button class="mini-btn bad" data-user-delete="${row.id}">Supprimer</button>
+                    <button class="mini-btn" data-user-view="${row.id}"><span data-i18n="admin.view">Consulter</span></button>
+                    <button class="mini-btn" data-user-edit="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
+                    <button class="mini-btn bad" data-user-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                 </div>
             </td>
         </tr>
@@ -1836,7 +1845,7 @@ const renderUsers = () => {
 };
 
 const fillUserForm = (row) => {
-    userDetailTitle.textContent = `Profil ${row.first_name} ${row.last_name}`;
+    userDetailTitle.textContent = t("admin.profile") + " " + row.first_name + " " + row.last_name;
     userEditId.value = row.id;
     userEditFirstName.value = row.first_name || "";
     userEditLastName.value = row.last_name || "";
@@ -1859,31 +1868,31 @@ const renderAdminAccount = () => {
         } else {
             adminAccountSummary.innerHTML = `
                 <article class="inline-stat">
-                    <span>Compte</span>
+                    <span data-i18n="admin.account">Compte</span>
                     <strong>${user.first_name || ""} ${user.last_name || ""}</strong>
                 </article>
                 <article class="inline-stat">
-                    <span>Role</span>
+                    <span data-i18n="admin.role">Role</span>
                     <strong>${user.role_name || "ADMIN"}</strong>
                 </article>
                 <article class="inline-stat">
-                    <span>Email</span>
+                    <span data-i18n="admin.email">Email</span>
                     <strong>${user.email || "-"}</strong>
                 </article>
                 <article class="inline-stat">
-                    <span>Telephone</span>
+                    <span data-i18n="admin.phone2">Telephone</span>
                     <strong>${user.phone || "-"}</strong>
                 </article>
                 <article class="inline-stat">
-                    <span>Societe / parfumerie</span>
+                    <span data-i18n="admin.companyPerfumery">Societe / parfumerie</span>
                     <strong>${user.perfume_shop_name || "-"}</strong>
                 </article>
                 <article class="inline-stat">
-                    <span>Localisation</span>
+                    <span data-i18n="admin.location">Localisation</span>
                     <strong>${user.location || "-"}</strong>
                 </article>
                 <article class="inline-stat">
-                    <span>Visages autorises</span>
+                    <span data-i18n="admin.authorizedFaces">Visages autorises</span>
                     <strong>${state.adminFaceProfiles.length}</strong>
                 </article>
             `;
@@ -1895,9 +1904,9 @@ const renderAdminAccount = () => {
             adminFaceProfilesList.innerHTML = `
                 <article class="face-profile-card empty">
                     <div class="face-profile-card-copy">
-                        <p class="employee-label">Aucun acces partage</p>
-                        <strong>Aucun visage enregistre</strong>
-                        <p class="muted">Ajoutez un premier visage pour autoriser un ou plusieurs collaborateurs a se connecter au compte admin.</p>
+                        <p class="employee-label" data-i18n="admin.noSharedAccess">Aucun acces partage</p>
+                        <strong data-i18n="admin.noFaceRegistered">Aucun visage enregistre</strong>
+                        <p class="muted" data-i18n="admin.addFirstFace">Ajoutez un premier visage pour autoriser un ou plusieurs collaborateurs a se connecter au compte admin.</p>
                     </div>
                 </article>
             `;
@@ -1907,13 +1916,13 @@ const renderAdminAccount = () => {
         adminFaceProfilesList.innerHTML = state.adminFaceProfiles.map((profile) => `
             <article class="face-profile-card">
                 <div class="face-profile-card-copy">
-                    <span class="face-profile-chip">Visage autorise</span>
-                    <h4>${profile.profile_label || "Acces sans nom"}</h4>
-                    <p class="muted">Ajoute le ${String(profile.created_at || "").replace(" ", " a ")}</p>
+                    <span class="face-profile-chip" data-i18n="admin.faceAuthorized">Visage autorise</span>
+                    <h4>${profile.profile_label || t("admin.noNameAccess")}</h4>
+                    <p class="muted">${t("admin.addedOn")} ${String(profile.createdated || "").replace(" ", " a ")}</p>
                 </div>
                 <div class="face-profile-card-actions">
-                    <span class="face-profile-id">ID ${profile.id}</span>
-                    <button class="mini-btn bad" type="button" data-face-profile-delete="${profile.id}">Supprimer</button>
+                    <span class="face-profile-id">${t("admin.idLabel")} ${profile.id}</span>
+                    <button class="mini-btn bad" type="button" data-face-profile-delete="${profile.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                 </div>
             </article>
         `).join("");
@@ -1948,8 +1957,8 @@ const renderExpenses = () => {
                 <td>${formatDT(row.amount_dzd)}</td>
                 <td>
                     <div class="table-actions">
-                        <button class="mini-btn" data-expense-edit="${row.id}">Modifier</button>
-                        <button class="mini-btn bad" data-expense-delete="${row.id}">Supprimer</button>
+                        <button class="mini-btn" data-expense-edit="${row.id}"><span data-i18n="admin.edit">Modifier</span></button>
+                        <button class="mini-btn bad" data-expense-delete="${row.id}"><span data-i18n="admin.delete">Supprimer</span></button>
                     </div>
                 </td>
             </tr>
@@ -2055,23 +2064,23 @@ const fillOrderDetail = (payload) => {
 
     orderDetailSummary.innerHTML = `
         <article class="inline-stat">
-            <span>Facture</span>
+            <span data-i18n="admin.invoice">Facture</span>
             <strong>${order.invoice_number || "-"}</strong>
         </article>
         <article class="inline-stat">
-            <span>Type</span>
+            <span data-i18n="admin.type">Type</span>
             <strong>${documentLabel}</strong>
         </article>
         <article class="inline-stat">
-            <span>Montant</span>
+            <span data-i18n="admin.amount">Montant</span>
             <strong>${formatDT(getOrderDisplayAmount(order))}</strong>
         </article>
         <article class="inline-stat">
-            <span>Paye / Reste</span>
+            <span data-i18n="admin.paidRemaining">Paye / Reste</span>
             <strong>${formatDT(order.paid_amount || 0)} / ${formatDT(order.remaining_amount || 0)}</strong>
         </article>
         <article class="inline-stat">
-            <span>Statuts</span>
+            <span data-i18n="admin.statuses">Statuts</span>
             <strong>${order.order_status || "-"} / ${order.invoice_status || "-"}</strong>
         </article>
     `;
@@ -2093,7 +2102,7 @@ const fillOrderDetail = (payload) => {
     }).join("");
 
     if (exportOrderPdfBtn) {
-        exportOrderPdfBtn.textContent = `Exporter ${documentLabel}`;
+        exportOrderPdfBtn.textContent = t("admin.exportPdf") + " " + documentLabel;
     }
     if (generateInvoiceFromOrderBtn) {
         const canGenerateInvoice = String(order.sale_type || "").toUpperCase() !== "GROS";
@@ -2130,7 +2139,7 @@ const prefillInvoiceFromOrder = (payload) => {
         orderCreatePhone.value = client.phone || order.phone || "";
     }
     if (orderCreateObservation) {
-        orderCreateObservation.value = `Facture generee depuis ${order.order_number || "bon de commande"}`;
+        orderCreateObservation.value = t("admin.invoiceGeneratedFrom") + " " + (order.order_number || t("admin.purchaseOrder"));
     }
 
     adminOrderCart.clear();
@@ -2164,7 +2173,7 @@ const prefillInvoiceFromOrder = (payload) => {
     });
 
     renderAdminOrderCart();
-    setNote(orderCreateMessage, "Facture pre-remplie depuis le bon de commande. Vous pouvez maintenant changer les prix.", "success");
+    setNote(orderCreateMessage, "admin.invoicePrefilled", "success");
 };
 
 const prefillPurchaseOrderFromInvoice = (payload) => {
@@ -2219,7 +2228,7 @@ const prefillPurchaseOrderFromInvoice = (payload) => {
         orderCreateRepresentative.value = documentMeta.representative || "";
     }
     if (orderCreateObservation) {
-        orderCreateObservation.value = documentMeta.observation || `Bon de commande genere depuis ${order.order_number || "facture"}`;
+        orderCreateObservation.value = documentMeta.observation || t("admin.orderGeneratedFrom") + " " + (order.order_number || t("admin.invoice"));
     }
     if (orderCreatePaymentMode) {
         orderCreatePaymentMode.value = documentMeta.payment_mode || "Espece";
@@ -2268,7 +2277,7 @@ const prefillPurchaseOrderFromInvoice = (payload) => {
     });
 
     renderAdminOrderCart();
-    setNote(orderCreateMessage, "Bon de commande pre-rempli depuis la facture. Les memes donnees et quantites ont ete reprises, seul le prix a ete remplace par le prix du site sans remise.", "success");
+    setNote(orderCreateMessage, "admin.orderPrefilled", "success");
 };
 
 const loadEmployees = async () => {
@@ -2474,7 +2483,7 @@ orderCreateSaleType?.addEventListener("change", () => {
     renderOrderCreateProductOptions();
     syncOrderCreateUnitPrice();
     renderAdminOrderCart();
-    setNote(orderCreateMessage, `Tarif ${saleType === "GROS" ? "stock parfumerie" : "site"} applique.`, "success");
+    setNote(orderCreateMessage, t("admin.tariffApplied"), "success");
 });
 orderAddItemBtn?.addEventListener("click", addAdminOrderItem);
 employeeSearch?.addEventListener("input", renderEmployees);
@@ -2554,7 +2563,7 @@ adminRawMaterialsBody?.addEventListener("click", async (event) => {
             await loadRawMaterials();
             await loadSummary();
         } catch (error) {
-            alert(error.message);
+            alert(t(error.message));
         }
         return;
     }
@@ -2569,7 +2578,7 @@ adminRawMaterialsBody?.addEventListener("click", async (event) => {
             await loadRawMaterials();
             await loadSummary();
         } catch (error) {
-            alert(error.message);
+            alert(t(error.message));
         }
         return;
     }
@@ -2644,7 +2653,7 @@ productForm?.addEventListener("submit", async (event) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-        setNote(productFormMessage, "Produit enregistre.", "success");
+        setNote(productFormMessage, "admin.productSaved", "success");
         resetProductForm();
         hideProductForm();
         await loadProducts();
@@ -2763,7 +2772,7 @@ orderCreateItemsBody?.addEventListener("click", (event) => {
     if (!target.dataset.orderCreateRemove) return;
     adminOrderCart.delete(String(target.dataset.orderCreateRemove));
     renderAdminOrderCart();
-    setNote(orderCreateMessage, "Produit retire du panier admin.", "success");
+    setNote(orderCreateMessage, "admin.productRemoved", "success");
 });
 
 orderCreateItemsBody?.addEventListener("change", (event) => {
@@ -2867,7 +2876,7 @@ orderEditForm?.addEventListener("submit", async (event) => {
                 items: collectOrderDetailItems(),
             }),
         });
-        setNote(orderDetailMessage, "Commande modifiee.", "success");
+        setNote(orderDetailMessage, "admin.orderModified", "success");
         const detail = await fetchJson(`${API.orders}/${orderEditId.value}`);
         fillOrderDetail(detail);
         await loadOrders();
@@ -2881,11 +2890,11 @@ orderCreateForm?.addEventListener("submit", async (event) => {
 
     const selectedUser = getSelectedAdminUser();
     if (!selectedUser) {
-        setNote(orderCreateMessage, "Choisissez une parfumerie.", "error");
+        setNote(orderCreateMessage, "admin.choosePerfumery", "error");
         return;
     }
     if (adminOrderCart.size === 0) {
-        setNote(orderCreateMessage, "Ajoutez au moins un produit.", "error");
+        setNote(orderCreateMessage, "admin.addAtLeastOne", "error");
         return;
     }
 
@@ -2939,7 +2948,7 @@ orderCreateForm?.addEventListener("submit", async (event) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-        setNote(orderCreateMessage, payload.sale_type === "GROS" ? "Facture admin enregistree." : "Bon de commande enregistre.", "success");
+        setNote(orderCreateMessage, payload.sale_type === "GROS" ? "admin.invoiceSaved" : "admin.orderSaved", "success");
         resetAdminOrderBuilder();
         hideOrderCreatePanel();
         await loadOrders();
@@ -2969,7 +2978,7 @@ employeeForm?.addEventListener("submit", async (event) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-        setNote(employeeFormMessage, "Employe ajoute.", "success");
+        setNote(employeeFormMessage, "admin.employeeAdded", "success");
         employeeForm.reset();
         hideEmployeeForm();
         await loadEmployees();
@@ -2985,11 +2994,11 @@ adminEmployeesGrid?.addEventListener("click", async (event) => {
     if (target.dataset.employeeEdit) {
         const row = state.employees.find((item) => String(item.id) === target.dataset.employeeEdit);
         if (!row) return;
-        const job_title = prompt("Poste", row.job_title);
+        const job_title = prompt(t("admin.jobTitle"), row.job_title);
         if (job_title === null) return;
-        const salary = prompt("Salaire DT", row.salary_dzd);
+        const salary = prompt(t("admin.salaryDT"), row.salary_dzd);
         if (salary === null) return;
-        const employment_status = prompt("Statut ACTIF / INACTIF / SUSPENDU", row.employment_status);
+        const employment_status = prompt(t("admin.statusActiveInactiveSuspended"), row.employment_status);
         if (employment_status === null) return;
         await fetchJson(`${API.employees}/${row.id}`, {
             method: "PATCH",
@@ -3088,7 +3097,7 @@ paymentModalConfirmBtn?.addEventListener("click", async () => {
     }
 
     paymentModalConfirmBtn.disabled = true;
-    paymentModalConfirmBtn.textContent = "Validation...";
+    paymentModalConfirmBtn.textContent = t("admin.validating...");
     try {
         await fetchJson(`/api/admin/invoices/${pendingPartialPayment.invoiceId}/status`, {
             method: "PATCH",
@@ -3102,7 +3111,7 @@ paymentModalConfirmBtn?.addEventListener("click", async () => {
         setPaymentModalMessage(error.message || "Validation impossible.", "error");
     } finally {
         paymentModalConfirmBtn.disabled = false;
-        paymentModalConfirmBtn.textContent = "Valider le paiement";
+        paymentModalConfirmBtn.textContent = t("admin.validatePayment");
     }
 });
 
@@ -3172,7 +3181,7 @@ userEditForm?.addEventListener("submit", async (event) => {
                 is_active: Number(userEditActive.value),
             }),
         });
-        setNote(userFormMessage, "Profil user modifie.", "success");
+        setNote(userFormMessage, "admin.userProfileUpdated", "success");
         await loadUsers();
         await loadSummary();
     } catch (error) {
@@ -3243,3 +3252,14 @@ const init = async () => {
 };
 
 init();
+
+
+
+
+
+
+
+
+
+
+

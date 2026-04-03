@@ -53,32 +53,32 @@ final class ShopController
             <nav class="shop-nav">
                 <a href="#" class="shop-nav-item active" data-view="shop">
                     <span class="shop-nav-icon"><i class="bi bi-shop"></i></span>
-                    <span>Boutique</span>
+                    <span data-i18n="dash.shop">Boutique</span>
                 </a>
                 <a href="#" class="shop-nav-item cart-badge" data-view="cart">
                     <span class="shop-nav-icon"><i class="bi bi-cart3"></i></span>
-                    <span>Panier</span>
+                    <span data-i18n="shop.cart">Panier</span>
                     <span class="cart-count" style="display: none;">0</span>
                 </a>
                 <a href="/dashboard#commandes" class="shop-nav-item">
                     <span class="shop-nav-icon"><i class="bi bi-bag-check"></i></span>
-                    <span>Mes Commandes</span>
+                    <span data-i18n="dash.orders">Mes Commandes</span>
                 </a>
                 <a href="/dashboard#factures" class="shop-nav-item">
                     <span class="shop-nav-icon"><i class="bi bi-receipt"></i></span>
-                    <span>Mes Factures</span>
+                    <span data-i18n="dash.myInvoices">Mes Factures</span>
                 </a>
                 <a href="/dashboard#profil" class="shop-nav-item">
                     <span class="shop-nav-icon"><i class="bi bi-person"></i></span>
-                    <span>Mon Compte</span>
+                    <span data-i18n="dash.myAccount">Mon Compte</span>
                 </a>
                 <a href="/dashboard" class="shop-nav-item">
                     <span class="shop-nav-icon"><i class="bi bi-grid"></i></span>
-                    <span>Dashboard</span>
+                    <span data-i18n="dash.dashboard">Dashboard</span>
                 </a>
                 <button type="button" id="logoutBtn" class="shop-nav-item" style="margin-top: auto;">
                     <span class="shop-nav-icon"><i class="bi bi-box-arrow-right"></i></span>
-                    <span>DÃƒÆ’Ã‚Â©connexion</span>
+                    <span data-i18n="dash.logout">Déconnexion</span>
                 </button>
             </nav>
         </aside>
@@ -230,8 +230,9 @@ final class ShopController
             }
         });
     </script>
-    <script src="/assets/js/client-ecommerce.js?v=600"></script>
-    <script src="/assets/js/user-app.js?v=606"></script>
+    <script src="/assets/js/client-ecommerce.js?v=601"></script>
+    <script src="/assets/js/user-app.js?v=611"></script>
+    <script src="/assets/js/i18n.js?v=3"></script>
 </body>
 </html>
 HTML);

@@ -54,7 +54,7 @@
 
     const getStockStatus = (stock) => {
         const qty = Number(stock || 0);
-        if (qty === 0) return { class: 'out-stock', label: 'Rupture' };
+        if (qty === 0) return { class: 'out-stock', label: '<span data-i18n="shop.outOfStockBtn">Rupture</span>' };
         if (qty < 10) return { class: 'low-stock', label: `${qty} restants` };
         return { class: 'in-stock', label: 'En stock' };
     };
@@ -208,7 +208,7 @@
                                 ${!inStock ? 'disabled' : ''}
                             >
                                 <i class="bi bi-cart-plus"></i>
-                                ${inStock ? 'Ajouter' : 'Rupture'}
+                                ${inStock ? '<span data-i18n="shop.add">Ajouter</span>' : '<span data-i18n="shop.outOfStockBtn">Rupture</span>'}
                             </button>
                         </div>
                     </div>
@@ -234,9 +234,9 @@
             elements.cartItems.innerHTML = `
                 <div class="cart-empty">
                     <div class="cart-empty-icon">🛒</div>
-                    <p>Votre panier est vide</p>
+                    <p data-i18n="cart.empty">Votre panier est vide</p>
                     <button class="btn btn-primary mt-lg" onclick="document.querySelector('.cart-close').click()">
-                        Continuer mes achats
+                        <span data-i18n="checkout.continueShopping">Continuer mes achats</span>
                     </button>
                 </div>
             `;
@@ -456,3 +456,4 @@
     };
 
 })();
+

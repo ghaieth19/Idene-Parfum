@@ -19,16 +19,16 @@ final class PublicWebsiteController
         $isLoggedIn = $this->app->currentUserId() !== null;
 
         $navActions = $isLoggedIn 
-            ? '<a href="/dashboard" class="btn btn-sm btn-primary"><i class="bi bi-person-circle"></i> Mon Espace</a>'
-            : '<a href="/auth" class="btn btn-sm btn-outline">Connexion</a><a href="/auth" class="btn btn-sm btn-primary">Compte Pro</a>';
+            ? '<a href="/dashboard" class="btn btn-sm btn-primary"><i class="bi bi-person-circle"></i> <span data-i18n="nav.mySpace">Mon Espace</span></a>'
+            : '<a href="/auth" class="btn btn-sm btn-outline" data-i18n="nav.login">Connexion</a><a href="/auth" class="btn btn-sm btn-primary" data-i18n="nav.proAccount">Compte Pro</a>';
 
         $heroAction = $isLoggedIn
-            ? '<a href="/dashboard" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.3);color:#fff;">Mon Espace</a>'
-            : '<a href="/auth" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.3);color:#fff;">Demander un compte pro</a>';
+            ? '<a href="/dashboard" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.3);color:#fff;" data-i18n="nav.mySpace">Mon Espace</a>'
+            : '<a href="/auth" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.3);color:#fff;" data-i18n="hero.requestPro">Demander un compte pro</a>';
 
         $ctaAction = $isLoggedIn
-            ? '<a href="/dashboard" class="btn btn-gold btn-xl">Accéder à mon espace</a>'
-            : '<a href="/auth" class="btn btn-gold btn-xl">Demander mon accès professionnel</a>';
+            ? '<a href="/dashboard" class="btn btn-gold btn-xl" data-i18n="cta.buttonLoggedIn">Accéder à mon espace</a>'
+            : '<a href="/auth" class="btn btn-gold btn-xl" data-i18n="cta.createPro">Demander mon accès professionnel</a>';
 
         $catalogLink = $isLoggedIn ? '/dashboard#shop' : '/catalogue';
 
@@ -83,6 +83,7 @@ final class PublicWebsiteController
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css">
     <link rel="stylesheet" href="/assets/css/public-website.css">
+    <link rel="stylesheet" href="/assets/css/i18n-rtl.css">
 </head>
 <body>
 
@@ -94,12 +95,16 @@ final class PublicWebsiteController
                 <span>IDENE</span>
             </a>
             <ul class="pub-nav-links">
-                <li><a href="#pourquoi">Avantages</a></li>
-                <li><a href="/catalogue">Catalogue</a></li>
-                <li><a href="#comment">Comment commander</a></li>
-                <li><a href="#contact">Contact</a></li>
+                <li><a href="#pourquoi" data-i18n="nav.advantages">Avantages</a></li>
+                <li><a href="/catalogue" data-i18n="nav.catalog">Catalogue</a></li>
+                <li><a href="#comment" data-i18n="nav.howToOrder">Comment commander</a></li>
+                <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
             </ul>
             <div class="pub-nav-actions">
+                <button class="lang-toggle-btn" type="button" aria-label="Switch language">
+                    <span class="lang-toggle-flag">🇸🇦</span>
+                    <span class="lang-toggle-label">العربية</span>
+                </button>
                 {$navActions}
             </div>
             <button class="pub-nav-mobile" id="mobileMenuBtn" aria-label="Menu">
@@ -114,25 +119,25 @@ final class PublicWebsiteController
         <div class="container">
             <div class="pub-hero-grid">
                 <div class="pub-hero-content">
-                    <span class="pub-hero-badge">Plateforme B2B · Direct Usine</span>
-                    <h1 class="pub-hero-title">IDENE — L'huile de parfum <em>au plus près de la source</em></h1>
-                    <p class="pub-hero-subtitle">Approvisionnement B2B direct d'usine pour les parfumeries professionnelles. Commandez vos huiles de parfum en vrac, aux meilleurs tarifs.</p>
+                    <span class="pub-hero-badge" data-i18n="hero.badge">Plateforme B2B · Direct Usine</span>
+                    <h1 class="pub-hero-title" data-i18n="hero.title">IDENE — L'huile de parfum <em>au plus près de la source</em></h1>
+                    <p class="pub-hero-subtitle" data-i18n="hero.subtitle">Approvisionnement B2B direct d'usine pour les parfumeries professionnelles. Commandez vos huiles de parfum en vrac, aux meilleurs tarifs.</p>
                     <div class="pub-hero-actions">
-                        <a href="{$catalogLink}" class="btn btn-primary btn-lg">Voir le catalogue</a>
+                        <a href="{$catalogLink}" class="btn btn-primary btn-lg" data-i18n="hero.viewCatalog">Voir le catalogue</a>
                         {$heroAction}
                     </div>
                     <div class="pub-hero-stats">
                         <div class="pub-hero-stat">
                             <strong data-count="200">0</strong>
-                            <span>Parfums disponibles</span>
+                            <span data-i18n="hero.perfumesAvailable">Parfums disponibles</span>
                         </div>
                         <div class="pub-hero-stat">
                             <strong>48h</strong>
-                            <span>Livraison directe</span>
+                            <span data-i18n="hero.directDelivery">Livraison directe</span>
                         </div>
                         <div class="pub-hero-stat">
                             <strong>100%</strong>
-                            <span>Qualité contrôlée</span>
+                            <span data-i18n="hero.qualityControlled">Qualité contrôlée</span>
                         </div>
                     </div>
                 </div>
@@ -153,10 +158,10 @@ final class PublicWebsiteController
         <canvas id="essenceCanvas"></canvas>
         <div class="essence-overlay container">
             <div class="essence-content reveal">
-                <span class="kicker-gold">L'Art de la Création</span>
-                <h2>Une essence pure, vibrante, intemporelle.</h2>
-                <p>Découvrez notre sélection exclusive d'huiles de parfum. Chaque goutte est le fruit d'une sélection rigoureuse à la source pour une qualité irréprochable.</p>
-                <a href="#comment" class="btn btn-outline-gold mt-4">Découvrir le processus <i class="bi bi-arrow-down"></i></a>
+                <span class="kicker-gold" data-i18n="essence.kicker">L'Art de la Création</span>
+                <h2 data-i18n="essence.title">Une essence pure, vibrante, intemporelle.</h2>
+                <p data-i18n="essence.text">Découvrez notre sélection exclusive d'huiles de parfum. Chaque goutte est le fruit d'une sélection rigoureuse à la source pour une qualité irréprochable.</p>
+                <a href="#comment" class="btn btn-outline-gold mt-4" data-i18n="essence.cta">Découvrir le processus <i class="bi bi-arrow-down"></i></a>
             </div>
         </div>
     </section>
@@ -165,25 +170,25 @@ final class PublicWebsiteController
     <section id="pourquoi" class="pub-section pub-why">
         <div class="container">
             <div class="pub-section-header reveal">
-                <span class="kicker">Nos avantages</span>
-                <h2>Pourquoi choisir IDENE</h2>
-                <p>Une solution complète pensée pour les professionnels de la parfumerie</p>
+                <span class="kicker" data-i18n="why.kicker">Nos avantages</span>
+                <h2 data-i18n="why.title">Pourquoi choisir IDENE</h2>
+                <p data-i18n="why.subtitle">Une solution complète pensée pour les professionnels de la parfumerie</p>
             </div>
             <div class="pub-why-grid">
                 <div class="pub-why-card green reveal">
                     <div class="icon-wrap"><i class="bi bi-box-seam-fill"></i></div>
-                    <h3>Approvisionnement fiable</h3>
-                    <p>Une base de parfums structurée par gamme et segment. Visualisez la disponibilité en temps réel et commandez en toute confiance.</p>
+                    <h3 data-i18n="why.card1.title">Approvisionnement fiable</h3>
+                    <p data-i18n="why.card1.text">Une base de parfums structurée par gamme et segment. Visualisez la disponibilité en temps réel et commandez en toute confiance.</p>
                 </div>
                 <div class="pub-why-card terra reveal">
                     <div class="icon-wrap"><i class="bi bi-truck"></i></div>
-                    <h3>Livraison directe d'usine</h3>
-                    <p>Meilleurs prix garantis, qualité contrôlée à la source. Expédition sous 48h pour toutes les commandes confirmées.</p>
+                    <h3 data-i18n="why.card2.title">Livraison directe d'usine</h3>
+                    <p data-i18n="why.card2.text">Meilleurs prix garantis, qualité contrôlée à la source. Expédition sous 48h pour toutes les commandes confirmées.</p>
                 </div>
                 <div class="pub-why-card gold reveal">
                     <div class="icon-wrap"><i class="bi bi-person-badge-fill"></i></div>
-                    <h3>Compte professionnel dédié</h3>
-                    <p>Tarifs GROS et DETAIL personnalisés, historique complet de vos commandes, factures PDF et suivi de paiement.</p>
+                    <h3 data-i18n="why.card3.title">Compte professionnel dédié</h3>
+                    <p data-i18n="why.card3.text">Tarifs GROS et DETAIL personnalisés, historique complet de vos commandes, factures PDF et suivi de paiement.</p>
                 </div>
             </div>
         </div>
@@ -193,9 +198,9 @@ final class PublicWebsiteController
     <section class="pub-section pub-catalog-preview">
         <div class="container">
             <div class="pub-section-header reveal">
-                <span class="kicker">Notre catalogue</span>
-                <h2>Aperçu de nos parfums</h2>
-                <p>Découvrez un extrait de notre gamme. Connectez-vous pour voir tous les prix et passer commande.</p>
+                <span class="kicker" data-i18n="catalog.kicker">Notre catalogue</span>
+                <h2 data-i18n="catalog.title">Aperçu de nos parfums</h2>
+                <p data-i18n="catalog.text">Découvrez un extrait de notre gamme. Connectez-vous pour voir tous les prix et passer commande.</p>
             </div>
             <div class="pub-catalog-grid" id="previewGrid">
                 <div style="grid-column:1/-1;text-align:center;padding:48px 0">
@@ -204,7 +209,7 @@ final class PublicWebsiteController
                 </div>
             </div>
             <div style="text-align:center;margin-top:40px" class="reveal">
-                <a href="/catalogue" class="btn btn-primary btn-lg">Voir tout le catalogue</a>
+                <a href="/catalogue" class="btn btn-primary btn-lg" data-i18n="catalog.viewAll">Voir tout le catalogue</a>
             </div>
         </div>
     </section>
@@ -213,34 +218,34 @@ final class PublicWebsiteController
     <section id="comment" class="pub-section pub-steps">
         <div class="container">
             <div class="pub-section-header reveal">
-                <span class="kicker">Mode d'emploi</span>
-                <h2>Comment commander</h2>
-                <p>Quatre étapes simples pour recevoir vos parfums</p>
+                <span class="kicker" data-i18n="steps.kicker">Mode d'emploi</span>
+                <h2 data-i18n="steps.title">Comment commander</h2>
+                <p data-i18n="steps.subtitle">Quatre étapes simples pour recevoir vos parfums</p>
             </div>
             <div class="pub-steps-grid reveal">
                 <div class="pub-step">
                     <div class="pub-step-number">1</div>
                     <div class="pub-step-icon">👤</div>
-                    <h4>Créez votre compte pro</h4>
-                    <p>Inscription rapide avec validation de votre statut professionnel par notre équipe.</p>
+                    <h4 data-i18n="steps.step1.title">Créez votre compte pro</h4>
+                    <p data-i18n="steps.step1.text">Inscription rapide avec validation de votre statut professionnel par notre équipe.</p>
                 </div>
                 <div class="pub-step">
                     <div class="pub-step-number">2</div>
                     <div class="pub-step-icon">🔍</div>
-                    <h4>Choisissez vos parfums</h4>
-                    <p>Filtrez par gamme, segment et disponibilité. Consultez les prix et le stock en temps réel.</p>
+                    <h4 data-i18n="steps.step2.title">Choisissez vos parfums</h4>
+                    <p data-i18n="steps.step2.text">Filtrez par gamme, segment et disponibilité. Consultez les prix et le stock en temps réel.</p>
                 </div>
                 <div class="pub-step">
                     <div class="pub-step-number">3</div>
                     <div class="pub-step-icon">🛒</div>
-                    <h4>Passez commande</h4>
-                    <p>Ajoutez les quantités souhaitées au panier et validez votre commande en un clic.</p>
+                    <h4 data-i18n="steps.step3.title">Passez commande</h4>
+                    <p data-i18n="steps.step3.text">Ajoutez les quantités souhaitées au panier et validez votre commande en un clic.</p>
                 </div>
                 <div class="pub-step">
                     <div class="pub-step-number">4</div>
                     <div class="pub-step-icon">📦</div>
-                    <h4>Recevez et payez</h4>
-                    <p>Livraison sous 48h à votre parfumerie. Facture PDF générée automatiquement.</p>
+                    <h4 data-i18n="steps.step4.title">Recevez et payez</h4>
+                    <p data-i18n="steps.step4.text">Livraison sous 48h à votre parfumerie. Facture PDF générée automatiquement.</p>
                 </div>
             </div>
         </div>
@@ -249,8 +254,8 @@ final class PublicWebsiteController
     <!-- ═══ CTA Banner ═══ -->
     <section class="pub-section pub-cta py-20">
         <div class="container reveal">
-            <h2>Rejoignez les parfumeries qui font confiance à IDENE</h2>
-            <p>Accédez à notre plateforme B2B et simplifiez vos approvisionnements dès aujourd'hui</p>
+            <h2 data-i18n="cta.title">Rejoignez les parfumeries qui font confiance à IDENE</h2>
+            <p data-i18n="cta.text">Accédez à notre plateforme B2B et simplifiez vos approvisionnements dès aujourd'hui</p>
             {$ctaAction}
         </div>
     </section>
@@ -261,30 +266,30 @@ final class PublicWebsiteController
             <div class="pub-footer-grid">
                 <div class="pub-footer-brand">
                     <img src="/assets/images/logo.png" alt="IDENE Logo">
-                    <h3>IDENE PARFUM</h3>
-                    <p>L'huile de parfum au plus près de la source. Approvisionnement B2B direct d'usine pour les parfumeries professionnelles.</p>
-                    <span class="pro-badge"><i class="bi bi-shield-check"></i> Réservé aux professionnels</span>
+                    <h3 data-i18n="footer.brand">IDENE PARFUM</h3>
+                    <p data-i18n="footer.description">L'huile de parfum au plus près de la source. Approvisionnement B2B direct d'usine pour les parfumeries professionnelles.</p>
+                    <span class="pro-badge"><i class="bi bi-shield-check"></i> <span data-i18n="footer.proOnly">Réservé aux professionnels</span></span>
                 </div>
                 <div>
-                    <h4>Navigation</h4>
+                    <h4 data-i18n="footer.navigation">Navigation</h4>
                     <ul>
-                        <li><a href="/accueil">Accueil</a></li>
-                        <li><a href="/catalogue">Catalogue</a></li>
-                        <li><a href="#pourquoi">Avantages</a></li>
-                        <li><a href="#comment">Comment commander</a></li>
-                        <li><a href="/auth">Connexion</a></li>
+                        <li><a href="/accueil" data-i18n="footer.home">Accueil</a></li>
+                        <li><a href="/catalogue" data-i18n="nav.catalog">Catalogue</a></li>
+                        <li><a href="#pourquoi" data-i18n="nav.advantages">Avantages</a></li>
+                        <li><a href="#comment" data-i18n="nav.howToOrder">Comment commander</a></li>
+                        <li><a href="/auth" data-i18n="nav.login">Connexion</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4>Informations</h4>
+                    <h4 data-i18n="footer.information">Informations</h4>
                     <ul>
-                        <li><a href="#">À propos</a></li>
-                        <li><a href="#">Conditions générales</a></li>
-                        <li><a href="#">Politique de confidentialité</a></li>
+                        <li><a href="#" data-i18n="footer.about">À propos</a></li>
+                        <li><a href="#" data-i18n="footer.terms">Conditions générales</a></li>
+                        <li><a href="#" data-i18n="footer.privacy">Politique de confidentialité</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4>Contact</h4>
+                    <h4 data-i18n="footer.contactTitle">Contact</h4>
                     <ul class="pub-footer-contact">
                         <li><i class="bi bi-telephone-fill"></i> +215 58 60 62 33</li>
                         <li><i class="bi bi-telephone-fill"></i> +216 58 36 74 68</li>
@@ -298,7 +303,7 @@ final class PublicWebsiteController
                 </div>
             </div>
             <div class="pub-footer-bottom">
-                <p>&copy; 2025 IDENE PARFUM. Tous droits réservés. Plateforme réservée aux professionnels.</p>
+                <p data-i18n="footer.rights">&copy; 2025 IDENE PARFUM. Tous droits réservés. Plateforme réservée aux professionnels.</p>
             </div>
         </div>
     </footer>
@@ -311,10 +316,10 @@ final class PublicWebsiteController
             <button class="pub-mobile-menu-close" id="mobileMenuClose"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav>
-            <a href="#pourquoi">Avantages</a>
-            <a href="/catalogue">Catalogue</a>
-            <a href="#comment">Comment commander</a>
-            <a href="#contact">Contact</a>
+            <a href="#pourquoi" data-i18n="nav.advantages">Avantages</a>
+            <a href="/catalogue" data-i18n="nav.catalog">Catalogue</a>
+            <a href="#comment" data-i18n="nav.howToOrder">Comment commander</a>
+            <a href="#contact" data-i18n="nav.contact">Contact</a>
         </nav>
         <div class="pub-mobile-menu-actions">
             {$navActions}
@@ -328,6 +333,7 @@ final class PublicWebsiteController
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="/assets/js/public-website.js"></script>
+    <script src="/assets/js/i18n.js"></script>
 </body>
 </html>
 HTML);
@@ -356,6 +362,7 @@ HTML);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/assets/css/idene-design-system.css">
     <link rel="stylesheet" href="/assets/css/public-website.css">
+    <link rel="stylesheet" href="/assets/css/i18n-rtl.css">
 </head>
 <body>
 
@@ -367,14 +374,18 @@ HTML);
                 <span>IDENE</span>
             </a>
             <ul class="pub-nav-links">
-                <li><a href="/accueil#pourquoi">Avantages</a></li>
-                <li><a href="/catalogue" style="color:var(--primary);font-weight:600">Catalogue</a></li>
-                <li><a href="/accueil#comment">Comment commander</a></li>
-                <li><a href="/accueil#contact">Contact</a></li>
+                <li><a href="/accueil#pourquoi" data-i18n="nav.advantages">Avantages</a></li>
+                <li><a href="/catalogue" style="color:var(--primary);font-weight:600" data-i18n="nav.catalog">Catalogue</a></li>
+                <li><a href="/accueil#comment" data-i18n="nav.howToOrder">Comment commander</a></li>
+                <li><a href="/accueil#contact" data-i18n="nav.contact">Contact</a></li>
             </ul>
             <div class="pub-nav-actions">
-                <a href="/auth" class="btn btn-sm btn-outline">Connexion</a>
-                <a href="/auth" class="btn btn-sm btn-primary">Compte Pro</a>
+                <button class="lang-toggle-btn" type="button" aria-label="Switch language">
+                    <span class="lang-toggle-flag">🇸🇦</span>
+                    <span class="lang-toggle-label">العربية</span>
+                </button>
+                <a href="/auth" class="btn btn-sm btn-outline" data-i18n="nav.login">Connexion</a>
+                <a href="/auth" class="btn btn-sm btn-primary" data-i18n="nav.proAccount">Compte Pro</a>
             </div>
             <button class="pub-nav-mobile" id="mobileMenuBtn" aria-label="Menu">
                 <i class="bi bi-list"></i>
@@ -386,9 +397,9 @@ HTML);
     <section class="pub-section" style="padding-top:120px;min-height:100vh">
         <div class="container">
             <div class="pub-section-header" style="margin-bottom:32px">
-                <span class="kicker">Catalogue complet</span>
-                <h2>Nos parfums professionnels</h2>
-                <p>Explorez notre gamme complète. Connectez-vous pour voir les prix et passer commande.</p>
+                <span class="kicker" data-i18n="catalogPage.kicker">Catalogue complet</span>
+                <h2 data-i18n="catalogPage.title">Nos parfums professionnels</h2>
+                <p data-i18n="catalogPage.text">Explorez notre gamme complète. Connectez-vous pour voir les prix et passer commande.</p>
             </div>
 
             <div class="pub-catalog-filters" id="catalogFilters">
@@ -430,9 +441,9 @@ HTML);
     <!-- ═══ CTA ═══ -->
     <section class="pub-section pub-cta py-16">
         <div class="container">
-            <h2>Prêt à commander ?</h2>
-            <p>Créez votre compte professionnel et accédez aux prix, au stock en temps réel et à la commande en ligne.</p>
-            <a href="/auth" class="btn btn-gold btn-xl">Créer mon compte pro</a>
+            <h2 data-i18n="cta.ready">Prêt à commander ?</h2>
+            <p data-i18n="cta.readyText">Créez votre compte professionnel et accédez aux prix, au stock en temps réel et à la commande en ligne.</p>
+            <a href="/auth" class="btn btn-gold btn-xl" data-i18n="cta.createPro">Créer mon compte pro</a>
         </div>
     </section>
 
@@ -442,27 +453,27 @@ HTML);
             <div class="pub-footer-grid">
                 <div class="pub-footer-brand">
                     <img src="/assets/images/logo.png" alt="IDENE Logo">
-                    <h3>IDENE PARFUM</h3>
-                    <p>L'huile de parfum au plus près de la source.</p>
-                    <span class="pro-badge"><i class="bi bi-shield-check"></i> Réservé aux professionnels</span>
+                    <h3 data-i18n="footer.brand">IDENE PARFUM</h3>
+                    <p data-i18n="footer.description">L'huile de parfum au plus près de la source.</p>
+                    <span class="pro-badge"><i class="bi bi-shield-check"></i> <span data-i18n="footer.proOnly">Réservé aux professionnels</span></span>
                 </div>
                 <div>
-                    <h4>Navigation</h4>
+                    <h4 data-i18n="footer.navigation">Navigation</h4>
                     <ul>
-                        <li><a href="/accueil">Accueil</a></li>
-                        <li><a href="/catalogue">Catalogue</a></li>
-                        <li><a href="/auth">Connexion</a></li>
+                        <li><a href="/accueil" data-i18n="footer.home">Accueil</a></li>
+                        <li><a href="/catalogue" data-i18n="nav.catalog">Catalogue</a></li>
+                        <li><a href="/auth" data-i18n="nav.login">Connexion</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4>Informations</h4>
+                    <h4 data-i18n="footer.information">Informations</h4>
                     <ul>
-                        <li><a href="#">Conditions générales</a></li>
-                        <li><a href="#">Politique de confidentialité</a></li>
+                        <li><a href="#" data-i18n="footer.terms">Conditions générales</a></li>
+                        <li><a href="#" data-i18n="footer.privacy">Politique de confidentialité</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4>Contact</h4>
+                    <h4 data-i18n="footer.contactTitle">Contact</h4>
                     <ul class="pub-footer-contact">
                         <li><i class="bi bi-telephone-fill"></i> +215 58 60 62 33</li>
                         <li><i class="bi bi-telephone-fill"></i> +216 58 36 74 68</li>
@@ -471,7 +482,7 @@ HTML);
                 </div>
             </div>
             <div class="pub-footer-bottom">
-                <p>&copy; 2025 IDENE PARFUM. Tous droits réservés.</p>
+                <p data-i18n="footer.rights">&copy; 2025 IDENE PARFUM. Tous droits réservés.</p>
             </div>
         </div>
     </footer>
@@ -484,14 +495,14 @@ HTML);
             <button class="pub-mobile-menu-close" id="mobileMenuClose"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav>
-            <a href="/accueil">Accueil</a>
-            <a href="/catalogue">Catalogue</a>
-            <a href="/accueil#pourquoi">Avantages</a>
-            <a href="/accueil#contact">Contact</a>
+            <a href="/accueil" data-i18n="footer.home">Accueil</a>
+            <a href="/catalogue" data-i18n="nav.catalog">Catalogue</a>
+            <a href="/accueil#pourquoi" data-i18n="nav.advantages">Avantages</a>
+            <a href="/accueil#contact" data-i18n="nav.contact">Contact</a>
         </nav>
         <div class="pub-mobile-menu-actions">
-            <a href="/auth" class="btn btn-outline btn-block">Connexion</a>
-            <a href="/auth" class="btn btn-primary btn-block">Compte Pro</a>
+            <a href="/auth" class="btn btn-outline btn-block" data-i18n="nav.login">Connexion</a>
+            <a href="/auth" class="btn btn-primary btn-block" data-i18n="nav.proAccount">Compte Pro</a>
         </div>
     </div>
 
@@ -499,7 +510,8 @@ HTML);
         <i class="bi bi-chevron-up"></i>
     </button>
 
-    <script src="/assets/js/public-website.js"></script>
+    <script src="/assets/js/public-website.js?v=3"></script>
+    <script src="/assets/js/i18n.js?v=3"></script>
 </body>
 </html>
 HTML);

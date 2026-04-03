@@ -31,20 +31,37 @@
   const bottleLabel = (qty) => `${qty} bouteille${qty > 1 ? 's' : ''}`;
 
   const themeToggleBtn = document.getElementById('themeToggleBtn');
+  let themeToggleLock = false;
   const applyTheme = (theme) => {
-    document.documentElement.setAttribute('data-theme', theme);
+    const root = document.documentElement;
+    root.classList.add('theme-switching');
+    root.setAttribute('data-theme', theme);
     localStorage.setItem('idene-user-theme', theme);
     if (themeToggleBtn) {
-      themeToggleBtn.innerHTML = theme === 'dark'
-        ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>'
-        : '<i class="bi bi-moon-stars-fill"></i>';
+      const icon = themeToggleBtn.querySelector('i');
+      if (icon) {
+        icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+        icon.style.color = theme === 'dark' ? '#FFF' : '';
+      }
     }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        root.classList.remove('theme-switching');
+      });
+    });
   };
   applyTheme(localStorage.getItem('idene-user-theme') || 'light');
-  themeToggleBtn?.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') || 'light';
-    applyTheme(current === 'dark' ? 'light' : 'dark');
-  });
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      if (themeToggleLock) return;
+      themeToggleLock = true;
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+      setTimeout(() => {
+        themeToggleLock = false;
+      }, 300);
+    });
+  }
 
   const statusColors = {
     BROUILLON: 'status-brouillon',
@@ -296,26 +313,26 @@
       $('#dashProductStats').innerHTML = `
         <div class="dash-stat-card">
           <div class="dash-stat-number">${totalProducts}</div>
-          <div class="dash-stat-label">Produits au catalogue</div>
-          <div class="dash-stat-detail">${Object.keys(groups).length} categories</div>
+          <div class="dash-stat-label" data-i18n="dash.products">Produits au catalogue</div>
+          <div class="dash-stat-detail">${Object.keys(groups).length} <span data-i18n="dash.categories">categories</span></div>
         </div>
         <div class="dash-stat-card dash-stat-success">
           <div class="dash-stat-number">${inStock}</div>
-          <div class="dash-stat-label">En stock</div>
+          <div class="dash-stat-label" data-i18n="dash.inStock">En stock</div>
           <div class="dash-stat-bar"><div class="dash-stat-fill dash-fill-success" style="width:${pctIn}%"></div></div>
-          <div class="dash-stat-detail">${pctIn}% du catalogue</div>
+          <div class="dash-stat-detail">${pctIn}% <span data-i18n="dash.ofCatalog">du catalogue</span></div>
         </div>
         <div class="dash-stat-card dash-stat-warning">
           <div class="dash-stat-number">${limited}</div>
-          <div class="dash-stat-label">Stock limite</div>
+          <div class="dash-stat-label" data-i18n="dash.limitedStock">Stock limite</div>
           <div class="dash-stat-bar"><div class="dash-stat-fill dash-fill-warning" style="width:${pctLimited}%"></div></div>
-          <div class="dash-stat-detail">${pctLimited}% du catalogue</div>
+          <div class="dash-stat-detail">${pctLimited}% <span data-i18n="dash.ofCatalog">du catalogue</span></div>
         </div>
         <div class="dash-stat-card dash-stat-danger">
           <div class="dash-stat-number">${outStock}</div>
-          <div class="dash-stat-label">En rupture</div>
+          <div class="dash-stat-label" data-i18n="dash.outOfStock">En rupture</div>
           <div class="dash-stat-bar"><div class="dash-stat-fill dash-fill-danger" style="width:${pctOut}%"></div></div>
-          <div class="dash-stat-detail">${pctOut}% du catalogue</div>
+          <div class="dash-stat-detail">${pctOut}% <span data-i18n="dash.ofCatalog">du catalogue</span></div>
         </div>`;
 
       const segments = {};
@@ -340,9 +357,9 @@
 
       const recent = dash.recent_orders || [];
       if (!recent.length) {
-        $('#dashRecentOrders').innerHTML = '<p class="muted" style="padding:16px">Aucune commande.</p>';
+        $('#dashRecentOrders').innerHTML = '<p class="muted" style="padding:16px" data-i18n="dash.noOrders">Aucune commande.</p>';
       } else {
-        let html = '<table class="dash-mini-table"><thead><tr><th>Numero</th><th>Montant</th><th>Statut</th></tr></thead><tbody>';
+        let html = '<table class="dash-mini-table"><thead><tr><th data-i18n="dash.number">Numero</th><th data-i18n="dash.amount">Montant</th><th data-i18n="dash.status">Statut</th></tr></thead><tbody>';
         recent.forEach((o) => {
           html += `<tr><td>${esc(o.order_number)}</td><td>${formatDT(o.total_dzd)}</td><td>${statusPill(o.status)}</td></tr>`;
         });
@@ -352,7 +369,7 @@
 
       const topPerfumes = dash.top_perfumes || [];
       if (!topPerfumes.length) {
-        $('#dashTopPerfumes').innerHTML = '<p class="muted" style="padding:16px">Aucune vente disponible pour le moment.</p>';
+        $('#dashTopPerfumes').innerHTML = '<p class="muted" style="padding:16px" data-i18n="dash.noSales">Aucune vente disponible pour le moment.</p>';
       } else {
         $('#dashTopPerfumes').innerHTML = topPerfumes.map((perfume, index) => `
           <article class="dash-top-card">
@@ -362,8 +379,8 @@
               <p>${esc(perfume.segment || 'AUTRE')} - ${esc(perfume.catalog_group || 'Catalogue')}</p>
             </div>
             <div class="dash-top-metrics">
-              <strong>${Number(perfume.sold_qty || 0)} ventes</strong>
-              <span>${Number(perfume.orders_count || 0)} commandes</span>
+              <strong>${Number(perfume.sold_qty || 0)} <span data-i18n="dash.sales">ventes</span></strong>
+              <span>${Number(perfume.orders_count || 0)} <span data-i18n="dash.ordersMin">commandes</span></span>
             </div>
           </article>
         `).join('');
@@ -386,7 +403,7 @@
 
     $('#shopResultsCount').textContent = `${filtered.length} parfum${filtered.length !== 1 ? 's' : ''}`;
     if (!filtered.length) {
-      $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:40px;">Aucun parfum ne correspond a vos criteres.</p>';
+      $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:40px;" data-i18n="dash.noMatch">Aucun parfum ne correspond a vos criteres.</p>';
       return;
     }
 
@@ -411,7 +428,7 @@
               <button onclick="adjQty(this,1)">+</button>
             </div>
             <button class="pcard-add" ${isOut ? 'disabled' : ''} onclick="addToCart(${p.id}, this)">
-              <i class="bi bi-cart-plus"></i> Ajouter
+              <i class="bi bi-cart-plus"></i> <span data-i18n="dash.add">Ajouter</span>
             </button>
           </div>
         </div>
@@ -481,9 +498,9 @@
     renderCart();
 
     if (btnEl) {
-      btnEl.innerHTML = '<i class="bi bi-check"></i> Ajoute !';
+      btnEl.innerHTML = '<i class="bi bi-check"></i> <span data-i18n="dash.added">Ajoute !</span>';
       setTimeout(() => {
-        btnEl.innerHTML = '<i class="bi bi-cart-plus"></i> Ajouter';
+        btnEl.innerHTML = '<i class="bi bi-cart-plus"></i> <span data-i18n="dash.add">Ajouter</span>';
       }, 1000);
     }
   };
@@ -646,12 +663,12 @@
     if (st !== 'ALL') filtered = filtered.filter((o) => o.status === st);
 
     if (!filtered.length) {
-      $('#ordersPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-box"></i><p>Aucune commande trouvee.</p></div>';
+      $('#ordersPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-box"></i><p data-i18n="dash.noOrdersFound">Aucune commande trouvee.</p></div>';
       return;
     }
 
     let html = `<div class="orders-table-wrap"><table class="orders-table"><thead><tr>
-      <th>NÂ° Commande</th><th>Date</th><th>Montant</th><th>Statut</th><th>Action</th>
+      <th data-i18n="dash.orderNum">NÂ° Commande</th><th data-i18n="dash.date">Date</th><th data-i18n="dash.amount">Montant</th><th data-i18n="dash.status">Statut</th><th data-i18n="dash.action">Action</th>
       </tr></thead><tbody>`;
     filtered.forEach((o) => {
       html += `<tr>
@@ -660,9 +677,9 @@
         <td>${formatDT(o.total_dzd)}</td>
         <td>${statusPill(o.status)}</td>
         <td>${o.can_manage
-          ? `<button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})"><i class="bi bi-pencil"></i> Modifier</button>
-             <button class="btn btn-sm btn-ghost" onclick="deleteOrder(${o.id})"><i class="bi bi-trash3"></i> Supprimer</button>`
-          : '<span class="text-muted">Validee / depassee 24h</span>'}</td>
+          ? `<button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})"><i class="bi bi-pencil"></i> <span data-i18n="dash.edit">Modifier</span></button>
+             <button class="btn btn-sm btn-ghost" onclick="deleteOrder(${o.id})"><i class="bi bi-trash3"></i> <span data-i18n="dash.delete">Supprimer</span></button>`
+          : '<span class="text-muted" data-i18n="dash.validatedTimeout">Validee / depassee 24h</span>'}</td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -737,11 +754,11 @@
     if (st !== 'ALL') filtered = filtered.filter((x) => x.payment_status === st || x.status === st);
 
     if (!filtered.length) {
-      $('#invoicesPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-receipt"></i><p>Aucune facture trouvee.</p></div>';
+      $('#invoicesPanel').innerHTML = '<div class="cart-empty"><i class="bi bi-receipt"></i><p data-i18n="dash.noInvoicesFound">Aucune facture trouvee.</p></div>';
       return;
     }
     let html = `<div class="orders-table-wrap"><table class="orders-table"><thead><tr>
-      <th>Facture</th><th>Date d'emission</th><th>Nom</th><th>Statut Paiement</th>
+      <th data-i18n="dash.invoice">Facture</th><th data-i18n="dash.issueDate">Date d'emission</th><th data-i18n="dash.name">Nom</th><th data-i18n="dash.paymentStatus">Statut Paiement</th>
       </tr></thead><tbody>`;
     filtered.forEach((x) => {
       const payStatus = x.payment_status || x.status;

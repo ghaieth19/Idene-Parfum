@@ -1,0 +1,279 @@
+/* ═══════════════════════════════════════════════════════════════
+   IDENE PARFUM — RTL & Language Toggle Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Language Toggle Button ──────────────────────────────── */
+.lang-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1.5px solid rgba(215, 170, 77, 0.4);
+  border-radius: 100px;
+  background: linear-gradient(135deg, rgba(215, 170, 77, 0.08), rgba(215, 170, 77, 0.02));
+  color: var(--gold, #d7aa4d);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  letter-spacing: 0.01em;
+}
+
+.lang-toggle-btn:hover {
+  border-color: rgba(215, 170, 77, 0.7);
+  background: linear-gradient(135deg, rgba(215, 170, 77, 0.18), rgba(215, 170, 77, 0.06));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(215, 170, 77, 0.2);
+}
+
+.lang-toggle-btn:active {
+  transform: translateY(0);
+}
+
+.lang-toggle-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.lang-toggle-label {
+  line-height: 1.2;
+}
+
+/* Mobile: smaller button */
+@media (max-width: 768px) {
+  .lang-toggle-btn {
+    padding: 5px 10px;
+    font-size: 0.76rem;
+    gap: 4px;
+  }
+  .lang-toggle-flag {
+    font-size: 1rem;
+  }
+}
+
+/* ── RTL Global Overrides ────────────────────────────────── */
+.rtl-mode {
+  direction: rtl;
+  text-align: right;
+}
+
+
+.rtl-mode .pub-nav .container,
+.rtl-mode .pub-nav-actions,
+.rtl-mode .pub-hero-actions,
+.rtl-mode .pub-hero-stats,
+.rtl-mode .pub-footer-grid,
+.rtl-mode .pub-footer-socials,
+.rtl-mode .pub-footer-contact li,
+.rtl-mode .pub-steps-grid,
+.rtl-mode .pub-catalog-filters,
+.rtl-mode .eco-nav-container,
+.rtl-mode .eco-nav-actions,
+.rtl-mode .dropdown-menu a {
+  direction: rtl;
+}
+
+/* Fix icons in RTL */
+.rtl-mode .bi-arrow-right::before {
+  content: "\f12f"; /* bi-arrow-left */
+}
+
+
+.rtl-mode .pub-nav-brand {
+  flex-direction: row-reverse;
+}
+
+.rtl-mode .pub-nav-links {
+  direction: rtl;
+}
+
+.rtl-mode .pub-nav-links a {
+  direction: rtl;
+}
+
+/* ── Hero RTL ────────────────────────────────────────────── */
+.rtl-mode .pub-hero-content {
+  text-align: right;
+}
+
+.rtl-mode .pub-hero-actions {
+  justify-content: flex-start;
+}
+
+.rtl-mode .pub-hero-stat {
+  text-align: center;
+}
+
+/* ── Cards RTL ───────────────────────────────────────────── */
+.rtl-mode .pub-why-card {
+  text-align: right;
+}
+
+.rtl-mode .pub-step {
+  text-align: right;
+}
+
+.rtl-mode .pub-step-number {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* ── Section headers RTL ─────────────────────────────────── */
+.rtl-mode .pub-section-header {
+  text-align: center;
+}
+
+/* ── Footer RTL ──────────────────────────────────────────── */
+.rtl-mode .pub-footer-brand {
+  text-align: right;
+}
+
+.rtl-mode .pub-footer ul {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.rtl-mode .pub-footer-contact i {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+.rtl-mode .pub-footer-bottom {
+  text-align: center;
+}
+
+/* ── CTA RTL ─────────────────────────────────────────────── */
+.rtl-mode .pub-cta {
+  text-align: center;
+}
+
+/* ── Catalog Filters RTL ─────────────────────────────────── */
+.rtl-mode .pub-catalog-search .search-icon {
+  left: auto;
+  right: 12px;
+}
+
+.rtl-mode .pub-catalog-search input {
+  padding-left: 12px;
+  padding-right: 40px;
+}
+
+/* ── Auth page RTL ───────────────────────────────────────── */
+.rtl-mode .auth-showcase {
+  text-align: right;
+}
+
+.rtl-mode .form-intro {
+  text-align: right;
+}
+
+.rtl-mode .floating-label input {
+  text-align: right;
+}
+
+.rtl-mode .floating-label label {
+  left: auto;
+  right: 12px;
+}
+
+.rtl-mode .switcher {
+  direction: rtl;
+}
+
+.rtl-mode .auth-submit i {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+.rtl-mode .muted-link.align-right {
+  text-align: left;
+}
+
+.rtl-mode .check {
+  direction: rtl;
+}
+
+.rtl-mode .check input {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+/* ── Dashboard/Ecommerce RTL ─────────────────────────────── */
+.rtl-mode .eco-brand {
+  flex-direction: row-reverse;
+}
+
+.rtl-mode .dropdown-menu {
+  left: 0;
+  right: auto;
+}
+
+.rtl-mode .mob-links a i {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+/* ── Mobile menu RTL ─────────────────────────────────────── */
+.rtl-mode .pub-mobile-menu {
+  left: 0;
+  right: auto;
+  transform: translateX(-100%);
+}
+
+.rtl-mode .pub-mobile-menu.open {
+  transform: translateX(0);
+}
+
+.rtl-mode .pub-mobile-menu nav a {
+  text-align: right;
+}
+
+/* ── Badge & product cards RTL ───────────────────────────── */
+.rtl-mode .pub-product-body {
+  text-align: right;
+}
+
+.rtl-mode .segment-tag {
+  right: auto;
+  left: 8px;
+}
+
+.rtl-mode .stock-badge {
+  left: auto;
+  right: 8px;
+}
+
+/* ── Scroll to top stays in place ────────────────────────── */
+.rtl-mode .pub-scroll-top {
+  right: auto;
+  left: 20px;
+}
+
+/* ── Smooth transitions for language switch ──────────────── */
+[data-i18n],
+[data-i18n-placeholder] {
+  transition: opacity 0.15s ease;
+}
+
+/* ── Pro badge RTL ───────────────────────────────────────── */
+.rtl-mode .pro-badge i {
+  margin-left: 6px;
+  margin-right: 0;
+}
+
+/* ── Arabic font enhancement ─────────────────────────────── */
+.rtl-mode {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}
+
+.rtl-mode h1,
+.rtl-mode h2,
+.rtl-mode h3,
+.rtl-mode h4 {
+  font-family: 'Cormorant Garamond', 'Noto Serif Arabic', serif;
+  letter-spacing: 0;
+}
