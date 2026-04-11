@@ -837,7 +837,7 @@
     }
 
     let html = `<div class="orders-table-wrap"><table class="orders-table"><thead><tr>
-      <th data-i18n="dash.orderNum">NÂ° Commande</th><th data-i18n="dash.date">Date</th><th data-i18n="dash.amount">Montant</th><th data-i18n="dash.status">Statut</th><th data-i18n="dash.action">Action</th>
+      <th data-i18n="dash.orderNum">No Commande</th><th data-i18n="dash.date">Date</th><th data-i18n="dash.amount">Montant</th><th data-i18n="dash.status">Statut</th><th data-i18n="dash.action">Action</th>
       </tr></thead><tbody>`;
     filtered.forEach((o) => {
       html += `<tr>

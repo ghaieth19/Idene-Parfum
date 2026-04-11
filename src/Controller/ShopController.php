@@ -78,7 +78,7 @@ final class ShopController
                 </a>
                 <button type="button" id="logoutBtn" class="shop-nav-item" style="margin-top: auto;">
                     <span class="shop-nav-icon"><i class="bi bi-box-arrow-right"></i></span>
-                    <span data-i18n="dash.logout">Déconnexion</span>
+                    <span data-i18n="dash.logout">Deconnexion</span>
                 </button>
             </nav>
         </aside>
@@ -121,15 +121,15 @@ final class ShopController
             <div class="shop-content">
                 <div class="shop-section-header">
                     <h1 class="shop-section-title">Catalogue Professionnel</h1>
-                    <p class="shop-section-subtitle">DÃƒÆ’Ã‚Â©couvrez notre sÃƒÆ’Ã‚Â©lection de parfums premium pour votre boutique</p>
+                    <p class="shop-section-subtitle">Decouvrez notre selection de parfums premium pour votre boutique</p>
                 </div>
 
                 <!-- Filters -->
                 <div class="shop-filters">
                     <div class="filter-group">
-                        <label class="filter-label">CatÃƒÆ’Ã‚Â©gorie</label>
+                        <label class="filter-label">Categorie</label>
                         <select class="filter-select" id="categoryFilter">
-                            <option value="ALL">Toutes les catÃƒÆ’Ã‚Â©gories</option>
+                            <option value="ALL">Toutes les categories</option>
                             <option value="PRINCIPAL">Principal</option>
                             <option value="SMART">Smart</option>
                             <option value="ENFANT">Enfant</option>
@@ -140,7 +140,7 @@ final class ShopController
                         <select class="filter-select" id="sortFilter">
                             <option value="name">Nom (A-Z)</option>
                             <option value="price-asc">Prix croissant</option>
-                            <option value="price-desc">Prix dÃƒÆ’Ã‚Â©croissant</option>
+                            <option value="price-desc">Prix decroissant</option>
                         </select>
                     </div>
                 </div>
@@ -155,7 +155,7 @@ final class ShopController
 
                 <!-- Pagination -->
                 <div class="shop-pagination">
-                    <button class="pagination-btn" disabled>PrÃƒÆ’Ã‚Â©cÃƒÆ’Ã‚Â©dent</button>
+                    <button class="pagination-btn" disabled>Precedent</button>
                     <span class="pagination-info">Page 1 / 1</span>
                     <button class="pagination-btn" disabled>Suivant</button>
                 </div>
@@ -173,7 +173,7 @@ final class ShopController
         </div>
         <div class="cart-items">
             <div class="cart-empty">
-                <div class="cart-empty-icon">ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ¢â‚¬â„¢</div>
+                <div class="cart-empty-icon"><i class="bi bi-bag-x"></i></div>
                 <p>Votre panier est vide</p>
             </div>
         </div>
@@ -201,7 +201,7 @@ final class ShopController
         <i class="bi bi-list"></i>
     </button>
 
-    <button id="themeToggleBtn" class="floating-theme-btn" title="Activer/DÃƒÆ’Ã‚Â©sactiver le mode sombre">ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢</button>
+    <button id="themeToggleBtn" class="floating-theme-btn" title="Activer/Desactiver le mode sombre"><i class="bi bi-moon-stars-fill"></i></button>
 
     <!-- Scripts -->
     <script>
@@ -210,7 +210,7 @@ final class ShopController
             const saved = localStorage.getItem("idene-user-theme") || "light";
             document.documentElement.setAttribute("data-theme", saved);
             const btn = document.getElementById("themeToggleBtn");
-            if(btn) btn.innerHTML = saved === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : 'ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢';
+            if(btn) btn.innerHTML = saved === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
         };
         initTheme();
 
@@ -219,7 +219,7 @@ final class ShopController
             const newTheme = current === "dark" ? "light" : "dark";
             document.documentElement.setAttribute("data-theme", newTheme);
             localStorage.setItem("idene-user-theme", newTheme);
-            document.getElementById("themeToggleBtn").innerHTML = newTheme === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : 'ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢';
+            document.getElementById("themeToggleBtn").innerHTML = newTheme === "dark" ? '<i class="bi bi-sun-fill" style="color:#FFF;"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
         });
 
         // Logout functionality

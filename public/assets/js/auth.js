@@ -912,6 +912,11 @@ if (signupForm) {
         
         if (signupForm.dataset.submitting === "1") return;
 
+        if (signupForm.password.value !== signupForm.password_confirm.value) {
+            setMessage(signupMessage, "Les mots de passe ne correspondent pas.", "is-error");
+            return;
+        }
+
         const wantsFace = !!(faceSignupOptIn && faceSignupOptIn.checked);
         if (wantsFace && !pendingFaceReady) {
             setFaceSignupStatus("Compte cree sans visage pour le moment. Vous pourrez ajouter votre visage plus tard dans Mon compte.");

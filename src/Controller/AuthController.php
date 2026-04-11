@@ -46,8 +46,8 @@ final class AuthController
     <!-- Language Toggle -->
     <div style="position: absolute; top: 20px; right: 20px; z-index: 100;">
         <button class="lang-toggle-btn" type="button" aria-label="Switch language">
-            <span class="lang-toggle-flag">🇸🇦</span>
-            <span class="lang-toggle-label">العربية</span>
+            <span class="lang-toggle-flag">AR</span>
+            <span class="lang-toggle-label">Arabe</span>
         </button>
     </div>
     <main class="auth-shell">
@@ -60,20 +60,20 @@ final class AuthController
                         <img src="/assets/images/logo.png" alt="IDENE PARFUM" class="logo-image">
                     </div>
                     <p class="hero-tag" data-i18n="auth.buyBulk">Acheter en gros</p>
-                    <h1 data-i18n="auth.heroTitle">L'huile de parfum<br>au plus près de la source.</h1>
-                    <p class="intro-text" data-i18n="auth.heroText">Créez votre compte B2B pour accéder instantanément aux tarifs professionnels et aux commandes directes usine.</p>
+                    <h1 data-i18n="auth.heroTitle">L'huile de parfum<br>au plus pres de la source.</h1>
+                    <p class="intro-text" data-i18n="auth.heroText">Creez votre compte B2B pour acceder instantanement aux tarifs professionnels et aux commandes directes usine.</p>
                 </header>
 
                 <div class="showcase-grid">
                     <div class="showcase-card">
-                        <span data-i18n="auth.selection">Sélection</span>
+                        <span data-i18n="auth.selection">Selection</span>
                         <strong data-i18n="auth.selectionDetail">+200 Parfums en stock</strong>
-                        <p data-i18n="auth.selectionText">Disponible en 250ml, 500ml et 1 Litre pour s'adapter à vos besoins.</p>
+                        <p data-i18n="auth.selectionText">Disponible en 250ml, 500ml et 1 Litre pour s'adapter a vos besoins.</p>
                     </div>
                     <div class="showcase-card">
-                        <span data-i18n="auth.qualityService">Qualité & Service</span>
-                        <strong data-i18n="auth.qualityDetail">Expédition prioritaire 48h</strong>
-                        <p data-i18n="auth.qualityText">Commandez en quelques clics, suivez votre livraison en temps réel.</p>
+                        <span data-i18n="auth.qualityService">Qualite & Service</span>
+                        <strong data-i18n="auth.qualityDetail">Expedition prioritaire 48h</strong>
+                        <p data-i18n="auth.qualityText">Commandez en quelques clics, suivez votre livraison en temps reel.</p>
                     </div>
                 </div>
             </aside>
@@ -88,7 +88,7 @@ final class AuthController
                 <form id="loginForm" class="form active" action="#" method="post">
                     <div class="form-intro">
                         <p class="form-kicker" data-i18n="auth.welcome">Bienvenue</p>
-                        <h2 data-i18n="auth.accessSpace">Accédez à votre espace</h2>
+                        <h2 data-i18n="auth.accessSpace">Accedez a votre espace</h2>
                     </div>
                     <p id="loginMessage" class="helper-text form-message"></p>
                     <div class="floating-label">
@@ -100,16 +100,10 @@ final class AuthController
                         <label for="loginPassword" data-i18n="auth.password">Mot de passe</label>
                     </div>
                     
-                    <a href="/verify-reset-code" id="forgotToggle" class="muted-link align-right" data-i18n="auth.forgotPassword">Mot de passe oublié ?</a>
+                    <a href="/verify-reset-code" id="forgotToggle" class="muted-link align-right" data-i18n="auth.forgotPassword">Mot de passe oublie ?</a>
                     
                     <button type="submit" class="btn-primary auth-submit"><span data-i18n="auth.loginBtn">Se connecter</span> <i class="bi bi-arrow-right"></i></button>
 
-                    <div class="divider"><span data-i18n="auth.or">ou</span></div>
-
-                    <button id="faceLoginBtn" type="button" class="btn-outline face-btn">
-                        <i class="bi bi-person-bounding-box"></i> <span data-i18n="auth.faceLogin">Connexion Faciale</span>
-                    </button>
-                    <p id="faceStatus" class="helper-text"></p>
                 </form>
 
                 <form id="signupForm" class="form" action="#" method="post">
@@ -150,34 +144,10 @@ final class AuthController
                         <input type="password" name="password" id="regPassword" placeholder=" " required minlength="8">
                         <label for="regPassword" data-i18n="auth.createPassword">Créer un mot de passe</label>
                     </div>
-
-                    <label class="check custom-checkbox">
-                        <input id="faceSignupOptIn" type="checkbox" name="face_signup_opt_in" checked>
-                        <span data-i18n="auth.enableFace">Activer la reconnaissance faciale pour les prochaines connexions </span>
-                    </label>
-
-                    <section class="biometric-panel glass-panel mt-3 mb-4">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-camera-video" style="font-size:1.2rem; margin-right:8px; color:var(--primary);"></i>
-                            <p class="panel-title mb-0" style="margin:0;" data-i18n="auth.biometric">Enregistrement biométrique</p>
-                        </div>
-                        <p class="panel-text mb-3" data-i18n="auth.biometricText">Capturez votre visage une seule fois pour accélérer les connexions futures.</p>
-                        
-                        <div class="inline-face-box">
-                            <div class="inline-camera-shell" style="border-radius:var(--radius-md); overflow:hidden; border:1px solid rgba(0,0,0,0.1); margin-bottom:12px;">
-                                <video id="inlineFaceVideo" class="face-video" autoplay playsinline muted style="width:100%; display:block;"></video>
-                                <div class="camera-guide-circle"></div>
-                                <div class="camera-frame"></div>
-                            </div>
-                            <canvas id="inlineFaceCanvas" class="face-canvas" width="320" height="240" style="display:none"></canvas>
-                            <div class="inline-face-actions" style="display:flex; gap:10px;">
-                                <button id="faceSignupBtn" type="button" class="btn-outline" style="flex:1;"><i class="bi bi-camera"></i> <span data-i18n="auth.openCamera">Ouvrir la camera</span></button>
-                                <button id="validateFaceSignupBtn" type="button" class="btn-primary" style="flex:1;"><i class="bi bi-check2-circle"></i> <span data-i18n="auth.validateFace">Valider le visage</span></button>
-                            </div>
-                        </div>
-                    </section>
-                    <p id="faceSignupStatus" class="helper-text"></p>
-
+                    <div class="floating-label">
+                        <input type="password" name="password_confirm" id="regPasswordConfirm" placeholder=" " required minlength="8">
+                        <label for="regPasswordConfirm">Confirmer votre mot de passe</label>
+                    </div>
                     <button type="submit" class="btn-primary auth-submit mt-4" style="width:100%;"><span data-i18n="auth.signupBtn">S'inscrire</span> <i class="bi bi-person-plus"></i></button>
                 </form>
 
@@ -185,24 +155,6 @@ final class AuthController
             </section>
         </section>
     </main>
-
-    <div id="faceModal" class="face-modal" hidden>
-        <div class="face-modal-card">
-            <h3 data-i18n="auth.faceScan">Scan du visage</h3>
-            <p id="faceModalText" class="helper-text" data-i18n="auth.facePosition">Controle vivant active: centre, gauche, droite, haut, puis retour centre.</p>
-            <div id="faceChallengeProgress" class="face-challenge-progress" hidden></div>
-            <div class="camera-shell">
-                <video id="faceVideo" class="face-video" autoplay playsinline muted></video>
-                <div class="camera-guide-circle"></div>
-                <div class="camera-frame"></div>
-            </div>
-            <canvas id="faceCanvas" class="face-canvas" width="320" height="240"></canvas>
-            <div class="face-modal-actions">
-                <button id="captureFaceBtn" type="button" class="btn-primary" data-i18n="auth.capture">Scanner en secours</button>
-                <button id="closeFaceModalBtn" type="button" class="btn-secondary" data-i18n="auth.cancel">Annuler</button>
-            </div>
-        </div>
-    </div>
 
     <footer class="site-contact-bar">
         <div class="container-fluid">
@@ -216,7 +168,7 @@ final class AuthController
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/auth.js?v=14"></script>
+    <script src="/assets/js/auth.js?v=15"></script>
     <script src="/assets/js/i18n.js"></script>
 </body>
 </html>

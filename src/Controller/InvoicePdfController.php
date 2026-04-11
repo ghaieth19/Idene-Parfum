@@ -284,6 +284,7 @@ final class InvoicePdfController
                     <tr><th>TOTAL Remise</th><td class="right">0.000</td></tr>
                     <tr><th>HT NET:</th><td class="right">{{ht_net}}</td></tr>
                     <tr><th>CICT</th><td class="right">{{cict}}</td></tr>
+                    <tr><th>DROIT DE CONSOMMATION</th><td class="right">{{consumption}}</td></tr>
                     <tr><th>TOTAL TVA</th><td class="right">{{mt_tva}}</td></tr>
                     <tr><th>Timbre Fiscal</th><td class="right">{{timbre}}</td></tr>
                     <tr><th>TOTAL A PAYER</th><td class="right">{{total_to_pay}}</td></tr>
@@ -332,6 +333,7 @@ HTML;
             '{{ht_brut}}' => $this->money($summary['ht_brut']),
             '{{ht_net}}' => $this->money($summary['ht_net']),
             '{{cict}}' => $this->money($summary['cict']),
+            '{{consumption}}' => $this->money($summary['consumption']),
             '{{timbre}}' => $this->money($summary['timbre']),
             '{{total_to_pay}}' => $this->money($summary['total_to_pay']),
             '{{amount_words}}' => htmlspecialchars($this->spellAmountFr($summary['total_to_pay']), ENT_QUOTES),
@@ -352,6 +354,7 @@ HTML;
             'ht_brut' => $htBrut,
             'ht_net' => $htNet,
             'cict' => $cict,
+            'consumption' => $totalToPay * 0.25,
             'base_tva' => $baseTva,
             'mt_tva' => $mtTva,
             'timbre' => $timbre,
