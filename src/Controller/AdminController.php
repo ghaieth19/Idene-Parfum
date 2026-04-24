@@ -50,7 +50,7 @@ final class AdminController
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/admin-app.css?v=25">
+    <link rel="stylesheet" href="/assets/css/admin-app.css?v=29">
 </head>
 <body data-admin-name="__ADMIN_NAME__" data-admin-role="__ADMIN_ROLE__">
     <button type="button" id="mobileAdminSidebarToggle" class="mobile-sidebar-toggle hamburger-toggle" aria-label="Ouvrir ou fermer le menu admin">
@@ -285,18 +285,18 @@ final class AdminController
                     <form id="productForm" class="admin-form">
                         <input type="hidden" id="productId">
                         <div class="form-grid">
-                            <label data-i18n="admin.category"><select id="productCatalogGroup"><option value="PRINCIPAL">PRINCIPAL</option><option value="SMART">SMART</option><option value="ENFANT">ENFANT</option><option value="LUXE">LUXE</option><option value="MIXTE">MIXTE</option><option value="AUTRE">AUTRE</option></select></label>
-                            <label data-i18n="admin.segment"><select id="productSegment"><option value="HOMME">HOMME</option><option value="FEMME">FEMME</option><option value="UNISEX">UNISEX</option><option value="ENFANT">ENFANT</option><option value="MIXTE">MIXTE</option><option value="AUTRE">AUTRE</option></select></label>
-                            <label data-i18n="admin.code"><input id="productCode" type="text"></label>
-                            <label data-i18n="admin.perfumeName"><input id="productName" type="text" required></label>
-                            <label data-i18n="admin.priceDT"><input id="productPrice" type="number" min="0" step="0.01" required></label>
-                            <label data-i18n="admin.bottleStock"><input id="productStock" type="number" min="0" step="1" required></label>
-                            <label data-i18n="admin.bottleAlertThreshold"><input id="productAlert" type="number" min="0" step="1"></label>
-                            <label data-i18n="admin.rawMaterialStockMl"><input id="productRawMaterialStock" type="number" min="0" step="0.01"></label>
-                            <label data-i18n="admin.rawMaterialAlertMl"><input id="productRawMaterialAlert" type="number" min="0" step="0.01"></label>
-                            <label data-i18n="admin.sku"><input id="productSku" type="text"></label>
-                            <label data-i18n="admin.barcode"><input id="productBarcode" type="text"></label>
-                            <label data-i18n="admin.active"><select id="productActive"><option value="1">Oui</option><option value="0">Non</option></select></label>
+                            <label data-i18n="admin.category"><select id="productCatalogGroup" title="Choisir la famille du parfum"><option value="PRINCIPAL">PRINCIPAL</option><option value="SMART">SMART</option><option value="ENFANT">ENFANT</option><option value="LUXE">LUXE</option><option value="MIXTE">MIXTE</option><option value="AUTRE">AUTRE</option></select></label>
+                            <label data-i18n="admin.segment"><select id="productSegment" title="Choisir le profil du parfum"><option value="HOMME">HOMME</option><option value="FEMME">FEMME</option><option value="UNISEX">UNISEX</option><option value="ENFANT">ENFANT</option><option value="MIXTE">MIXTE</option><option value="AUTRE">AUTRE</option></select></label>
+                            <label data-i18n="admin.code"><input id="productCode" type="text" placeholder="Code produit interne"></label>
+                            <label data-i18n="admin.perfumeName"><input id="productName" type="text" placeholder="Nom du parfum" required></label>
+                            <label data-i18n="admin.priceDT"><input id="productPrice" type="number" min="0" step="0.01" placeholder="Prix en DT" required></label>
+                            <label data-i18n="admin.bottleStock"><input id="productStock" type="number" min="0" step="1" placeholder="Stock bouteilles" required></label>
+                            <label data-i18n="admin.bottleAlertThreshold"><input id="productAlert" type="number" min="0" step="1" placeholder="Seuil alerte bouteilles"></label>
+                            <label data-i18n="admin.rawMaterialStockMl"><input id="productRawMaterialStock" type="number" min="0" step="0.01" placeholder="Stock base en ml"></label>
+                            <label data-i18n="admin.rawMaterialAlertMl"><input id="productRawMaterialAlert" type="number" min="0" step="0.01" placeholder="Seuil alerte base en ml"></label>
+                            <label data-i18n="admin.sku"><input id="productSku" type="text" placeholder="Reference SKU"></label>
+                            <label data-i18n="admin.barcode"><input id="productBarcode" type="text" placeholder="Code-barres"></label>
+                            <label data-i18n="admin.active"><select id="productActive" title="Produit actif ou non"><option value="1">Oui</option><option value="0">Non</option></select></label>
                         </div>
                         <div class="form-actions">
                             <button class="primary-btn" type="submit"><span data-i18n="admin.saveProduct">Enregistrer produit</span></button>
@@ -456,11 +456,14 @@ final class AdminController
                 <section class="admin-card">
                     <div class="section-head">
                         <div>
-                            <p class="section-kicker" data-i18n="admin.accountMgmt">Gestion des comptes</p>
+                            <p class="section-kicker" data-i18n="admin.accountMgmt">Gestion des clients et comptes</p>
                             <h3 data-i18n="admin.usersProfiles">Users et profils</h3>
-                            <p class="section-copy" data-i18n="admin.usersProfilesDesc">Consultez les profils utilisateurs, modifiez leurs informations et desactivez les comptes si necessaire.</p>
+                            <p class="section-copy" data-i18n="admin.usersProfilesDesc">Les clients ajoutes depuis l admin sont de simples fiches clients pour les commandes. Les vrais comptes clients restent ceux crees par les utilisateurs eux-memes.</p>
                         </div>
-                        <input id="userSearch" class="search-input" type="search" placeholder="Rechercher un user..." data-i18n-placeholder="admin.searchUser">
+                        <div class="section-actions">
+                            <input id="userSearch" class="search-input" type="search" placeholder="Rechercher un user..." data-i18n-placeholder="admin.searchUser">
+                            <button id="showClientCreateBtn" class="primary-btn" type="button" onclick="window.ideneAdminShowClientCreatePanel && window.ideneAdminShowClientCreatePanel()">Ajouter client</button>
+                        </div>
                     </div>
                     <div id="userSectionStats" class="inline-stats"></div>
                     <div class="table-wrap">
@@ -470,6 +473,8 @@ final class AdminController
                                     <th data-i18n="admin.fullName">Nom complet</th>
                                     <th data-i18n="admin.role">Role</th>
                                     <th data-i18n="admin.perfumery">Parfumerie</th>
+                                    <th>Code client</th>
+                                    <th>Matricule fiscal</th>
                                     <th data-i18n="admin.contact">Contact</th>
                                     <th data-i18n="admin.location">Localisation</th>
                                     <th data-i18n="admin.status">Statut</th>
@@ -480,6 +485,34 @@ final class AdminController
                         </table>
                     </div>
                     <div id="usersPagination" class="table-pagination"></div>
+                </section>
+
+                <section id="clientCreatePanel" class="admin-card admin-hidden">
+                    <div class="section-head">
+                        <div>
+                            <p class="section-kicker">Nouveau client</p>
+                            <h3>Ajouter un client</h3>
+                            <p class="section-copy">Renseignez le client une seule fois. Aucun compte client, email ou mot de passe n est necessaire ici. Cette fiche servira uniquement a retrouver le client dans la creation de commande admin.</p>
+                        </div>
+                        <div class="section-actions">
+                            <p id="clientCreateMessage" class="form-note"></p>
+                            <button id="hideClientCreateBtn" class="soft-btn" type="button"><span data-i18n="admin.close">Fermer</span></button>
+                        </div>
+                    </div>
+                    <form id="clientCreateForm" class="admin-form">
+                        <div class="form-grid">
+                            <label>Prenom du client<input id="clientCreateFirstName" type="text" placeholder="Prenom du client"></label>
+                            <label>Nom du client<input id="clientCreateLastName" type="text" placeholder="Nom du client"></label>
+                            <label>Nom de la parfumerie<input id="clientCreateShop" type="text" placeholder="Nom de la parfumerie" required></label>
+                            <label>Code client<input id="clientCreateClientCode" type="text" placeholder="Code client"></label>
+                            <label>Matricule fiscal<input id="clientCreateFiscalCode" type="text" placeholder="Matricule fiscal"></label>
+                            <label>Telephone du client<input id="clientCreatePhone" type="text" placeholder="Telephone du client"></label>
+                            <label>Adresse / localisation<input id="clientCreateLocation" type="text" placeholder="Adresse ou localisation"></label>
+                        </div>
+                        <div class="form-actions">
+                            <button class="primary-btn" type="submit">Enregistrer client</button>
+                        </div>
+                    </form>
                 </section>
 
                 <section id="userDetailPanel" class="admin-card admin-hidden">
@@ -496,12 +529,14 @@ final class AdminController
                     <form id="userEditForm" class="admin-form">
                         <input type="hidden" id="userEditId">
                         <div class="form-grid">
-                            <label data-i18n="admin.firstName"><input id="userEditFirstName" type="text" required></label>
-                            <label data-i18n="admin.lastName"><input id="userEditLastName" type="text" required></label>
+                            <label data-i18n="admin.firstName"><input id="userEditFirstName" type="text"></label>
+                            <label data-i18n="admin.lastName"><input id="userEditLastName" type="text"></label>
                             <label data-i18n="admin.perfumery"><input id="userEditShop" type="text" required></label>
-                            <label data-i18n="admin.phone"><input id="userEditPhone" type="text" required></label>
-                            <label data-i18n="admin.location"><input id="userEditLocation" type="text" required></label>
-                            <label data-i18n="admin.email"><input id="userEditEmail" type="email" required></label>
+                            <label><input id="userEditClientCode" type="text" placeholder="Code client"></label>
+                            <label><input id="userEditFiscalCode" type="text" placeholder="Matricule fiscal"></label>
+                            <label data-i18n="admin.phone"><input id="userEditPhone" type="text"></label>
+                            <label data-i18n="admin.location"><input id="userEditLocation" type="text"></label>
+                            <label id="userEditEmailWrap" data-i18n="admin.email"><input id="userEditEmail" type="email" required></label>
                             <label data-i18n="admin.status">
                                 <select id="userEditActive">
                                     <option value="1" data-i18n="admin.active">Actif</option>
@@ -560,7 +595,7 @@ final class AdminController
                                 <span data-i18n="admin.to">Au</span>
                                 <input id="orderDateTo" class="search-input orders-filter" type="date">
                             </label>
-                            <button id="showOrderCreateBtn" class="primary-btn" type="button"><span data-i18n="admin.createOrder">Creer une commande</span></button>
+                            <button id="showOrderCreateBtn" class="primary-btn" type="button"><span data-i18n="admin.createOrder">Créer une commande</span></button>
                             <button id="orderFiltersResetBtn" class="soft-btn" type="button"><span data-i18n="admin.showAll">Tout afficher</span></button>
                         </div>
                     </div>
@@ -587,7 +622,7 @@ final class AdminController
                     <div class="section-head">
                         <div>
                             <p class="section-kicker" data-i18n="admin.orderCreation">Creation commande admin</p>
-                            <h3 id="orderCreatePanelTitle" data-i18n="admin.createOrderForPerfumery">Creer une commande pour une parfumerie</h3>
+                            <h3 id="orderCreatePanelTitle" data-i18n="admin.createOrderForPerfumery">Créer une commande pour une parfumerie</h3>
                             <p id="orderCreatePanelCopy" class="section-copy" data-i18n="admin.createOrderDesc">Choisissez une parfumerie existante, ajoutez les parfums souhaites puis enregistrez la commande sous son compte.</p>
                         </div>
                         <div class="section-actions">
@@ -604,6 +639,36 @@ final class AdminController
                                     <button id="orderCreateSubmitTopBtn" class="primary-btn" type="submit"><span data-i18n="admin.validateDocument">Valider document</span></button>
                                 </div>
                             </div>
+
+                            <section class="invoice-client-selector">
+                                <div class="section-head invoice-client-selector-head">
+                                    <div>
+                                        <p class="section-kicker">Clients</p>
+                                        <h4>Selectionner un client existant</h4>
+                                        <p class="section-copy">Choisissez un client dans le tableau puis les champs du bon se remplissent automatiquement. Il ne vous reste qu'a selectionner les produits.</p>
+                                    </div>
+                                    <div class="section-actions">
+                                        <input id="orderCreateClientSearch" class="search-input" type="search" placeholder="Rechercher client, code, parfumerie, matricule...">
+                                        <button id="orderCreateManageClientsBtn" class="soft-btn" type="button" onclick="window.ideneAdminShowClientCreatePanel && window.ideneAdminShowClientCreatePanel()">Gérer clients</button>
+                                    </div>
+                                </div>
+                                <div class="table-wrap invoice-client-table-wrap">
+                                    <table class="admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Client</th>
+                                                <th>Parfumerie</th>
+                                                <th>Code client</th>
+                                                <th>Matricule fiscal</th>
+                                                <th>Contact</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="orderCreateClientsBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="orderCreateClientsPagination" class="table-pagination"></div>
+                            </section>
 
                             <div class="invoice-layout-grid">
                                 <section class="invoice-panel">
@@ -629,12 +694,12 @@ final class AdminController
                                         <label data-i18n="admin.orderNum">
                                             <input id="orderCreateOrderCode" type="text" placeholder="Bon / code interne">
                                         </label>
-                                        <label data-i18n="admin.discountRate">
-                                            <input id="orderCreateGlobalDiscount" type="number" min="0" step="0.001" value="0.000">
-                                        </label>
                                         <label data-i18n="admin.exceptionalRate">
                                             <input id="orderCreateExceptionalTax" type="number" min="0" step="0.001" value="0.000">
                                         </label>
+                                    </div>
+                                    <div class="form-actions invoice-panel-reset-client">
+                                        <button id="orderCreateResetClientBtn" class="soft-btn" type="button">Réinstaller</button>
                                     </div>
                                 </section>
 
@@ -698,56 +763,58 @@ final class AdminController
                             </section>
 
                             <section class="invoice-lines-card">
+                                    <div class="invoice-search-hero">
+                                        <div class="invoice-price-toolbar">
+                                            <input id="orderCreateFixedPriceInput" class="invoice-price-toolbar-input" type="number" min="0.001" step="0.001" value="0.000" placeholder="Prix fixe ex: 18.000">
+                                            <button id="orderSelectPriceBtn" class="soft-btn invoice-price-toolbar-btn" type="button">Selectionner prix</button>
+                                            <input id="orderCreateGlobalDiscount" class="invoice-price-toolbar-input" type="number" min="0" step="0.001" value="0.000" placeholder="Remise ex: 15.000">
+                                            <button id="orderCreateApplyDiscountBtn" class="soft-btn invoice-price-toolbar-btn" type="button">Appliquer remise</button>
+                                        </div>
+                                    <label class="invoice-search-label invoice-search-label-hero" data-i18n="admin.searchPerfume">
+                                        <span class="invoice-search-combo">
+                                            <span class="invoice-search-topbar">
+                                                <input id="orderCreateProductSearch" class="invoice-search-input-hero invoice-search-input-combo" type="search" placeholder="Rechercher un parfum et le selectionner rapidement..." data-i18n-placeholder="admin.searchPerfume" oninput="window.renderOrderCreateProductOptions?.()" onkeyup="window.renderOrderCreateProductOptions?.()" onchange="window.renderOrderCreateProductOptions?.()" onsearch="window.renderOrderCreateProductOptions?.()">
+                                                <select id="orderCreateQuickGroup" class="search-input invoice-search-filter">
+                                                    <option value="">Tous les types</option>
+                                                    <option value="PRINCIPAL">Principal</option>
+                                                    <option value="SMART">Smart</option>
+                                                    <option value="ENFANT">Enfant</option>
+                                                </select>
+                                            </span>
+                                            <div id="orderCreateProductAutocomplete" class="invoice-search-autocomplete admin-hidden"></div>
+                                            <select id="orderCreateProduct" class="invoice-search-select admin-hidden">
+                                                <option value="" data-i18n="admin.optionalChoice">Selection parfum</option>
+                                            </select>
+                                        </span>
+                                    </label>
+                                </div>
                                 <div class="invoice-line-entry">
-                                    <label data-i18n="admin.quickType">
-                                        <select id="orderCreateQuickGroup">
-                                            <option value="">Type optionnel</option>
-                                            <option value="PRINCIPAL">PRINCIPAL</option>
-                                            <option value="SMART">SMART</option>
-                                            <option value="ENFANT">ENFANT</option>
-                                        </select>
-                                    </label>
-                                    <label data-i18n="admin.profileLabel">
-                                        <select id="orderCreateQuickSegment">
-                                            <option value="">Profil optionnel</option>
-                                            <option value="FEMME">FEMME</option>
-                                            <option value="HOMME">HOMME</option>
-                                            <option value="UNISEX">UNISEX</option>
-                                            <option value="ENFANT">ENFANT</option>
-                                        </select>
-                                    </label>
-                                    <label data-i18n="admin.product">
-                                        <select id="orderCreateProduct">
-                                            <option value="" data-i18n="admin.optionalChoice">Choix facultatif</option>
-                                        </select>
-                                    </label>
                                     <label data-i18n="admin.packageCount">
-                                        <input id="orderCreatePackageCount" type="number" min="0" step="1" value="0">
+                                        <input id="orderCreatePackageCount" type="number" min="0" step="1" value="0" placeholder="Nb col">
                                     </label>
                                     <label data-i18n="admin.qty">
-                                        <input id="orderCreateQty" type="number" min="1" step="1" value="1">
+                                        <input id="orderCreateQty" type="number" min="1" step="1" value="1" placeholder="Qte">
                                     </label>
                                     <label data-i18n="admin.stock">
-                                        <input id="orderCreateStockPreview" type="text" value="0.00" readonly>
+                                        <input id="orderCreateStockPreview" type="text" value="0.00" placeholder="Stock" readonly>
                                     </label>
                                     <label data-i18n="admin.price">
-                                        <input id="orderCreateUnitPrice" type="number" min="0.001" step="0.001" value="0.000">
+                                        <input id="orderCreateUnitPrice" type="number" min="0.001" step="0.001" value="0.000" placeholder="Prix">
                                     </label>
                                     <label data-i18n="admin.discount">
-                                        <input id="orderCreateItemDiscount" type="number" min="0" step="0.001" value="0.000">
+                                        <input id="orderCreateItemDiscount" type="number" min="0" step="0.001" value="0.000" placeholder="Remise %">
                                     </label>
                                     <label data-i18n="admin.fodec">
-                                        <input id="orderCreateItemFodec" type="number" min="0" step="0.001" value="0.000">
+                                        <input id="orderCreateItemFodec" type="number" min="0" step="0.001" value="0.000" placeholder="Fodec %">
                                     </label>
                                     <label data-i18n="admin.consumptionTax">
-                                        <input id="orderCreateItemConsumption" type="number" min="0" step="0.001" value="0.000">
+                                        <input id="orderCreateItemConsumption" type="number" min="0" step="0.001" value="0.000" placeholder="D.C %">
                                     </label>
                                     <label data-i18n="admin.vat">
-                                        <input id="orderCreateItemTva" type="number" min="0" step="0.001" value="19.000">
+                                        <input id="orderCreateItemTva" type="number" min="0" step="0.001" value="19.000" placeholder="TVA %">
                                     </label>
                                     <button id="orderAddItemBtn" class="soft-btn invoice-add-line-btn" type="button"><span data-i18n="admin.add">Ajouter</span></button>
                                 </div>
-
                                 <div class="table-wrap invoice-lines-table-wrap">
                                     <table class="admin-table invoice-lines-table">
                                         <thead>
@@ -1087,7 +1154,7 @@ final class AdminController
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/i18n.js"></script><script src="/assets/js/admin-app.js?v=1006"></script>
+    <script src="/assets/js/i18n.js"></script><script src="/assets/js/admin-app.js?v=1021"></script>
 </body>
 </html>
 HTML

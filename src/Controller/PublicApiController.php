@@ -64,7 +64,13 @@ final class PublicApiController
             $sql .= " AND COALESCE(s.quantity_ml, 0) <= 0";
         }
 
-        $sql .= " ORDER BY pc.catalog_group ASC, pc.segment ASC, pc.name ASC";
+        $sql .= " ORDER BY
+                    CASE
+                        WHEN pc.code REGEXP '^[0-9]+$' THEN CAST(pc.code AS UNSIGNED)
+                        ELSE 999999
+                    END ASC,
+                    pc.code ASC,
+                    pc.name ASC";
 
         if ($featured !== '') {
             $sql .= " LIMIT :limit";

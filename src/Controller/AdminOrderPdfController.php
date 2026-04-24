@@ -14,6 +14,7 @@ final class AdminOrderPdfController
 {
     private const TVA_RATE = 0.19;
     private const CICT_RATE = 0.01;
+    private const CONSUMPTION_RATE = 0.25;
     private const TIMBRE = 1.000;
 
     public function __construct(private readonly AppContext $app)
@@ -91,7 +92,7 @@ final class AdminOrderPdfController
         $isWholesale = $saleType === 'GROS';
         $renderWholesaleDocument = $exportWholesaleOrder || ($isWholesale && !$exportSiteOrder);
 
-        $htBrut = 0.0;
+        $totalHt = 0.0;
         $rowsHtml = '';
         $lineItemsMeta = is_array($documentMeta['line_items'] ?? null) ? array_values($documentMeta['line_items']) : [];
         foreach ($items as $index => $item) {
@@ -110,8 +111,9 @@ final class AdminOrderPdfController
             $lineTotal = $exportSiteOrder
                 ? $quantityValue * $unitPrice
                 : (float) $item['line_total_dzd'];
+            $lineTotalHt = $this->lineTotalHt($lineTotal);
             $quantity = $this->quantity($quantityValue);
-            $htBrut += $lineTotal;
+            $totalHt += $lineTotalHt;
 
             $designation = strtoupper(trim((string) ($lineMeta['display_name'] ?? $item['name'] ?? 'Produit')));
             $referenceCode = (string) ($lineMeta['display_code'] ?? $item['code'] ?? '-');
@@ -122,7 +124,6 @@ final class AdminOrderPdfController
                     <td class="center">%s</td>
                     <td class="center">1</td>
                     <td class="right">%s</td>
-                    <td class="right">0.000</td>
                     <td class="right">19.00</td>
                     <td class="right">%s</td>
                 </tr>',
@@ -130,11 +131,14 @@ final class AdminOrderPdfController
                 htmlspecialchars($designation, ENT_QUOTES),
                 htmlspecialchars($quantity, ENT_QUOTES),
                 $this->money($unitPrice),
-                $this->money($lineTotal)
+                $this->money($lineTotalHt)
             );
         }
 
-        $summary = $this->buildSummary($htBrut, $documentMeta, $renderWholesaleDocument);
+        $storedTotals = is_array($documentMeta['totals'] ?? null) ? $documentMeta['totals'] : [];
+        $subtotalHt = isset($storedTotals['subtotal']) ? (float) $storedTotals['subtotal'] : $totalHt;
+        $discountTotal = isset($storedTotals['discount']) ? (float) $storedTotals['discount'] : 0.0;
+        $summary = $this->buildSummary($subtotalHt, $discountTotal);
         $createdAt = (string) ($order['created_at'] ?? '');
         $clientName = trim((string) ($documentMeta['contact_name'] ?? ''));
         if ($clientName === '') {
@@ -199,11 +203,11 @@ final class AdminOrderPdfController
     <meta charset="utf-8">
     <style>
         @page { margin: 8mm 8mm 8mm 8mm; }
-        body { font-family: DejaVu Sans, sans-serif; color: #111; font-size: 10px; margin: 0; }
-        .brand { margin: 6mm 0 5mm 4mm; font-size: 20px; font-style: italic; letter-spacing: 0.2px; }
-        .client-text { margin: 0 0 5mm 4mm; width: 78mm; font-size: 10px; line-height: 1.6; }
+        body { font-family: DejaVu Sans, sans-serif; color: #111; font-size: 11px; font-weight: 600; margin: 0; }
+        .brand { margin: 6mm 0 5mm 4mm; font-size: 21px; font-style: italic; font-weight: 700; letter-spacing: 0.2px; }
+        .client-text { margin: 0 0 5mm 4mm; width: 78mm; font-size: 11px; line-height: 1.6; }
         .client-text .code { font-weight: 700; margin-bottom: 1.5mm; }
-        .client-text .name { font-size: 11px; font-style: italic; }
+        .client-text .name { font-size: 12px; font-style: italic; font-weight: 700; }
         table { border-collapse: collapse; width: 100%; }
         .top-layout td { vertical-align: top; }
         .box, .main-table, .tax-table, .summary-table, .stamp-table, .amount-table { border: 1px solid #8f8f8f; }
@@ -215,14 +219,14 @@ final class AdminOrderPdfController
         .amount-table td { border: 1px solid #8f8f8f; padding: 4px 6px; }
         .box th, .main-table th, .tax-table th, .summary-table th { background: #d8d8d8; font-weight: 700; }
         .invoice-box { width: 86mm; }
-        .invoice-box .title-cell { font-size: 17px; letter-spacing: 0.4px; }
-        .invoice-box .number-cell { font-size: 16px; font-weight: 700; }
+        .invoice-box .title-cell { font-size: 18px; letter-spacing: 0.4px; }
+        .invoice-box .number-cell { font-size: 17px; font-weight: 700; }
         .invoice-box .date-row td { height: 20px; }
         .spacer { width: 8mm; }
         .main-table { table-layout: fixed; margin-top: 2mm; }
-        .main-table th { font-size: 9px; }
-        .main-table td { font-size: 9px; vertical-align: top; }
-        .main-table .delivery-row td { padding: 2px 4px; font-size: 8px; }
+        .main-table th { font-size: 10px; }
+        .main-table td { font-size: 10px; font-weight: 600; vertical-align: top; }
+        .main-table .delivery-row td { padding: 2px 4px; font-size: 9px; }
         .main-table .delivery-label { text-align: right; }
         .main-table .item-row td { height: 14px; }
         .main-table .blank-row td { height: 16px; }
@@ -233,16 +237,16 @@ final class AdminOrderPdfController
         .tax-wrap { width: 29%; }
         .summary-wrap { width: 46%; }
         .stamp-wrap { width: 25%; }
-        .tax-table th, .summary-table th, .stamp-table th { font-size: 9px; }
-        .tax-table td, .summary-table td, .stamp-table td { font-size: 9px; }
+        .tax-table th, .summary-table th, .stamp-table th { font-size: 10px; }
+        .tax-table td, .summary-table td, .stamp-table td { font-size: 10px; font-weight: 600; }
         .tax-table .total-head { text-align: left; }
         .summary-table th { text-align: left; width: 58%; }
         .summary-table td { width: 42%; }
         .stamp-box { height: 88px; background: #fff; }
         .amount-table { margin-top: 4px; }
-        .amount-table td { padding: 5px 7px; font-size: 10px; }
-        .amount-table strong { font-size: 11px; }
-        .company { margin-top: 5mm; border-top: 1px solid #8f8f8f; padding-top: 3mm; text-align: center; font-size: 9px; line-height: 1.25; }
+        .amount-table td { padding: 5px 7px; font-size: 11px; font-weight: 600; }
+        .amount-table strong { font-size: 12px; font-weight: 700; }
+        .company { margin-top: 5mm; border-top: 1px solid #8f8f8f; padding-top: 3mm; text-align: center; font-size: 10px; font-weight: 600; line-height: 1.25; }
     </style>
 </head>
 <body>
@@ -328,8 +332,7 @@ final class AdminOrderPdfController
             <td style="width: 1%;"></td>
             <td class="summary-wrap">
                 <table class="summary-table">
-                    <tr><th>HT BRUT:</th><td class="right">{{ht_brut}}</td></tr>
-                    <tr><th>TOTAL Remise</th><td class="right">0.000</td></tr>
+                    <tr><th>TOTAL HT:</th><td class="right">{{ht_brut}}</td></tr>
                     <tr><th>HT NET:</th><td class="right">{{ht_net}}</td></tr>
                     <tr><th>CICT</th><td class="right">{{cict}}</td></tr>
                     <tr><th>DROIT DE CONSOMMATION</th><td class="right">{{consumption}}</td></tr>
@@ -390,39 +393,45 @@ HTML;
         ]);
     }
 
-    private function buildSummary(float $htBrut, array $documentMeta = [], bool $isWholesale = false): array
+    private function buildSummary(float $subtotalHt, float $discount): array
     {
-        $totalsMeta = is_array($documentMeta['totals'] ?? null) ? $documentMeta['totals'] : [];
-
-        if ($totalsMeta !== []) {
-            return [
-                'ht_brut' => (float) ($totalsMeta['subtotal'] ?? $htBrut),
-                'ht_net' => (float) ($totalsMeta['htNet'] ?? $htBrut),
-                'cict' => (float) ($totalsMeta['cict'] ?? 0),
-                'consumption' => (float) ($totalsMeta['consumption'] ?? ((float) ($totalsMeta['totalToPay'] ?? $htBrut) * 0.25)),
-                'base_tva' => (float) ($totalsMeta['baseTva'] ?? 0),
-                'mt_tva' => (float) ($totalsMeta['tva'] ?? 0),
-                'timbre' => (float) ($totalsMeta['timbre'] ?? self::TIMBRE),
-                'total_to_pay' => (float) ($totalsMeta['totalToPay'] ?? $htBrut),
-            ];
-        }
-
-        $totalToPay = $htBrut;
-        $mtTva = $totalToPay * self::TVA_RATE;
-        $htNet = max(0.0, $totalToPay - $mtTva);
-        $cict = $totalToPay * self::CICT_RATE;
-        $baseTva = $htNet + $cict;
+        $includedGross = max(0.0, $subtotalHt);
+        $discount = max(0.0, min($discount, $includedGross));
+        $includedNet = max(0.0, $includedGross - $discount);
+        $multiplier = $this->taxMultiplier();
+        $htBrut = $multiplier > 0 ? $includedGross / $multiplier : $includedGross;
+        $htNet = $multiplier > 0 ? $includedNet / $multiplier : $includedNet;
+        $cict = $htNet * self::CICT_RATE;
+        $consumptionBase = $htNet + $cict;
+        $consumption = $consumptionBase / 4;
+        $baseTva = $consumptionBase + $consumption;
+        $mtTva = $baseTva * self::TVA_RATE;
+        $timbre = self::TIMBRE;
+        $totalToPay = $includedNet;
 
         return [
-            'ht_brut' => $totalToPay,
+            'ht_brut' => $htBrut,
+            'discount' => $discount,
             'ht_net' => $htNet,
             'cict' => $cict,
-            'consumption' => $totalToPay * 0.25,
+            'consumption' => $consumption,
             'base_tva' => $baseTva,
             'mt_tva' => $mtTva,
-            'timbre' => self::TIMBRE,
+            'timbre' => $timbre,
             'total_to_pay' => $totalToPay,
         ];
+    }
+
+    private function lineTotalHt(float $lineTotal): float
+    {
+        $divider = $this->taxMultiplier();
+
+        return $divider > 0 ? $lineTotal / $divider : $lineTotal;
+    }
+
+    private function taxMultiplier(): float
+    {
+        return (1 + self::CICT_RATE + self::CONSUMPTION_RATE) * (1 + self::TVA_RATE);
     }
 
     private function clientCode(array $client, int $fallback): string

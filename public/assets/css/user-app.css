@@ -239,20 +239,84 @@ html[data-theme="dark"] body.ecommerce-layout::before {
   box-shadow: 0 0 0 3px rgba(13,107,99,.1);
 }
 .eco-search-wrap--hero {
-  width: min(100%, 560px);
+  width: min(100%, 980px);
   margin-top: 22px;
   z-index: 2;
 }
 .eco-search-wrap--hero input {
   width: 100%;
-  height: 56px;
-  padding-left: 44px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.82);
+  height: 60px;
+  padding-left: 48px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.94);
+  border: 2px solid rgba(13,107,99,.28);
   box-shadow: 0 12px 30px rgba(13,107,99,.08);
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 [data-theme="dark"] .eco-search-wrap--hero input {
   background: rgba(26, 32, 51, 0.88);
+}
+
+.shop-autocomplete {
+  display: none;
+  position: relative;
+  margin-top: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 18px 34px rgba(13,107,99,.14);
+  z-index: 5;
+}
+
+.shop-autocomplete.is-visible {
+  display: block;
+}
+
+.shop-autocomplete-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text);
+}
+
+.shop-autocomplete-item strong {
+  font-size: .96rem;
+  font-weight: 800;
+}
+
+.shop-autocomplete-item span {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.shop-autocomplete-item:hover {
+  background: var(--primary-50);
+}
+
+.shop-autocomplete-item:focus {
+  outline: none;
+  background: var(--primary-50);
+}
+
+.shop-autocomplete-empty {
+  padding: 14px 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.pcard-picked {
+  box-shadow: 0 0 0 3px rgba(13,107,99,.18), 0 18px 40px rgba(13,107,99,.18) !important;
+  transform: translateY(-2px);
 }
 
 .icon-btn {

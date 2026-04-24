@@ -70,7 +70,7 @@ final class OrderPricingService
              LIMIT 1"
         );
 
-        return $this->resolveItems($normalized['items'], $stmt, ['sale_type' => $saleType], $saleType === 'GROS');
+        return $this->resolveItems($normalized['items'], $stmt, ['sale_type' => $saleType], true);
     }
 
     public function total(array $items): float

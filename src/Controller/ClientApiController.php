@@ -305,7 +305,13 @@ final class ClientApiController
         LEFT JOIN product_prices pp ON pp.product_id = p.id AND pp.sale_type = 'DETAIL' AND pp.ends_at IS NULL
         LEFT JOIN stock s ON s.product_id = p.id
         WHERE pc.is_active = 1 AND p.is_active = 1
-        ORDER BY pc.catalog_group, pc.segment, pc.name");
+        ORDER BY
+            CASE
+                WHEN pc.code REGEXP '^[0-9]+$' THEN CAST(pc.code AS UNSIGNED)
+                ELSE 999999
+            END ASC,
+            pc.code ASC,
+            pc.name ASC");
 
         $products = [];
         foreach ($stmt->fetchAll() as $row) {

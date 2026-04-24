@@ -29,6 +29,11 @@
     return isNaN(dt) ? '' : dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
   const bottleLabel = (qty) => `${qty} bouteille${qty > 1 ? 's' : ''}`;
+  const normalizeText = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   let themeToggleLock = false;
@@ -86,6 +91,7 @@
     return '<span class="badge badge-success">En stock</span>';
   };
   const regionSelect = $('#ckRegion');
+  const shopSearchAutocomplete = $('#shopSearchAutocomplete');
   const regionMobileBtn = $('#ckRegionMobileBtn');
   const regionMobileLabel = $('#ckRegionMobileLabel');
   const regionSheet = $('#ckRegionSheet');
@@ -561,10 +567,10 @@
   }
 
   function renderShopProducts() {
-    const search = ($('#shopSearch')?.value || $('#shopSearchMobile')?.value || '').toLowerCase();
+    const search = normalizeText($('#shopSearch')?.value || $('#shopSearchMobile')?.value || '');
     let filtered = shopProducts;
     if (search) {
-      filtered = filtered.filter((p) => p.name.toLowerCase().includes(search) || String(p.code || '').toLowerCase().includes(search));
+      filtered = filtered.filter((p) => normalizeText(`${p.name} ${p.code || ''}`).includes(search));
     }
     if (currentSegment !== 'ALL') {
       filtered = filtered.filter((p) => p.segment === currentSegment);
@@ -605,17 +611,44 @@
     }).join('');
   }
 
+  function renderShopSearchAutocomplete() {
+    if (!shopSearchAutocomplete) return;
+
+    const search = normalizeText($('#shopSearch')?.value || '');
+    let filtered = shopProducts;
+    if (search) {
+      filtered = filtered.filter((p) => normalizeText(`${p.name} ${p.code || ''} ${p.catalog_group || ''} ${p.segment || ''}`).includes(search));
+    }
+    if (currentSegment !== 'ALL') {
+      filtered = filtered.filter((p) => p.segment === currentSegment);
+    }
+
+    if (!filtered.length) {
+      shopSearchAutocomplete.innerHTML = '<div class="shop-autocomplete-empty">Aucun parfum trouve.</div>';
+    } else {
+      shopSearchAutocomplete.innerHTML = filtered.slice(0, 20).map((p) => `
+        <button type="button" class="shop-autocomplete-item" data-shop-product-pick="${p.id}">
+          <strong>${esc(p.name)}</strong>
+          <span>${esc(p.catalog_group || '-')} / ${esc(p.segment || '-')} - ${formatDT(p.price || 0)}</span>
+        </button>
+      `).join('');
+    }
+    shopSearchAutocomplete.classList.add('is-visible');
+  }
+
   function loadShop() {
     if (!$('#shopProductGrid')) return;
     if (shopProducts.length === 0) {
       fetch('/api/shop/products').then((r) => r.json()).then((d) => {
         shopProducts = d.products || [];
         renderShopProducts();
+        renderShopSearchAutocomplete();
       }).catch(() => {
         $('#shopProductGrid').innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;">Erreur de chargement. Veuillez reessayer.</p>';
       });
     } else {
       renderShopProducts();
+      renderShopSearchAutocomplete();
     }
   }
 
@@ -635,8 +668,26 @@
     if (!$('#viewShop').classList.contains('active')) switchView('shop');
   };
 
-  on($('#shopSearch'), 'input', debounce(renderShopProducts, 200));
+  on($('#shopSearch'), 'input', debounce(() => {
+    renderShopProducts();
+    renderShopSearchAutocomplete();
+  }, 120));
+  on($('#shopSearch'), 'focus', renderShopSearchAutocomplete);
   on($('#shopSearchMobile'), 'input', debounce(renderShopProducts, 200));
+  shopSearchAutocomplete?.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-shop-product-pick]');
+    if (!trigger) return;
+    const productId = Number(trigger.getAttribute('data-shop-product-pick') || 0);
+    const product = shopProducts.find((item) => Number(item.id) === productId);
+    if (!product) return;
+    if ($('#shopSearch')) $('#shopSearch').value = product.name || '';
+    renderShopProducts();
+    renderShopSearchAutocomplete();
+    const card = document.querySelector(`.pcard[data-id="${productId}"]`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card?.classList.add('pcard-picked');
+    window.setTimeout(() => card?.classList.remove('pcard-picked'), 1400);
+  });
 
   window.setQty = function (btn, val) {
     const inp = btn.closest('.pcard')?.querySelector('.qty-input');

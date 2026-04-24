@@ -684,60 +684,73 @@ final class AuthApiController
             return ApiResponse::validation($errors);
         }
 
-        $db = $this->app->db();
-        $check = $db->prepare('SELECT id FROM users WHERE email = :email OR phone = :phone LIMIT 1');
-        $check->execute([
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-        ]);
-        if ($check->fetch()) {
-            return ApiResponse::error('Cet email ou telephone existe deja.', 409);
-        }
-
-        $stmt = $db->prepare(
-            'INSERT INTO users (first_name, last_name, perfume_shop_name, phone, location, email, password_hash)
-             VALUES (:first_name, :last_name, :shop, :phone, :location, :email, :password_hash)'
-        );
-        $stmt->execute([
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'shop' => $data['perfume_shop_name'],
-            'phone' => $data['phone'],
-            'location' => $data['location'],
-            'email' => $data['email'],
-            'password_hash' => password_hash($data['password'], PASSWORD_DEFAULT),
-        ]);
-
-        $userId = (int) $db->lastInsertId();
-        $roleStmt = $db->prepare('SELECT id FROM roles WHERE role_name = :name LIMIT 1');
-        $roleStmt->execute(['name' => 'CLIENT']);
-        $roleId = $roleStmt->fetchColumn();
-        if ($roleId) {
-            $assignStmt = $db->prepare(
-                'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)'
-            );
-            $assignStmt->execute([
-                'user_id' => $userId,
-                'role_id' => (int) $roleId,
+        try {
+            $db = $this->app->db();
+            $check = $db->prepare('SELECT id FROM users WHERE email = :email OR phone = :phone LIMIT 1');
+            $check->execute([
+                'email' => $data['email'],
+                'phone' => $data['phone'],
             ]);
+            if ($check->fetch()) {
+                return ApiResponse::error('Cet email ou telephone existe deja.', 409);
+            }
+
+            $stmt = $db->prepare(
+                'INSERT INTO users (first_name, last_name, perfume_shop_name, phone, location, email, password_hash)
+                 VALUES (:first_name, :last_name, :shop, :phone, :location, :email, :password_hash)'
+            );
+            $stmt->execute([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'shop' => $data['perfume_shop_name'],
+                'phone' => $data['phone'],
+                'location' => $data['location'],
+                'email' => $data['email'],
+                'password_hash' => password_hash($data['password'], PASSWORD_DEFAULT),
+            ]);
+
+            $userId = (int) $db->lastInsertId();
+            $roleStmt = $db->prepare('SELECT id FROM roles WHERE role_name = :name LIMIT 1');
+            $roleStmt->execute(['name' => 'CLIENT']);
+            $roleId = $roleStmt->fetchColumn();
+            if ($roleId) {
+                $assignStmt = $db->prepare(
+                    'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)'
+                );
+                $assignStmt->execute([
+                    'user_id' => $userId,
+                    'role_id' => (int) $roleId,
+                ]);
+            }
+
+            $pendingMatrix = $this->popPendingFaceMatrix();
+            if ($pendingMatrix !== null) {
+                $this->saveFaceProfile($userId, $pendingMatrix);
+                $this->migrateLegacyMatrixToFaceProfiles($userId);
+                $this->syncLegacyMatrixFromFaceProfiles($userId);
+            }
+
+            $this->markFirstClientLoginGuide();
+
+            return ApiResponse::ok([
+                'ok' => true,
+                'user_id' => $userId,
+                'role_name' => 'CLIENT',
+                'biometric_available' => $pendingMatrix !== null,
+                'redirect' => '/auth',
+            ], 201);
+        } catch (\Throwable $exception) {
+            $extra = [];
+            if (($_ENV['APP_ENV'] ?? 'dev') === 'dev') {
+                $extra['details'] = $exception->getMessage();
+            }
+
+            return ApiResponse::error(
+                'Impossible de creer le compte pour le moment. Verifiez la base de donnees et reessayez.',
+                503,
+                $extra
+            );
         }
-
-        $pendingMatrix = $this->popPendingFaceMatrix();
-        if ($pendingMatrix !== null) {
-            $this->saveFaceProfile($userId, $pendingMatrix);
-            $this->migrateLegacyMatrixToFaceProfiles($userId);
-            $this->syncLegacyMatrixFromFaceProfiles($userId);
-        }
-
-        $this->markFirstClientLoginGuide();
-
-        return ApiResponse::ok([
-            'ok' => true,
-            'user_id' => $userId,
-            'role_name' => 'CLIENT',
-            'biometric_available' => $pendingMatrix !== null,
-            'redirect' => '/auth',
-        ], 201);
     }
 
     #[Route('/api/auth/signin', name: 'api_auth_signin', methods: ['POST'])]

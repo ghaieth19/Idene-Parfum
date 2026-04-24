@@ -153,8 +153,9 @@ final class ApiController
         $params = [];
 
         if ($search !== '') {
-            $sql .= " AND name LIKE :search";
+            $sql .= " AND (name LIKE :search OR code LIKE :search_code)";
             $params['search'] = '%' . $search . '%';
+            $params['search_code'] = '%' . $search . '%';
         }
 
         if ($category !== '' && $category !== 'ALL') {
@@ -168,7 +169,13 @@ final class ApiController
             }
         }
 
-        $sql .= " ORDER BY catalog_group, segment, name";
+        $sql .= " ORDER BY
+            CASE
+                WHEN code REGEXP '^[0-9]+$' THEN CAST(code AS UNSIGNED)
+                ELSE 999999
+            END ASC,
+            code ASC,
+            name ASC";
         $stmt = $this->app->db()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll();

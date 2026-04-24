@@ -406,13 +406,33 @@ const postJson = async (url, payload) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
     });
-    const result = await response.json().catch(() => ({}));
+    const result = await parseApiResponse(response);
 
     if (!response.ok) {
-        throw new Error(result.error || "Erreur serveur.");
+        throw new Error(buildApiErrorMessage(result));
     }
 
     return result;
+};
+
+const parseApiResponse = async (response) => {
+    const raw = await response.text();
+    if (!raw) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch (_error) {
+        return {
+            error: response.ok ? "Reponse serveur invalide." : "Le serveur a renvoye une erreur non JSON.",
+            details: raw.slice(0, 160).replace(/\s+/g, " ").trim(),
+        };
+    }
+};
+
+const buildApiErrorMessage = (result) => {
+    return [result?.error, result?.details].filter(Boolean).join(" ") || "Erreur serveur.";
 };
 
 const handleJsonSubmit = async (form, url, payload, messageEl, successText) => {
@@ -430,9 +450,9 @@ const handleJsonSubmit = async (form, url, payload, messageEl, successText) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-        const result = await response.json();
+        const result = await parseApiResponse(response);
         if (!response.ok) {
-            const errorText = [result.error, result.details].filter(Boolean).join(" ");
+            const errorText = buildApiErrorMessage(result);
             setMessage(messageEl, errorText || "Erreur serveur.", "is-error");
             return null;
         }

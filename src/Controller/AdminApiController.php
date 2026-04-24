@@ -64,6 +64,15 @@ final class AdminApiController
         return null;
     }
 
+    private function validateMaxLength(string $value, string $label, int $max = 150): ?string
+    {
+        if ($value !== '' && mb_strlen($value) > $max) {
+            return $label . ' trop long.';
+        }
+
+        return null;
+    }
+
     private function validateDate(string $value, string $label): ?string
     {
         return $this->validator->date($value, $label);
@@ -161,6 +170,71 @@ final class AdminApiController
         }
     }
 
+    private function ensureUserClientMetadataColumns(): void
+    {
+        $db = $this->app->db();
+        $schema = (string) $db->query('SELECT DATABASE()')->fetchColumn();
+        if ($schema === '') {
+            return;
+        }
+
+        $columns = [
+            'client_code' => 'ALTER TABLE users ADD COLUMN client_code VARCHAR(80) NULL AFTER email',
+            'fiscal_code' => 'ALTER TABLE users ADD COLUMN fiscal_code VARCHAR(120) NULL AFTER client_code',
+            'preferred_unit_price_dzd' => 'ALTER TABLE users ADD COLUMN preferred_unit_price_dzd DECIMAL(10,3) NULL AFTER fiscal_code',
+        ];
+
+        $check = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "users"
+               AND COLUMN_NAME = :column_name'
+        );
+
+        foreach ($columns as $column => $sql) {
+            $check->execute([
+                'schema' => $schema,
+                'column_name' => $column,
+            ]);
+            if ((int) $check->fetchColumn() === 0) {
+                $db->exec($sql);
+            }
+        }
+    }
+
+    private function ensureAdminOnlyClientColumn(): void
+    {
+        $db = $this->app->db();
+        $schema = (string) $db->query('SELECT DATABASE()')->fetchColumn();
+        if ($schema === '') {
+            return;
+        }
+
+        $check = $db->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = :schema
+               AND TABLE_NAME = "users"
+               AND COLUMN_NAME = "admin_only_client"'
+        );
+        $check->execute(['schema' => $schema]);
+        if ((int) $check->fetchColumn() === 0) {
+            $db->exec('ALTER TABLE users ADD COLUMN admin_only_client TINYINT(1) NOT NULL DEFAULT 0 AFTER fiscal_code');
+        }
+    }
+
+    private function buildInternalAdminClientEmail(string $phone): string
+    {
+        $normalizedPhone = preg_replace('/\D+/', '', $phone) ?: 'client';
+
+        return sprintf(
+            'admin-client-%s-%s@idene.local',
+            $normalizedPhone,
+            bin2hex(random_bytes(4))
+        );
+    }
+
     private function migrateLegacyMatrixToFaceProfiles(int $userId): void
     {
         $this->ensureFaceAuthProfilesTable();
@@ -236,6 +310,17 @@ final class AdminApiController
             'generated_invoice_pdf' => !empty($generatedDocuments['WHOLESALE_STOCK']),
             'generated_purchase_pdf' => !empty($generatedDocuments['DETAIL_SITE']),
         ];
+    }
+
+    private function paymentsTableAvailable(\PDO $db): bool
+    {
+        try {
+            $db->query('SELECT 1 FROM payments LIMIT 1')->fetchColumn();
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function fetchAccountFaceProfiles(int $userId): array
@@ -350,14 +435,21 @@ final class AdminApiController
     private function syncInvoiceStatus(\PDO $db, int $invoiceId): string
     {
         $stmt = $db->prepare(
-            "SELECT
-                i.total_dzd,
-                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
-             FROM invoices i
-             LEFT JOIN payments p ON p.invoice_id = i.id
-             WHERE i.id = :id
-             GROUP BY i.id, i.total_dzd
-             LIMIT 1"
+            $this->paymentsTableAvailable($db)
+                ? "SELECT
+                    i.total_dzd,
+                    COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
+                 FROM invoices i
+                 LEFT JOIN payments p ON p.invoice_id = i.id
+                 WHERE i.id = :id
+                 GROUP BY i.id, i.total_dzd
+                 LIMIT 1"
+                : "SELECT
+                    i.total_dzd,
+                    0 AS paid_amount
+                 FROM invoices i
+                 WHERE i.id = :id
+                 LIMIT 1"
         );
         $stmt->execute([
             'id' => $invoiceId,
@@ -388,14 +480,21 @@ final class AdminApiController
     private function invoicePaymentSnapshot(\PDO $db, int $invoiceId): array
     {
         $stmt = $db->prepare(
-            "SELECT
-                i.total_dzd,
-                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
-             FROM invoices i
-             LEFT JOIN payments p ON p.invoice_id = i.id
-             WHERE i.id = :id
-             GROUP BY i.id, i.total_dzd
-             LIMIT 1"
+            $this->paymentsTableAvailable($db)
+                ? "SELECT
+                    i.total_dzd,
+                    COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
+                 FROM invoices i
+                 LEFT JOIN payments p ON p.invoice_id = i.id
+                 WHERE i.id = :id
+                 GROUP BY i.id, i.total_dzd
+                 LIMIT 1"
+                : "SELECT
+                    i.total_dzd,
+                    0 AS paid_amount
+                 FROM invoices i
+                 WHERE i.id = :id
+                 LIMIT 1"
         );
         $stmt->execute(['id' => $invoiceId]);
         $invoice = $stmt->fetch();
@@ -413,6 +512,59 @@ final class AdminApiController
         ];
     }
 
+    private function sanitizeRate(mixed $value): float
+    {
+        return max(0.0, (float) $value);
+    }
+
+    private function computeWholesaleStoredTotals(array $resolvedItems, array $itemsPayload): array
+    {
+        $summary = [
+            'subtotal' => 0.0,
+            'discount' => 0.0,
+            'htNet' => 0.0,
+            'cict' => 0.0,
+            'consumption' => 0.0,
+            'baseTva' => 0.0,
+            'tva' => 0.0,
+            'timbre' => 0.0,
+            'totalToPay' => 0.0,
+            'lines' => [],
+        ];
+
+        foreach ($resolvedItems as $index => $resolvedLine) {
+            $itemPayload = is_array($itemsPayload[$index] ?? null) ? $itemsPayload[$index] : [];
+            $qty = (float) ($resolvedLine['qty'] ?? 0);
+            $unitPrice = (float) ($resolvedLine['unit_price'] ?? 0);
+            $discountRate = $this->sanitizeRate($itemPayload['discount_rate'] ?? 0);
+            $lineSubtotal = $qty * $unitPrice;
+            $lineDiscount = $lineSubtotal * ($discountRate / 100);
+            $lineNet = max(0.0, $lineSubtotal - $lineDiscount);
+
+            $summary['subtotal'] += $lineSubtotal;
+            $summary['discount'] += $lineDiscount;
+            $summary['lines'][] = [
+                'product_id' => (int) ($resolvedLine['product_id'] ?? 0),
+                'qty' => $qty,
+                'unit_price' => $unitPrice,
+                'discount_rate' => $discountRate,
+                'line_subtotal' => $lineSubtotal,
+                'line_total' => $lineNet,
+            ];
+        }
+
+        $summary['htNet'] = max(0.0, $summary['subtotal'] - $summary['discount']);
+        $summary['cict'] = $summary['htNet'] * 0.01;
+        $consumptionBase = $summary['htNet'] + $summary['cict'];
+        $summary['consumption'] = $consumptionBase / 4;
+        $summary['baseTva'] = $consumptionBase + $summary['consumption'];
+        $summary['tva'] = $summary['baseTva'] * 0.19;
+        $summary['timbre'] = 1.0;
+        $summary['totalToPay'] = $summary['htNet'];
+
+        return $summary;
+    }
+
     #[Route('/api/admin/summary', name: 'api_admin_summary', methods: ['GET'])]
     public function summary(): JsonResponse
     {
@@ -421,17 +573,22 @@ final class AdminApiController
         }
 
         $db = $this->app->db();
-        $todayRevenue = (float) $db->query(
-            "SELECT COALESCE(SUM(amount_dzd), 0) FROM payments
-             WHERE status = 'VALIDE' AND DATE(paid_at) = CURDATE()"
-        )->fetchColumn();
+        $paymentsAvailable = $this->paymentsTableAvailable($db);
+        $todayRevenue = $paymentsAvailable
+            ? (float) $db->query(
+                "SELECT COALESCE(SUM(amount_dzd), 0) FROM payments
+                 WHERE status = 'VALIDE' AND DATE(paid_at) = CURDATE()"
+            )->fetchColumn()
+            : 0.0;
 
-        $monthRevenue = (float) $db->query(
-            "SELECT COALESCE(SUM(amount_dzd), 0) FROM payments
-             WHERE status = 'VALIDE'
-               AND YEAR(paid_at) = YEAR(CURDATE())
-               AND MONTH(paid_at) = MONTH(CURDATE())"
-        )->fetchColumn();
+        $monthRevenue = $paymentsAvailable
+            ? (float) $db->query(
+                "SELECT COALESCE(SUM(amount_dzd), 0) FROM payments
+                 WHERE status = 'VALIDE'
+                   AND YEAR(paid_at) = YEAR(CURDATE())
+                   AND MONTH(paid_at) = MONTH(CURDATE())"
+            )->fetchColumn()
+            : 0.0;
 
         $monthBusinessExpenses = (float) $db->query(
             "SELECT COALESCE(SUM(amount_dzd), 0) FROM business_expenses
@@ -632,7 +789,15 @@ final class AdminApiController
              FROM products p
              INNER JOIN perfume_catalog pc ON pc.id = p.perfume_catalog_id
              LEFT JOIN stock s ON s.product_id = p.id
-             ORDER BY p.id DESC"
+             WHERE p.is_active = 1
+               AND pc.is_active = 1
+             ORDER BY
+                CASE
+                    WHEN pc.code REGEXP '^[0-9]+$' THEN CAST(pc.code AS UNSIGNED)
+                    ELSE 999999
+                END ASC,
+                pc.code ASC,
+                pc.name ASC"
         )->fetchAll();
 
         return new JsonResponse(['items' => $rows]);
@@ -873,31 +1038,53 @@ final class AdminApiController
         }
 
         $db = $this->app->db();
+        $paymentsAvailable = $this->paymentsTableAvailable($db);
         $rows = $db->query(
-            "SELECT
-                o.id,
-                o.order_number,
-                o.sale_type,
-                o.status AS order_status,
-                o.total_dzd,
-                o.notes,
-                o.created_at,
-                u.first_name,
-                u.last_name,
-                u.perfume_shop_name,
-                i.id AS invoice_id,
-                i.invoice_number,
-                i.status AS invoice_status,
-                COALESCE(i.total_dzd, 0) AS invoice_total,
-                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
-             FROM orders o
-             INNER JOIN users u ON u.id = o.customer_user_id
-             LEFT JOIN invoices i ON i.order_id = o.id
-             LEFT JOIN payments p ON p.invoice_id = i.id
-             GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.notes, o.created_at,
-                      u.first_name, u.last_name, u.perfume_shop_name,
-                      i.id, i.invoice_number, i.status, i.total_dzd
-             ORDER BY o.id DESC"
+            $paymentsAvailable
+                ? "SELECT
+                    o.id,
+                    o.order_number,
+                    o.sale_type,
+                    o.status AS order_status,
+                    o.total_dzd,
+                    o.notes,
+                    o.created_at,
+                    u.first_name,
+                    u.last_name,
+                    u.perfume_shop_name,
+                    i.id AS invoice_id,
+                    i.invoice_number,
+                    i.status AS invoice_status,
+                    COALESCE(i.total_dzd, 0) AS invoice_total,
+                    COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
+                 FROM orders o
+                 INNER JOIN users u ON u.id = o.customer_user_id
+                 LEFT JOIN invoices i ON i.order_id = o.id
+                 LEFT JOIN payments p ON p.invoice_id = i.id
+                 GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.notes, o.created_at,
+                          u.first_name, u.last_name, u.perfume_shop_name,
+                          i.id, i.invoice_number, i.status, i.total_dzd
+                 ORDER BY o.id DESC"
+                : "SELECT
+                    o.id,
+                    o.order_number,
+                    o.sale_type,
+                    o.status AS order_status,
+                    o.total_dzd,
+                    o.notes,
+                    o.created_at,
+                    u.first_name,
+                    u.last_name,
+                    u.perfume_shop_name,
+                    i.id AS invoice_id,
+                    i.invoice_number,
+                    i.status AS invoice_status,
+                    COALESCE(i.total_dzd, 0) AS invoice_total,
+                    0 AS paid_amount
+                 FROM orders o
+                 INNER JOIN users u ON u.id = o.customer_user_id
+                 LEFT JOIN invoices i ON i.order_id = o.id
+                 ORDER BY o.id DESC"
         )->fetchAll();
 
         foreach ($rows as &$row) {
@@ -918,12 +1105,14 @@ final class AdminApiController
              WHERE i.status = 'PAYE'"
         )->fetchColumn();
 
-        $todayRevenue = (float) $db->query(
-            "SELECT COALESCE(SUM(p.amount_dzd), 0)
-             FROM payments p
-             WHERE p.status = 'VALIDE'
-               AND DATE(p.paid_at) = CURDATE()"
-        )->fetchColumn();
+        $todayRevenue = $paymentsAvailable
+            ? (float) $db->query(
+                "SELECT COALESCE(SUM(p.amount_dzd), 0)
+                 FROM payments p
+                 WHERE p.status = 'VALIDE'
+                   AND DATE(p.paid_at) = CURDATE()"
+            )->fetchColumn()
+            : 0.0;
 
         $paidOrdersCount = (int) $db->query(
             "SELECT COUNT(*)
@@ -982,9 +1171,10 @@ final class AdminApiController
             return new JsonResponse(['error' => $resolvedItems['error']], $resolvedItems['status']);
         }
 
+        $computedTotals = $this->computeWholesaleStoredTotals($resolvedItems['items'], $items);
         $lineDisplay = [];
         foreach ($items as $index => $item) {
-            $resolvedLine = $resolvedItems['items'][$index] ?? null;
+            $resolvedLine = $computedTotals['lines'][$index] ?? null;
             if (!$resolvedLine) {
                 continue;
             }
@@ -993,6 +1183,7 @@ final class AdminApiController
                 'product_id' => (int) ($resolvedLine['product_id'] ?? 0),
                 'display_name' => trim((string) ($item['display_name'] ?? '')),
                 'display_code' => trim((string) ($item['display_code'] ?? '')),
+                'discount_rate' => (float) ($resolvedLine['discount_rate'] ?? 0),
             ];
         }
 
@@ -1003,12 +1194,16 @@ final class AdminApiController
             return new JsonResponse(['error' => 'Parfumerie introuvable.'], 404);
         }
 
+        $this->ensureUserClientMetadataColumns();
+        $preferredUnitPrice = max(0, (float) ($metadata['preferred_unit_price_dzd'] ?? 0));
+
         $db->beginTransaction();
         try {
             $orderNumber = sprintf('CMD-%s-%04d', date('Y'), random_int(1000, 9999));
             $invoiceNumber = sprintf('FAC-%s-%04d', date('Y'), random_int(1000, 9999));
 
-            $total = $this->orderPricing->total($resolvedItems['items']);
+            $subtotal = (float) $computedTotals['subtotal'];
+            $total = (float) $computedTotals['htNet'];
 
             $notes = json_encode([
                 'last_name' => (string) ($client['last_name'] ?? ''),
@@ -1035,21 +1230,34 @@ final class AdminApiController
                     'piece_ref' => trim((string) ($metadata['piece_ref'] ?? '')),
                     'bank' => trim((string) ($metadata['bank'] ?? '')),
                     'due_date' => trim((string) ($metadata['due_date'] ?? '')),
-                    'totals' => is_array($metadata['totals'] ?? null) ? $metadata['totals'] : [],
+                    'totals' => array_merge(
+                        is_array($metadata['totals'] ?? null) ? $metadata['totals'] : [],
+                        [
+                            'subtotal' => $computedTotals['subtotal'],
+                            'discount' => $computedTotals['discount'],
+                            'htNet' => $computedTotals['htNet'],
+                            'cict' => $computedTotals['cict'],
+                            'consumption' => $computedTotals['consumption'],
+                            'baseTva' => $computedTotals['baseTva'],
+                            'tva' => $computedTotals['tva'],
+                            'timbre' => $computedTotals['timbre'],
+                            'totalToPay' => $computedTotals['totalToPay'],
+                        ]
+                    ),
                     'line_items' => $lineDisplay,
                 ],
             ], JSON_UNESCAPED_UNICODE);
 
             $stmtOrder = $db->prepare(
                 "INSERT INTO orders (order_number, customer_user_id, sale_type, status, notes, subtotal_dzd, total_dzd, created_by)
-                 VALUES (:n, :uid, :sale_type, 'CONFIRMEE', :notes, :sub, :total, :created_by)"
+                VALUES (:n, :uid, :sale_type, 'CONFIRMEE', :notes, :sub, :total, :created_by)"
             );
             $stmtOrder->execute([
                 'n' => $orderNumber,
                 'uid' => $userId,
                 'sale_type' => $saleType,
                 'notes' => $notes,
-                'sub' => $total,
+                'sub' => $subtotal,
                 'total' => $total,
                 'created_by' => $this->app->currentUserId(),
             ]);
@@ -1060,7 +1268,7 @@ final class AdminApiController
                  VALUES (:oid, :prid, :qty, :price, :line)"
             );
 
-            foreach ($resolvedItems['items'] as $line) {
+            foreach ($computedTotals['lines'] as $line) {
                 $stmtItem->execute([
                     'oid' => $orderId,
                     'prid' => $line['product_id'],
@@ -1077,9 +1285,21 @@ final class AdminApiController
             $stmtInvoice->execute([
                 'inv' => $invoiceNumber,
                 'oid' => $orderId,
-                'sub' => $total,
+                'sub' => $subtotal,
                 'total' => $total,
             ]);
+
+            if ($preferredUnitPrice > 0) {
+                $preferredPriceStmt = $db->prepare(
+                    'UPDATE users
+                     SET preferred_unit_price_dzd = :price
+                     WHERE id = :id'
+                );
+                $preferredPriceStmt->execute([
+                    'price' => $preferredUnitPrice,
+                    'id' => $userId,
+                ]);
+            }
 
             $db->commit();
 
@@ -1103,35 +1323,61 @@ final class AdminApiController
         }
 
         $db = $this->app->db();
+        $paymentsAvailable = $this->paymentsTableAvailable($db);
         $stmt = $db->prepare(
-            "SELECT
-                o.id,
-                o.order_number,
-                o.sale_type,
-                o.status AS order_status,
-                o.total_dzd,
-                o.subtotal_dzd,
-                o.notes,
-                o.created_at,
-                u.first_name,
-                u.last_name,
-                u.phone,
-                u.perfume_shop_name,
-                i.id AS invoice_id,
-                i.invoice_number,
-                i.status AS invoice_status,
-                i.total_dzd AS invoice_total,
-                i.issued_at,
-                COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
-             FROM orders o
-             INNER JOIN users u ON u.id = o.customer_user_id
-             LEFT JOIN invoices i ON i.order_id = o.id
-             LEFT JOIN payments p ON p.invoice_id = i.id
-             WHERE o.id = :id
-             GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.subtotal_dzd, o.notes, o.created_at,
-                      u.first_name, u.last_name, u.phone, u.perfume_shop_name,
-                      i.id, i.invoice_number, i.status, i.total_dzd, i.issued_at
-             LIMIT 1"
+            $paymentsAvailable
+                ? "SELECT
+                    o.id,
+                    o.order_number,
+                    o.sale_type,
+                    o.status AS order_status,
+                    o.total_dzd,
+                    o.subtotal_dzd,
+                    o.notes,
+                    o.created_at,
+                    u.first_name,
+                    u.last_name,
+                    u.phone,
+                    u.perfume_shop_name,
+                    i.id AS invoice_id,
+                    i.invoice_number,
+                    i.status AS invoice_status,
+                    i.total_dzd AS invoice_total,
+                    i.issued_at,
+                    COALESCE(SUM(CASE WHEN p.status = 'VALIDE' THEN p.amount_dzd ELSE 0 END), 0) AS paid_amount
+                 FROM orders o
+                 INNER JOIN users u ON u.id = o.customer_user_id
+                 LEFT JOIN invoices i ON i.order_id = o.id
+                 LEFT JOIN payments p ON p.invoice_id = i.id
+                 WHERE o.id = :id
+                 GROUP BY o.id, o.order_number, o.sale_type, o.status, o.total_dzd, o.subtotal_dzd, o.notes, o.created_at,
+                          u.first_name, u.last_name, u.phone, u.perfume_shop_name,
+                          i.id, i.invoice_number, i.status, i.total_dzd, i.issued_at
+                 LIMIT 1"
+                : "SELECT
+                    o.id,
+                    o.order_number,
+                    o.sale_type,
+                    o.status AS order_status,
+                    o.total_dzd,
+                    o.subtotal_dzd,
+                    o.notes,
+                    o.created_at,
+                    u.first_name,
+                    u.last_name,
+                    u.phone,
+                    u.perfume_shop_name,
+                    i.id AS invoice_id,
+                    i.invoice_number,
+                    i.status AS invoice_status,
+                    i.total_dzd AS invoice_total,
+                    i.issued_at,
+                    0 AS paid_amount
+                 FROM orders o
+                 INNER JOIN users u ON u.id = o.customer_user_id
+                 LEFT JOIN invoices i ON i.order_id = o.id
+                 WHERE o.id = :id
+                 LIMIT 1"
         );
         $stmt->execute(['id' => $id]);
         $order = $stmt->fetch();
@@ -1259,6 +1505,7 @@ final class AdminApiController
         $documentMeta = is_array($existingPayload['document_meta'] ?? null) ? $existingPayload['document_meta'] : [];
         $lineItemsMeta = is_array($documentMeta['line_items'] ?? null) ? array_values($documentMeta['line_items']) : [];
 
+        $subtotal = null;
         $total = null;
         $updatedLineDisplay = $lineItemsMeta;
 
@@ -1283,6 +1530,7 @@ final class AdminApiController
                       WHERE id = :id AND order_id = :order_id'
                 );
 
+                $subtotal = 0.0;
                 $total = 0.0;
                 $updatedLineDisplay = [];
                 foreach ($itemsPayload as $index => $itemPayload) {
@@ -1293,10 +1541,16 @@ final class AdminApiController
 
                     $existingItem = $itemsById[$itemId];
                     $qty = max(1, (float) ($itemPayload['quantity_bottles'] ?? 0));
-                    $price = $saleType === 'GROS'
-                        ? max(0.001, (float) ($itemPayload['unit_price_dzd'] ?? 0))
+                    $payloadPrice = max(0.0, (float) ($itemPayload['unit_price_dzd'] ?? 0));
+                    $price = $payloadPrice > 0
+                        ? max(0.001, $payloadPrice)
                         : (float) ($existingItem['unit_price_dzd'] ?? 0);
-                    $lineTotal = $qty * $price;
+                    $previousLineMeta = is_array($lineItemsMeta[$index] ?? null) ? $lineItemsMeta[$index] : [];
+                    $discountRate = $this->sanitizeRate($itemPayload['discount_rate'] ?? ($previousLineMeta['discount_rate'] ?? 0));
+                    $lineSubtotal = $qty * $price;
+                    $lineDiscount = $lineSubtotal * ($discountRate / 100);
+                    $lineTotal = max(0.0, $lineSubtotal - $lineDiscount);
+                    $subtotal += $lineSubtotal;
                     $total += $lineTotal;
 
                     $updateItemStmt->execute([
@@ -1307,11 +1561,11 @@ final class AdminApiController
                         'order_id' => $id,
                     ]);
 
-                    $previousLineMeta = is_array($lineItemsMeta[$index] ?? null) ? $lineItemsMeta[$index] : [];
                     $updatedLineDisplay[] = [
                         'product_id' => (int) ($existingItem['product_id'] ?? 0),
                         'display_name' => trim((string) ($itemPayload['display_name'] ?? $previousLineMeta['display_name'] ?? '')),
                         'display_code' => trim((string) ($itemPayload['display_code'] ?? $previousLineMeta['display_code'] ?? '')),
+                        'discount_rate' => $discountRate,
                     ];
                 }
 
@@ -1325,6 +1579,29 @@ final class AdminApiController
             }
         }
 
+        $totalsMeta = is_array($documentMeta['totals'] ?? null) ? $documentMeta['totals'] : [];
+        if ($itemsPayload !== []) {
+            $discount = max(0.0, (float) $subtotal - (float) $total);
+            $htNet = max(0.0, (float) $total);
+            $cict = $htNet * 0.01;
+            $consumptionBase = $htNet + $cict;
+            $consumption = $consumptionBase / 4;
+            $baseTva = $consumptionBase + $consumption;
+            $tva = $baseTva * 0.19;
+            $timbre = 1.0;
+            $totalsMeta = array_merge($totalsMeta, [
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'htNet' => $htNet,
+                'cict' => $cict,
+                'consumption' => $consumption,
+                'baseTva' => $baseTva,
+                'tva' => $tva,
+                'timbre' => $timbre,
+                'totalToPay' => $htNet,
+            ]);
+        }
+
         $notes = json_encode([
             'last_name' => $lastName,
             'first_name' => $firstName,
@@ -1333,6 +1610,7 @@ final class AdminApiController
             'created_by_admin' => (bool) ($existingPayload['created_by_admin'] ?? false),
             'document_label' => (string) ($existingPayload['document_label'] ?? ''),
             'document_meta' => array_merge($documentMeta, [
+                'totals' => $totalsMeta,
                 'line_items' => $updatedLineDisplay,
             ]),
         ], JSON_UNESCAPED_UNICODE);
@@ -1343,11 +1621,12 @@ final class AdminApiController
                     'UPDATE orders SET notes = :notes, subtotal_dzd = :sub, total_dzd = :total WHERE id = :id'
                 )->execute([
                     'notes' => $notes,
-                    'sub' => (float) $total,
+                    'sub' => (float) $subtotal,
                     'total' => (float) $total,
                     'id' => $id,
                 ]);
-                $db->prepare('UPDATE invoices SET total_dzd = :total WHERE order_id = :order_id')->execute([
+                $db->prepare('UPDATE invoices SET subtotal_dzd = :sub, total_dzd = :total WHERE order_id = :order_id')->execute([
+                    'sub' => (float) $subtotal,
                     'total' => (float) $total,
                     'order_id' => $id,
                 ]);
@@ -1377,6 +1656,7 @@ final class AdminApiController
         }
 
         $db = $this->app->db();
+        $paymentsAvailable = $this->paymentsTableAvailable($db);
         $db->beginTransaction();
         try {
             $stmtInv = $db->prepare("SELECT id FROM invoices WHERE order_id = :oid");
@@ -1384,7 +1664,9 @@ final class AdminApiController
             $invoiceIds = array_map(static fn(array $r) => (int) $r['id'], $stmtInv->fetchAll());
             if (count($invoiceIds) > 0) {
                 $in = implode(',', $invoiceIds);
-                $db->exec("DELETE FROM payments WHERE invoice_id IN ($in)");
+                if ($paymentsAvailable) {
+                    $db->exec("DELETE FROM payments WHERE invoice_id IN ($in)");
+                }
                 $db->exec("DELETE FROM invoices WHERE id IN ($in)");
             }
 
@@ -1569,6 +1851,9 @@ final class AdminApiController
             return $deny;
         }
 
+        $this->ensureUserClientMetadataColumns();
+        $this->ensureAdminOnlyClientColumn();
+
         $rows = $this->app->db()->query(
             "SELECT
                 u.id,
@@ -1578,6 +1863,10 @@ final class AdminApiController
                 u.phone,
                 u.location,
                 u.email,
+                u.client_code,
+                u.fiscal_code,
+                u.preferred_unit_price_dzd,
+                u.admin_only_client,
                 u.is_active,
                 COALESCE((
                     SELECT r.role_name
@@ -1588,10 +1877,128 @@ final class AdminApiController
                     LIMIT 1
                 ), 'CLIENT') AS role_name
              FROM users u
+             WHERE u.is_active = 1
              ORDER BY u.id DESC"
         )->fetchAll();
 
         return new JsonResponse(['items' => $rows]);
+    }
+
+    #[Route('/api/admin/users', name: 'api_admin_users_create', methods: ['POST'])]
+    public function createUser(Request $request): JsonResponse
+    {
+        if ($deny = $this->denyUnlessAdmin()) {
+            return $deny;
+        }
+
+        $this->ensureUserClientMetadataColumns();
+        $this->ensureAdminOnlyClientColumn();
+
+        $payload = json_decode((string) $request->getContent(), true) ?: [];
+        $data = [
+            'first_name' => trim((string) ($payload['first_name'] ?? '')),
+            'last_name' => trim((string) ($payload['last_name'] ?? '')),
+            'perfume_shop_name' => trim((string) ($payload['perfume_shop_name'] ?? '')),
+            'phone' => trim((string) ($payload['phone'] ?? '')),
+            'phone_db' => null,
+            'location' => trim((string) ($payload['location'] ?? '')),
+            'client_code' => trim((string) ($payload['client_code'] ?? '')),
+            'fiscal_code' => trim((string) ($payload['fiscal_code'] ?? '')),
+        ];
+        $data['phone_db'] = $data['phone'] !== '' ? $data['phone'] : null;
+
+        $errors = array_filter([
+            $this->validateRequired($data['perfume_shop_name'], 'Parfumerie', 150),
+            $this->validatePhone($data['phone']),
+            $this->validateMaxLength($data['first_name'], 'Prenom', 100),
+            $this->validateMaxLength($data['last_name'], 'Nom', 100),
+            $this->validateMaxLength($data['location'], 'Localisation', 150),
+            $data['client_code'] !== '' && mb_strlen($data['client_code']) > 80 ? 'Code client trop long.' : null,
+            $data['fiscal_code'] !== '' && mb_strlen($data['fiscal_code']) > 120 ? 'Matricule fiscal trop long.' : null,
+        ]);
+        if ($errors !== []) {
+            return new JsonResponse(['error' => array_values($errors)[0]], 422);
+        }
+
+        $internalEmail = $this->buildInternalAdminClientEmail($data['phone']);
+        $db = $this->app->db();
+        $check = $db->prepare(
+            'SELECT id FROM users
+             WHERE (:phone_present <> "" AND phone = :phone)
+                OR (:client_code_present <> "" AND client_code = :client_code_match)
+             LIMIT 1'
+        );
+        $check->execute([
+            'phone' => $data['phone'],
+            'phone_present' => $data['phone'],
+            'client_code_present' => $data['client_code'],
+            'client_code_match' => $data['client_code'],
+        ]);
+        if ($check->fetch()) {
+            return new JsonResponse(['error' => 'Telephone ou code client deja utilise.'], 409);
+        }
+
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare(
+                "INSERT INTO users (
+                    first_name,
+                    last_name,
+                    perfume_shop_name,
+                    phone,
+                    location,
+                    email,
+                    client_code,
+                    fiscal_code,
+                    admin_only_client,
+                    password_hash,
+                    is_active
+                ) VALUES (
+                    :first_name,
+                    :last_name,
+                    :perfume_shop_name,
+                    :phone,
+                    :location,
+                    :email,
+                    :client_code,
+                    :fiscal_code,
+                    1,
+                    :password_hash,
+                    1
+                )"
+            );
+            $stmt->execute([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'perfume_shop_name' => $data['perfume_shop_name'],
+                'phone' => $data['phone_db'],
+                'location' => $data['location'],
+                'email' => $internalEmail,
+                'client_code' => $data['client_code'] !== '' ? $data['client_code'] : null,
+                'fiscal_code' => $data['fiscal_code'] !== '' ? $data['fiscal_code'] : null,
+                'password_hash' => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
+            ]);
+
+            $userId = (int) $db->lastInsertId();
+            $roleId = (int) $db->query("SELECT id FROM roles WHERE role_name = 'CLIENT' LIMIT 1")->fetchColumn();
+            if ($roleId > 0) {
+                $roleStmt = $db->prepare(
+                    'INSERT IGNORE INTO user_roles (user_id, role_id)
+                     VALUES (:user_id, :role_id)'
+                );
+                $roleStmt->execute([
+                    'user_id' => $userId,
+                    'role_id' => $roleId,
+                ]);
+            }
+
+            $db->commit();
+
+            return new JsonResponse(['id' => $userId], 201);
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            return new JsonResponse(['error' => 'Creation client impossible: ' . $e->getMessage()], 500);
+        }
     }
 
     #[Route('/api/admin/users/{id}', name: 'api_admin_users_update', methods: ['PATCH'])]
@@ -1601,38 +2008,71 @@ final class AdminApiController
             return $deny;
         }
 
+        $this->ensureUserClientMetadataColumns();
+        $this->ensureAdminOnlyClientColumn();
+
         $payload = json_decode((string) $request->getContent(), true) ?: [];
+        $existingStmt = $this->app->db()->prepare(
+            'SELECT id, email, admin_only_client FROM users WHERE id = :id LIMIT 1'
+        );
+        $existingStmt->execute(['id' => $id]);
+        $existingUser = $existingStmt->fetch();
+        if (!$existingUser) {
+            return new JsonResponse(['error' => 'Utilisateur introuvable.'], 404);
+        }
+
         $data = [
             'first_name' => trim((string) ($payload['first_name'] ?? '')),
             'last_name' => trim((string) ($payload['last_name'] ?? '')),
             'perfume_shop_name' => trim((string) ($payload['perfume_shop_name'] ?? '')),
             'phone' => trim((string) ($payload['phone'] ?? '')),
+            'phone_db' => null,
             'location' => trim((string) ($payload['location'] ?? '')),
-            'email' => mb_strtolower(trim((string) ($payload['email'] ?? ''))),
+            'email' => mb_strtolower(trim((string) ($payload['email'] ?? ($existingUser['email'] ?? '')))),
+            'client_code' => trim((string) ($payload['client_code'] ?? '')),
+            'fiscal_code' => trim((string) ($payload['fiscal_code'] ?? '')),
             'is_active' => (int) ($payload['is_active'] ?? 1),
+            'admin_only_client' => (int) ($existingUser['admin_only_client'] ?? 0),
         ];
+        $data['phone_db'] = $data['phone'] !== '' ? $data['phone'] : null;
 
         $errors = array_filter([
-            $this->validateRequired($data['first_name'], 'Prenom', 100),
-            $this->validateRequired($data['last_name'], 'Nom', 100),
             $this->validateRequired($data['perfume_shop_name'], 'Parfumerie', 150),
             $this->validatePhone($data['phone']),
-            $this->validateRequired($data['location'], 'Localisation', 150),
-            $this->validateEmail($data['email']),
+            $this->validateMaxLength($data['first_name'], 'Prenom', 100),
+            $this->validateMaxLength($data['last_name'], 'Nom', 100),
+            $this->validateMaxLength($data['location'], 'Localisation', 150),
+            $data['admin_only_client'] === 1 ? null : $this->validateEmail($data['email']),
+            $data['client_code'] !== '' && mb_strlen($data['client_code']) > 80 ? 'Code client trop long.' : null,
+            $data['fiscal_code'] !== '' && mb_strlen($data['fiscal_code']) > 120 ? 'Matricule fiscal trop long.' : null,
         ]);
         if ($errors !== []) {
             return new JsonResponse(['error' => array_values($errors)[0]], 422);
         }
 
         $db = $this->app->db();
-        $check = $db->prepare('SELECT id FROM users WHERE (email = :email OR phone = :phone) AND id <> :id LIMIT 1');
-        $check->execute([
+        $check = $db->prepare(
+            $data['admin_only_client'] === 1
+                ? 'SELECT id FROM users
+                   WHERE ((:phone_present <> "" AND phone = :phone) OR (:client_code_present <> "" AND client_code = :client_code_match))
+                     AND id <> :id
+                   LIMIT 1'
+                : 'SELECT id FROM users
+                   WHERE (email = :email OR phone = :phone OR (:client_code_present <> "" AND client_code = :client_code_match))
+                     AND id <> :id
+                   LIMIT 1'
+        );
+        $params = [
             'email' => $data['email'],
             'phone' => $data['phone'],
+            'phone_present' => $data['phone'],
+            'client_code_present' => $data['client_code'],
+            'client_code_match' => $data['client_code'],
             'id' => $id,
-        ]);
+        ];
+        $check->execute($params);
         if ($check->fetch()) {
-            return new JsonResponse(['error' => 'Email ou telephone deja utilise.'], 409);
+            return new JsonResponse(['error' => $data['admin_only_client'] === 1 ? 'Telephone ou code client deja utilise.' : 'Email, telephone ou code client deja utilise.'], 409);
         }
 
         $stmt = $db->prepare(
@@ -1640,9 +2080,11 @@ final class AdminApiController
              SET first_name = :first_name,
                  last_name = :last_name,
                  perfume_shop_name = :perfume_shop_name,
-                 phone = :phone,
+                 phone = :phone_db,
                  location = :location,
                  email = :email,
+                 client_code = :client_code,
+                 fiscal_code = :fiscal_code,
                  is_active = :is_active
              WHERE id = :id"
         );

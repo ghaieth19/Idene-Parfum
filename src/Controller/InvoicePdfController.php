@@ -12,7 +12,8 @@ use Symfony\Component\Routing\Attribute\Route;
 final class InvoicePdfController
 {
     private const TVA_RATE = 0.19;
-    private const CICT_RATE = 0.008;
+    private const CICT_RATE = 0.01;
+    private const CONSUMPTION_RATE = 0.25;
     private const TIMBRE = 1.000;
 
     public function __construct(private readonly AppContext $app)
@@ -74,8 +75,11 @@ final class InvoicePdfController
         $shipping = is_array($client['shipping_address'] ?? null) ? $client['shipping_address'] : [];
 
         $rowsHtml = '';
+        $totalHt = 0.0;
         foreach ($items as $item) {
             $lineTotal = (float) $item['line_total_dzd'];
+            $lineTotalHt = $this->lineTotalHt($lineTotal);
+            $totalHt += $lineTotalHt;
             $quantity = (string) ($item['quantity_ml'] ?? '0');
 
             $designation = strtoupper(trim((string) ($item['name'] ?? 'Produit')));
@@ -94,11 +98,13 @@ final class InvoicePdfController
                 htmlspecialchars($designation, ENT_QUOTES),
                 htmlspecialchars($quantity, ENT_QUOTES),
                 $this->money((float) $item['unit_price_dzd']),
-                $this->money($lineTotal)
+                $this->money($lineTotalHt)
             );
         }
 
-        $summary = $this->buildSummary((float) ($invoice['total_dzd'] ?? 0));
+        $subtotalHt = (float) ($invoice['subtotal_dzd'] ?? $totalHt);
+        $discountTotal = max(0.0, $subtotalHt - (float) ($invoice['total_dzd'] ?? $subtotalHt));
+        $summary = $this->buildSummary($subtotalHt, $discountTotal);
         $issuedAt = (string) ($invoice['issued_at'] ?? '');
         $clientName = trim((string) (($client['first_name'] ?? '') . ' ' . ($client['last_name'] ?? '')));
         $phone = trim((string) ($shipping['phone'] ?? ($client['phone'] ?? '')));
@@ -151,11 +157,11 @@ final class InvoicePdfController
     <meta charset="utf-8">
     <style>
         @page { margin: 4mm 4mm 4mm 4mm; }
-        body { font-family: DejaVu Sans, sans-serif; color: #111; font-size: 10px; margin: 0; }
-        .brand { margin: 4mm 0 4mm 3mm; font-size: 21px; font-style: italic; letter-spacing: 0.2px; }
-        .client-text { margin: 0 0 4mm 3mm; width: 84mm; font-size: 10px; line-height: 1.6; }
+        body { font-family: DejaVu Sans, sans-serif; color: #111; font-size: 11px; font-weight: 600; margin: 0; }
+        .brand { margin: 4mm 0 4mm 3mm; font-size: 22px; font-style: italic; font-weight: 700; letter-spacing: 0.2px; }
+        .client-text { margin: 0 0 4mm 3mm; width: 84mm; font-size: 11px; line-height: 1.6; }
         .client-text .code { font-weight: 700; margin-bottom: 1.5mm; }
-        .client-text .name { font-size: 11px; font-style: italic; }
+        .client-text .name { font-size: 12px; font-style: italic; font-weight: 700; }
         table { border-collapse: collapse; width: 100%; }
         .top-layout td { vertical-align: top; }
         .box, .main-table, .tax-table, .summary-table, .stamp-table, .amount-table { border: 1px solid #8f8f8f; }
@@ -167,14 +173,14 @@ final class InvoicePdfController
         .amount-table td { border: 1px solid #8f8f8f; padding: 4px 6px; }
         .box th, .main-table th, .tax-table th, .summary-table th { background: #d8d8d8; font-weight: 700; }
         .invoice-box { width: 92mm; }
-        .invoice-box .title-cell { font-size: 17px; letter-spacing: 0.4px; }
-        .invoice-box .number-cell { font-size: 16px; font-weight: 700; }
+        .invoice-box .title-cell { font-size: 18px; letter-spacing: 0.4px; }
+        .invoice-box .number-cell { font-size: 17px; font-weight: 700; }
         .invoice-box .date-row td { height: 20px; }
         .spacer { width: 8mm; }
         .main-table { table-layout: fixed; margin-top: 2mm; }
-        .main-table th { font-size: 9px; }
-        .main-table td { font-size: 9px; vertical-align: top; }
-        .main-table .delivery-row td { padding: 2px 4px; font-size: 8px; }
+        .main-table th { font-size: 10px; }
+        .main-table td { font-size: 10px; font-weight: 600; vertical-align: top; }
+        .main-table .delivery-row td { padding: 2px 4px; font-size: 9px; }
         .main-table .delivery-label { text-align: right; }
         .main-table .item-row td { height: 14px; }
         .main-table .blank-row td { height: 18px; }
@@ -185,16 +191,16 @@ final class InvoicePdfController
         .tax-wrap { width: 29%; }
         .summary-wrap { width: 46%; }
         .stamp-wrap { width: 25%; }
-        .tax-table th, .summary-table th, .stamp-table th { font-size: 9px; }
-        .tax-table td, .summary-table td, .stamp-table td { font-size: 9px; }
+        .tax-table th, .summary-table th, .stamp-table th { font-size: 10px; }
+        .tax-table td, .summary-table td, .stamp-table td { font-size: 10px; font-weight: 600; }
         .tax-table .total-head { text-align: left; }
         .summary-table th { text-align: left; width: 58%; }
         .summary-table td { width: 42%; }
         .stamp-box { height: 96px; background: #fff; }
         .amount-table { margin-top: 4px; }
-        .amount-table td { padding: 5px 7px; font-size: 10px; }
-        .amount-table strong { font-size: 11px; }
-        .company { margin-top: 4mm; border-top: 1px solid #8f8f8f; padding-top: 3mm; text-align: center; font-size: 9px; line-height: 1.25; }
+        .amount-table td { padding: 5px 7px; font-size: 11px; font-weight: 600; }
+        .amount-table strong { font-size: 12px; font-weight: 700; }
+        .company { margin-top: 4mm; border-top: 1px solid #8f8f8f; padding-top: 3mm; text-align: center; font-size: 10px; font-weight: 600; line-height: 1.25; }
     </style>
 </head>
 <body>
@@ -280,8 +286,7 @@ final class InvoicePdfController
             <td style="width: 1%;"></td>
             <td class="summary-wrap">
                 <table class="summary-table">
-                    <tr><th>HT BRUT:</th><td class="right">{{ht_brut}}</td></tr>
-                    <tr><th>TOTAL Remise</th><td class="right">0.000</td></tr>
+                    <tr><th>TOTAL HT:</th><td class="right">{{ht_brut}}</td></tr>
                     <tr><th>HT NET:</th><td class="right">{{ht_net}}</td></tr>
                     <tr><th>CICT</th><td class="right">{{cict}}</td></tr>
                     <tr><th>DROIT DE CONSOMMATION</th><td class="right">{{consumption}}</td></tr>
@@ -340,26 +345,45 @@ HTML;
         ]);
     }
 
-    private function buildSummary(float $totalToPay): array
+    private function buildSummary(float $subtotalHt, float $discount): array
     {
-        $timbre = $totalToPay > 0 ? self::TIMBRE : 0.0;
-        $totalBeforeStamp = max(0.0, $totalToPay - $timbre);
-        $htBrut = $totalBeforeStamp / (1 + self::CICT_RATE + (1 + self::CICT_RATE) * self::TVA_RATE);
-        $cict = $htBrut * self::CICT_RATE;
-        $baseTva = $htBrut + $cict;
-        $mtTva = $totalBeforeStamp - $baseTva;
-        $htNet = $htBrut;
+        $includedGross = max(0.0, $subtotalHt);
+        $discount = max(0.0, min($discount, $includedGross));
+        $includedNet = max(0.0, $includedGross - $discount);
+        $multiplier = $this->taxMultiplier();
+        $htBrut = $multiplier > 0 ? $includedGross / $multiplier : $includedGross;
+        $htNet = $multiplier > 0 ? $includedNet / $multiplier : $includedNet;
+        $cict = $htNet * self::CICT_RATE;
+        $consumptionBase = $htNet + $cict;
+        $consumption = $consumptionBase / 4;
+        $baseTva = $consumptionBase + $consumption;
+        $mtTva = $baseTva * self::TVA_RATE;
+        $timbre = self::TIMBRE;
+        $totalToPay = $includedNet;
 
         return [
             'ht_brut' => $htBrut,
+            'discount' => $discount,
             'ht_net' => $htNet,
             'cict' => $cict,
-            'consumption' => $totalToPay * 0.25,
+            'consumption' => $consumption,
             'base_tva' => $baseTva,
             'mt_tva' => $mtTva,
             'timbre' => $timbre,
             'total_to_pay' => $totalToPay,
         ];
+    }
+
+    private function lineTotalHt(float $lineTotal): float
+    {
+        $divider = $this->taxMultiplier();
+
+        return $divider > 0 ? $lineTotal / $divider : $lineTotal;
+    }
+
+    private function taxMultiplier(): float
+    {
+        return (1 + self::CICT_RATE + self::CONSUMPTION_RATE) * (1 + self::TVA_RATE);
     }
 
     private function clientCode(array $client, int $fallback): string

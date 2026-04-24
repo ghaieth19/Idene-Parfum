@@ -213,6 +213,7 @@ final class UserInterfaceController
                     <div class="eco-search-wrap eco-search-wrap--hero">
                         <i class="bi bi-search"></i>
                         <input type="search" placeholder="Rechercher un parfum..." id="shopSearch">
+                        <div id="shopSearchAutocomplete" class="shop-autocomplete"></div>
                     </div>
                 </div>
                 
@@ -457,7 +458,7 @@ final class UserInterfaceController
                 <div class="ob-body">
                     <h2 class="ob-title">Bienvenue sur IDENE !</h2>
                     <p class="ob-desc">Votre espace professionnel pour commander vos huiles de parfum en vrac, directement depuis la source. Ce guide rapide vous montre comment tout fonctionne.</p>
-                    <div class="ob-arabic-note" id="obArabicNote" dir="rtl">Ø´Ø±Ø­ Ø³Ø±ÙŠØ¹: Ù…Ù† Ù‡Ù†Ø§ ØªÙ‚Ø¯Ø± ØªØªØµÙØ­ Ø§Ù„Ø¹Ø·ÙˆØ±ØŒ ØªØ¶ÙŠÙ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª Ù„Ù„Ø³Ù„Ø©ØŒ ØªØ¤ÙƒØ¯ Ø§Ù„Ø·Ù„Ø¨ØŒ ÙˆØªØªØ§Ø¨Ø¹ Ø§Ù„ÙÙˆØ§ØªÙŠØ± ÙˆØ§Ù„Ø­Ø³Ø§Ø¨ Ù…Ù† Ù†ÙØ³ Ø§Ù„Ù…Ø³Ø§Ø­Ø©.</div>
+                    <div class="ob-arabic-note" id="obArabicNote" dir="rtl">شرح سريع: من هنا تقدر تتصفح العطور، تضيف المنتجات إلى السلة، تؤكد الطلب، وتتابع الفواتير والحساب من نفس المساحة.</div>
                 </div>
             </div>
 
